@@ -354,7 +354,8 @@ public class Claim
     //build permission check
     public String allowBuild(Player player, Material material)
     {
-        return checkPermission(player, ClaimPermission.Build, new CompatBuildBreakEvent(material, false)).get();
+        Supplier<String> supplier = checkPermission(player, ClaimPermission.Build, new CompatBuildBreakEvent(material, false));
+        return supplier != null ? supplier.get() : null;
     }
 
     public static class CompatBuildBreakEvent extends Event
