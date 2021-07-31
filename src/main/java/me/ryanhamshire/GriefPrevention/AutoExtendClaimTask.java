@@ -9,6 +9,7 @@ import org.bukkit.block.Biome;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 //automatically extends a claim downward based on block types detected
@@ -80,7 +81,8 @@ class AutoExtendClaimTask implements Runnable
 
     private boolean yTooSmall(int y)
     {
-        return y == 0 || y <= GriefPrevention.instance.config_claims_maxDepth;
+        return y <= Objects.requireNonNull(claim.getLesserBoundaryCorner().getWorld()).getMinHeight()
+                || y <= GriefPrevention.instance.config_claims_maxDepth;
     }
 
     //runs in the main execution thread, where it can safely change claims and save those changes

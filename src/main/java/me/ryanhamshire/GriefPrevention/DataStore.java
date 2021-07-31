@@ -55,6 +55,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -868,8 +869,9 @@ public abstract class DataStore
 
         int smallx, bigx, smally, bigy, smallz, bigz;
 
-        if (y1 < GriefPrevention.instance.config_claims_maxDepth) y1 = GriefPrevention.instance.config_claims_maxDepth;
-        if (y2 < GriefPrevention.instance.config_claims_maxDepth) y2 = GriefPrevention.instance.config_claims_maxDepth;
+        int worldMinY = world.getMinHeight();
+        y1 = Math.max(worldMinY, Math.max(GriefPrevention.instance.config_claims_maxDepth, y1));
+        y2 = Math.max(worldMinY, Math.max(GriefPrevention.instance.config_claims_maxDepth, y2));
 
         //determine small versus big inputs
         if (x1 < x2)
@@ -1057,8 +1059,11 @@ public abstract class DataStore
     //respects the max depth config variable
     synchronized public void extendClaim(Claim claim, int newDepth)
     {
-        if (newDepth < GriefPrevention.instance.config_claims_maxDepth)
-            newDepth = GriefPrevention.instance.config_claims_maxDepth;
+        newDepth = Math.max(
+                Objects.requireNonNull(claim.getLesserBoundaryCorner().getWorld()).getMinHeight(),
+                Math.max(
+                        newDepth,
+                        GriefPrevention.instance.config_claims_maxDepth));
 
         if (claim.parent != null) claim = claim.parent;
 
