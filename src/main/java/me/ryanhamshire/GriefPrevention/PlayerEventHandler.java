@@ -1728,6 +1728,13 @@ class PlayerEventHandler implements Listener
         }
 
         //apply rules for containers and crafting blocks
+        Set<Material> candles = new HashSet<>();
+        for (Material material : Material.values())
+        {
+            if (material.isLegacy()) continue;
+            if (material.name().endsWith("CANDLE"))
+                candles.add(material);
+        }
         if (clickedBlock != null && instance.config_claims_preventTheft && (
                 event.getAction() == Action.RIGHT_CLICK_BLOCK && (
                         (this.isInventoryHolder(clickedBlock) && clickedBlock.getType() != Material.LECTERN) ||
@@ -1750,7 +1757,8 @@ class PlayerEventHandler implements Listener
                                 clickedBlockType == Material.RESPAWN_ANCHOR ||
                                 clickedBlockType == Material.CAVE_VINES ||
                                 clickedBlockType == Material.CAVE_VINES_PLANT ||
-                                clickedBlockType == Material.PUMPKIN
+                                clickedBlockType == Material.PUMPKIN ||
+                                candles.contains(clickedBlockType)
                         )))
         {
             if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
