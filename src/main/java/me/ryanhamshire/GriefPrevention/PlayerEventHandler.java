@@ -705,7 +705,8 @@ class PlayerEventHandler implements Listener
                 Bukkit.getScheduler().scheduleSyncDelayedTask(instance, task, instance.config_claims_manualDeliveryDelaySeconds * 20L);
             }
         }
-
+        
+        //FEATURE: option to enable ignoreclaims by default when the player has permission.
         if (instance.config_toggleIgnoreClaimsOnJoin && player.hasPermission("griefprevention.ignoreclaims"))
         {
             playerData.ignoreClaims = true;
