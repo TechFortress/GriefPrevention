@@ -706,6 +706,11 @@ class PlayerEventHandler implements Listener
             }
         }
 
+        if (player.hasPermission("griefprevention.ignoreclaims"))
+        {
+            playerData.ignoreClaims = instance.config_toggleIgnoreClaimsOnJoin;
+        }
+
         //silence notifications when they're coming too fast
         if (event.getJoinMessage() != null && this.shouldSilenceNotification())
         {
