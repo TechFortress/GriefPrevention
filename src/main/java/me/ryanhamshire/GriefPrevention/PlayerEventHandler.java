@@ -1748,7 +1748,7 @@ class PlayerEventHandler implements Listener
                                 clickedBlockType == Material.LOOM ||
                                 clickedBlockType == Material.PUMPKIN ||
                                 clickedBlockType == Material.RESPAWN_ANCHOR ||
-                                clickedBlockType == Material.ROOTED_DIRT
+                                clickedBlockType == Material.ROOTED_DIRT ||
                                 clickedBlockType == Material.STONECUTTER ||
                                 clickedBlockType == Material.SWEET_BERRY_BUSH ||
                                 Tag.CANDLES.isTagged(clickedBlockType) ||
