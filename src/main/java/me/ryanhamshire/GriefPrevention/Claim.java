@@ -324,7 +324,8 @@ public class Claim
     @Deprecated
     public String allowEdit(Player player)
     {
-        return checkPermission(player, ClaimPermission.Edit, null).get();
+        Supplier<String> supplier = checkPermission(player, ClaimPermission.Edit, null);
+        return supplier != null ? supplier.get() : null;
     }
 
     private static final Set<Material> PLACEABLE_FARMING_BLOCKS = EnumSet.of(
