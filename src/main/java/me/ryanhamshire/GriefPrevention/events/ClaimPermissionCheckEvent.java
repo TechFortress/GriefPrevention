@@ -6,139 +6,182 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
- * This event is called when a {@link Claim} requires a specific level of trust.
- * If the denial reason is null, the trust requirements are met and the action is allowed.
+ * An {@link Event} called when a {@link Claim} requires a specific level of trust.
+ * If the denial reason is {@code null}, the trust requirements are met and the action is allowed.
  */
-public class ClaimPermissionCheckEvent extends Event
+public class ClaimPermissionCheckEvent extends ClaimEvent implements MessageCancellable
 {
 
-    private static final HandlerList handlers = new HandlerList();
-
-    private final Player checkedPlayer;
-    private final UUID checkedUUID;
-    private final Claim claim;
-    private final ClaimPermission requiredPermission;
-    private final Event triggeringEvent;
-    private Supplier<String> denial;
+    private final @Nullable Player checkedPlayer;
+    private final @NotNull UUID checkedUUID;
+    private final @NotNull ClaimPermission requiredPermission;
+    private final @Nullable Event triggeringEvent;
 
     /**
-     * Constructor for a ClaimPermissionCheckEvent.
+     * Construct a new {@code ClaimPermissionCheckEvent}.
      *
-     * @param checked the Player being checked for permissions
-     * @param claim the Claim in which permissions are being checked
-     * @param required the ClaimPermission level required
-     * @param triggeringEvent the Event triggering the permission check
+     * @param checked the {@link Player} being checked for permissions
+     * @param claim the {@link Claim} in which permissions are being checked
+     * @param required the {@link ClaimPermission} level required
+     * @param triggeringEvent the {@link Event} triggering the permission check
      */
-    public ClaimPermissionCheckEvent(Player checked, Claim claim, ClaimPermission required, Event triggeringEvent)
+    public ClaimPermissionCheckEvent(
+            @NotNull Player checked,
+            @NotNull Claim claim,
+            @NotNull ClaimPermission required,
+            @Nullable Event triggeringEvent)
     {
         this(checked, checked.getUniqueId(), claim, required, triggeringEvent);
     }
 
     /**
-     * Constructor for a ClaimPermissionCheckEvent.
+     * Construct a new {@code ClaimPermissionCheckEvent}.
      *
-     * @param checked the UUID being checked for permissions
-     * @param claim the Claim in which permissions are being checked
-     * @param required the ClaimPermission level required
-     * @param triggeringEvent the Event triggering the permission check
+     * @param checked the {@link UUID} being checked for permissions
+     * @param claim the {@link Claim} in which permissions are being checked
+     * @param required the {@link ClaimPermission} level required
+     * @param triggeringEvent the {@link Event} triggering the permission check
      */
-    public ClaimPermissionCheckEvent(UUID checked, Claim claim, ClaimPermission required, Event triggeringEvent)
+    public ClaimPermissionCheckEvent(
+            @NotNull UUID checked,
+            @NotNull Claim claim,
+            @NotNull ClaimPermission required,
+            @Nullable Event triggeringEvent)
     {
         this(Bukkit.getPlayer(checked), checked, claim, required, triggeringEvent);
     }
 
-    private ClaimPermissionCheckEvent(Player checkedPlayer, UUID checkedUUID, Claim claim, ClaimPermission required, Event triggeringEvent)
+    private ClaimPermissionCheckEvent(
+            @Nullable Player checkedPlayer,
+            @NotNull UUID checkedUUID,
+            @NotNull Claim claim,
+            @NotNull ClaimPermission required,
+            @Nullable Event triggeringEvent)
     {
+        super(claim);
         this.checkedPlayer = checkedPlayer;
         this.checkedUUID = checkedUUID;
-        this.claim = claim;
         this.requiredPermission = required;
         this.triggeringEvent = triggeringEvent;
     }
 
     /**
-     * Returns the Player being checked for permission if online.
+     * Get the {@link Player} being checked for permission if online.
      *
-     * @return the Player being checked or null if offline
+     * @return the {@code Player} being checked or null if offline
      */
-    public Player getCheckedPlayer()
+    public @Nullable Player getCheckedPlayer()
     {
         return checkedPlayer;
     }
 
     /**
-     * Returns the UUID being checked for permission.
+     * Get the {@link UUID} being checked for permission.
      *
-     * @return the UUID being checked for permission
+     * @return the {@code UUID} being checked for permission
      */
-    public UUID getCheckedUUID()
+    public @NotNull UUID getCheckedUUID()
     {
         return checkedUUID;
     }
 
     /**
-     * Returns the Claim in which permission is being checked.
+     * Get the {@link ClaimPermission} being checked for.
      *
-     * @return the Claim in which permission is being checked
+     * @return the {@code ClaimPermission} being checked for
      */
-    public Claim getClaim()
-    {
-        return claim;
-    }
-
-    /**
-     * Returns the ClaimPermission being checked for.
-     *
-     * @return the ClaimPermission being checked for
-     */
-    public ClaimPermission getRequiredPermission()
+    public @NotNull ClaimPermission getRequiredPermission()
     {
         return requiredPermission;
     }
 
     /**
-     * Returns the Event causing this event to fire.
+     * Get the {@link Event} causing this {@code ClaimPermissionCheckEvent} to fire.
      *
-     * @return the Event triggering this event or null if none was provided
+     * @return the triggering {@code Event} or null if none was provided
      */
-    public Event getTriggeringEvent()
+    public @Nullable Event getTriggeringEvent()
     {
         return triggeringEvent;
     }
 
-    /**
-     * Returns the reason the ClaimPermission check failed.
-     * If the check did not fail, the message will be null.
-     *
-     * @return the denial reason or null if permission is granted
-     */
-    public Supplier<String> getDenialReason()
-    {
-        return denial;
-    }
+    // MessageCancellable requirements
+    private @Nullable Supplier<String> cancelReason = null;
 
-    /**
-     * Sets the reason for denial.
-     *
-     * @param denial the denial reason
-     */
-    public void setDenialReason(Supplier<String> denial)
+    @Override
+    public boolean isCancelled()
     {
-        this.denial = denial;
+        return cancelReason != null;
     }
 
     @Override
-    public HandlerList getHandlers()
+    @Deprecated
+    public void setCancelled(boolean cancelled)
+    {
+        if (!cancelled)
+        {
+            this.cancelReason = null;
+        }
+        else
+        {
+            this.cancelReason = () -> "";
+        }
+    }
+
+    @Override
+    public @NotNull Optional<Supplier<String>> getCancelReason()
+    {
+        return Optional.ofNullable(this.cancelReason);
+    }
+
+    @Override
+    public void setCancelled(@Nullable Supplier<String> reason)
+    {
+        this.cancelReason = reason;
+    }
+
+    /**
+     * Get the reason the ClaimPermission check failed.
+     * If the check did not fail, the message will be null.
+     *
+     * @return the denial reason or null if permission is granted
+     * @see MessageCancellable#getCancelReason()
+     * @see MessageCancellable#isCancelled()
+     */
+    public @Nullable Supplier<String> getDenialReason()
+    {
+        return cancelReason;
+    }
+
+    /**
+     * Set the reason for denial.
+     *
+     * @param denial the denial reason
+     * @see MessageCancellable#setCancelled(Supplier)
+     */
+    public void setDenialReason(@Nullable Supplier<String> denial)
+    {
+        this.cancelReason = denial;
+    }
+
+    // Listenable event requirements
+    private static final HandlerList handlers = new HandlerList();
+
+    public static HandlerList getHandlerList()
     {
         return handlers;
     }
 
-    public static HandlerList getHandlerList()
+    @Override
+    public @NotNull HandlerList getHandlers()
     {
         return handlers;
     }

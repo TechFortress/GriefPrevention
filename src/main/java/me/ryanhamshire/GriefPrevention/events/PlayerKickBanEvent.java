@@ -1,89 +1,108 @@
 package me.ryanhamshire.GriefPrevention.events;
 
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.player.PlayerEvent;
+import org.jetbrains.annotations.NotNull;
 
 /**
- * Called when GP is about to kick or ban a player
+ * An {@link org.bukkit.event.Event Event} called when GriefPrevention kicks or bans a {@link Player}.
  *
- * @author BillyGalbreath
- * 03/10/2017.
+ * @author BillyGalbreath on 03/10/2017
  */
-public class PlayerKickBanEvent extends Event
+public class PlayerKickBanEvent extends PlayerEvent implements Cancellable
 {
-    private static final HandlerList handlers = new HandlerList();
 
-    public static HandlerList getHandlerList()
-    {
-        return handlers;
-    }
-
-    @Override
-    public HandlerList getHandlers()
-    {
-        return handlers;
-    }
-
-    private final Player player;
-    private final String reason;
-    private final String source;
+    private final @NotNull String reason;
+    private final @NotNull String source;
     private final boolean ban;
-    private boolean cancelled = false;
 
     /**
-     * @param player Player getting kicked and/or banned
-     * @param reason Reason message for kick/ban
-     * @param source What caused the kick/ban
-     * @param ban True if player is getting banned
+     * Construct a new {@code PlayerKickBanEvent}.
+     *
+     * @param player the affected {@link Player}
+     * @param reason the reason for the kick/ban
+     * @param source the source of the kick/ban
+     * @param ban whether the {@code Player} will be banned
      */
-    public PlayerKickBanEvent(Player player, String reason, String source, boolean ban)
+    public PlayerKickBanEvent(Player player, @NotNull String reason, @NotNull String source, boolean ban)
     {
-        this.player = player;
+        super(player);
         this.reason = reason;
         this.source = source;
         this.ban = ban;
     }
 
     /**
-     * @return player getting kicked/banned
+     * Get the reason why the {@link Player} is being kicked.
+     *
+     * @return the reason why the target is being kicked
      */
-    public Player getPlayer()
-    {
-        return this.player;
-    }
-
-    /**
-     * @return reason player is getting kicked/banned
-     */
-    public String getReason()
+    public @NotNull String getReason()
     {
         return this.reason;
     }
 
     /**
-     * @return source that is kicking/banning the player
+     * Get the source of the kick.
+     *
+     * @return the source of the kick
      */
-    public String getSource()
+    public @NotNull String getSource()
     {
         return this.source;
     }
 
     /**
-     * @return is player getting banned
+     * Get whether the {@link Player} will also be banned.
+     *
+     * @return whether the target will be banned
      */
+    public boolean isBan()
+    {
+        return ban;
+    }
+
+    /**
+     * Get whether the {@link Player} will also be banned.
+     *
+     * @deprecated use {@link #isBan()}
+     * @return whether the target will be banned
+     */
+    @Deprecated
     public boolean getBan()
     {
-        return this.ban;
+        return this.isBan();
     }
 
+    // Listenable event requirements
+    private static final HandlerList HANDLERS = new HandlerList();
+
+    public static HandlerList getHandlerList()
+    {
+        return HANDLERS;
+    }
+
+    @Override
+    public @NotNull HandlerList getHandlers()
+    {
+        return HANDLERS;
+    }
+
+    // Cancellable requirements
+    private boolean cancelled = false;
+
+    @Override
     public boolean isCancelled()
     {
-        return this.cancelled;
+        return cancelled;
     }
 
-    public void setCancelled(boolean cancel)
+    @Override
+    public void setCancelled(boolean cancelled)
     {
-        this.cancelled = cancel;
+        this.cancelled = cancelled;
     }
+
 }

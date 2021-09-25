@@ -3,26 +3,18 @@ package me.ryanhamshire.GriefPrevention.events;
 import me.ryanhamshire.GriefPrevention.Claim;
 import org.bukkit.Location;
 import org.bukkit.event.Cancellable;
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
 
 //if destination field is set, then GriefPrevention will send the player to that location instead of searching for one
-public class SaveTrappedPlayerEvent extends Event implements Cancellable
+public class SaveTrappedPlayerEvent extends ClaimEvent implements Cancellable
 {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled = false;
+
     private Location destination = null;
-
-    public static HandlerList getHandlerList()
-    {
-        return handlers;
-    }
-
-    Claim claim;
 
     public SaveTrappedPlayerEvent(Claim claim)
     {
-        this.claim = claim;
+        super(claim);
     }
 
     public Location getDestination()
@@ -35,21 +27,27 @@ public class SaveTrappedPlayerEvent extends Event implements Cancellable
         this.destination = destination;
     }
 
-    public Claim getClaim()
+    // Listenable event requirements
+    private static final HandlerList HANDLERS = new HandlerList();
+
+    public static HandlerList getHandlerList()
     {
-        return this.claim;
+        return HANDLERS;
     }
 
     @Override
-    public HandlerList getHandlers()
+    public @NotNull HandlerList getHandlers()
     {
-        return handlers;
+        return HANDLERS;
     }
+
+    // Cancellable requirements
+    private boolean cancelled = false;
 
     @Override
     public boolean isCancelled()
     {
-        return this.cancelled;
+        return cancelled;
     }
 
     @Override
@@ -57,4 +55,5 @@ public class SaveTrappedPlayerEvent extends Event implements Cancellable
     {
         this.cancelled = cancelled;
     }
+
 }

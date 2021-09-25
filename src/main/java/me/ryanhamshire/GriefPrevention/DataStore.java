@@ -19,10 +19,10 @@
 package me.ryanhamshire.GriefPrevention;
 
 import com.google.common.io.Files;
+import me.ryanhamshire.GriefPrevention.events.ClaimResizeEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimCreatedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimDeletedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimExtendEvent;
-import me.ryanhamshire.GriefPrevention.events.ClaimModifiedEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
@@ -1400,7 +1400,7 @@ public abstract class DataStore
         newClaim.greaterBoundaryCorner = new Location(world, newx2, newy2, newz2);
 
         //call event here to check if it has been cancelled
-        ClaimModifiedEvent event = new ClaimModifiedEvent(oldClaim, newClaim, player);
+        ClaimResizeEvent event = new ClaimResizeEvent(oldClaim, newClaim, player);
         Bukkit.getPluginManager().callEvent(event);
 
         //return here if event is cancelled
@@ -1422,7 +1422,15 @@ public abstract class DataStore
         }
 
         //ask the datastore to try and resize the claim, this checks for conflicts with other claims
-        CreateClaimResult result = GriefPrevention.instance.dataStore.resizeClaim(playerData.claimResizing, newx1, newx2, newy1, newy2, newz1, newz2, player);
+        CreateClaimResult result = GriefPrevention.instance.dataStore.resizeClaim(
+                playerData.claimResizing,
+                newClaim.getLesserBoundaryCorner().getBlockX(),
+                newClaim.getGreaterBoundaryCorner().getBlockX(),
+                newClaim.getLesserBoundaryCorner().getBlockY(),
+                newClaim.getGreaterBoundaryCorner().getBlockY(),
+                newClaim.getLesserBoundaryCorner().getBlockZ(),
+                newClaim.getGreaterBoundaryCorner().getBlockZ(),
+                player);
 
         if (result.succeeded)
         {

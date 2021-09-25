@@ -177,6 +177,14 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- Annotations for nullity and other behaviors -->
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>22.0.0</version>
+            <!-- Annotations are not required at runtime, only during compilation. -->
+            <scope>provided</scope>
+        </dependency>
         <!-- Tests -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
