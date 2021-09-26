@@ -60,6 +60,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 //singleton class which manages all GriefPrevention data (except for config options)
 public abstract class DataStore
@@ -1059,13 +1060,9 @@ public abstract class DataStore
     //respects the max depth config variable
     synchronized public void extendClaim(Claim claim, int newDepth)
     {
-        newDepth = Math.max(
-                Objects.requireNonNull(claim.getLesserBoundaryCorner().getWorld()).getMinHeight(),
-                Math.max(
-                        newDepth,
-                        GriefPrevention.instance.config_claims_maxDepth));
-
         if (claim.parent != null) claim = claim.parent;
+
+        newDepth = sanitizeClaimDepth(claim, newDepth);
 
         //call event and return if event got cancelled
         ClaimExtendEvent event = new ClaimExtendEvent(claim, newDepth);
@@ -1073,17 +1070,52 @@ public abstract class DataStore
         if (event.isCancelled()) return;
 
         //adjust to new depth
-        claim.lesserBoundaryCorner.setY(newDepth);
-        claim.greaterBoundaryCorner.setY(newDepth);
-        for (Claim subdivision : claim.children)
-        {
-            subdivision.lesserBoundaryCorner.setY(newDepth);
-            subdivision.greaterBoundaryCorner.setY(newDepth);
-            this.saveClaim(subdivision);
-        }
+        setNewDepth(claim, event.getNewDepth());
+    }
 
-        //save changes
-        this.saveClaim(claim);
+    /**
+     * Helper method for sanitizing claim depth to find the minimum expected value.
+     *
+     * @param claim the claim
+     * @param newDepth the new depth
+     * @return the sanitized new depth
+     */
+    private int sanitizeClaimDepth(Claim claim, int newDepth) {
+        if (claim.parent != null) claim = claim.parent;
+
+        // Get the old depth including the depth of the lowest subdivision.
+        int oldDepth = Math.min(
+                claim.getLesserBoundaryCorner().getBlockY(),
+                claim.children.stream().mapToInt(child -> child.getLesserBoundaryCorner().getBlockY())
+                        .min().orElse(Integer.MAX_VALUE));
+
+        // Use the lowest of the old and new depths.
+        newDepth = Math.min(newDepth, oldDepth);
+        // Cap depth to maximum depth allowed by the configuration.
+        newDepth = Math.max(newDepth, GriefPrevention.instance.config_claims_maxDepth);
+        // Cap the depth to the world's minimum height.
+        World world = Objects.requireNonNull(claim.getLesserBoundaryCorner().getWorld());
+        newDepth = Math.max(newDepth, world.getMinHeight());
+
+        return newDepth;
+    }
+
+    /**
+     * Helper method for sanitizing and setting claim depth. Saves affected claims.
+     *
+     * @param claim the claim
+     * @param newDepth the new depth
+     */
+    private void setNewDepth(Claim claim, int newDepth) {
+        if (claim.parent != null) claim = claim.parent;
+
+        final int depth = sanitizeClaimDepth(claim, newDepth);
+
+        Stream.concat(Stream.of(claim), claim.children.stream()).forEach(localClaim -> {
+            localClaim.lesserBoundaryCorner.setY(depth);
+            localClaim.greaterBoundaryCorner.setY(Math.max(localClaim.greaterBoundaryCorner.getBlockY(), depth));
+            this.saveClaim(localClaim);
+        });
     }
 
     //starts a siege on a claim
@@ -1342,11 +1374,11 @@ public abstract class DataStore
             // copy the boundary from the claim created in the dry run of createClaim() to our existing claim
             claim.lesserBoundaryCorner = result.claim.lesserBoundaryCorner;
             claim.greaterBoundaryCorner = result.claim.greaterBoundaryCorner;
+            // Sanitize claim depth, expanding parent down to the lowest subdivision and subdivisions down to parent.
+            // Also saves affected claims.
+            setNewDepth(claim, claim.getLesserBoundaryCorner().getBlockY());
             result.claim = claim;
             addToChunkClaimMap(claim); // add the new boundary to the chunk cache
-
-            //save those changes
-            this.saveClaim(result.claim);
         }
 
         return result;
