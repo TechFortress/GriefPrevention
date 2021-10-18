@@ -199,8 +199,7 @@ public abstract class DataStore
             GriefPrevention.AddLogEntry("Successfully hooked into WorldGuard.");
         }
         //if failed, world guard compat features will just be disabled.
-        catch (ClassNotFoundException exception) { }
-        catch (NoClassDefFoundError exception) { }
+        catch (IllegalStateException | IllegalArgumentException | ClassCastException ignored) { }
     }
 
     private void loadSoftMutes()
