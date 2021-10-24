@@ -309,12 +309,17 @@ public class EntityEventHandler implements Listener
         }
 
         // Allow change if projectile was shot by a dispenser in the same claim.
-        if (shooter instanceof BlockProjectileSource &&
-                GriefPrevention.instance.dataStore.getClaimAt(((BlockProjectileSource) shooter).getBlock().getLocation(), false, claim) == claim)
+        if (isBlockSourceInClaim(shooter, claim))
             return;
 
         // Prevent change in all other cases.
         event.setCancelled(true);
+    }
+
+    private boolean isBlockSourceInClaim(ProjectileSource projectileSource, Claim claim)
+    {
+        return projectileSource instanceof BlockProjectileSource &&
+                GriefPrevention.instance.dataStore.getClaimAt(((BlockProjectileSource) projectileSource).getBlock().getLocation(), false, claim) == claim;
     }
 
     //Used by "sand cannon" fix to ignore fallingblocks that fell through End Portals
@@ -1461,37 +1466,62 @@ public class EntityEventHandler implements Listener
     {
         ThrownPotion potion = event.getPotion();
 
-        //ignore potions not thrown by players
         ProjectileSource projectileSource = potion.getShooter();
+        // Ignore potions with no source.
         if (projectileSource == null) return;
         Player thrower = null;
         if ((projectileSource instanceof Player))
             thrower = (Player) projectileSource;
+        boolean messagedPlayer = false;
 
         Collection<PotionEffect> effects = potion.getEffects();
         for (PotionEffect effect : effects)
         {
             PotionEffectType effectType = effect.getType();
 
-            //restrict some potions on claimed animals (griefers could use this to kill or steal animals over fences) //RoboMWM: include villagers
-            if (effectType.getName().equals("JUMP") || effectType.getName().equals("POISON"))
+            // Restrict some potions on claimed villagers and animals.
+            // Griefers could use potions to kill entities or steal them over fences.
+            if (PotionEffectType.HARM.equals(effectType)
+                    || PotionEffectType.POISON.equals(effectType)
+                    || PotionEffectType.JUMP.equals(effectType)
+                    || PotionEffectType.WITHER.equals(effectType))
             {
                 Claim cachedClaim = null;
-                for (LivingEntity effected : event.getAffectedEntities())
+                for (LivingEntity affected : event.getAffectedEntities())
                 {
-                    if (effected.getType() == EntityType.VILLAGER || effected instanceof Animals)
+                    // Always impact the thrower.
+                    if (affected == thrower) continue;
+
+                    if (affected.getType() == EntityType.VILLAGER || affected instanceof Animals)
                     {
-                        Claim claim = this.dataStore.getClaimAt(effected.getLocation(), false, cachedClaim);
+                        Claim claim = this.dataStore.getClaimAt(affected.getLocation(), false, cachedClaim);
                         if (claim != null)
                         {
                             cachedClaim = claim;
-                            Supplier<String> override = () -> instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, claim.getOwnerName());
-                            final Supplier<String> noContainersReason = claim.checkPermission(thrower, ClaimPermission.Inventory, event, override);
-                            if (thrower == null || noContainersReason != null)
+
+                            if (thrower == null)
                             {
-                                event.setIntensity(effected, 0);
-                                GriefPrevention.sendMessage(thrower, TextMode.Err, noContainersReason.get());
-                                return;
+                                // Non-player source: Witches, dispensers, etc.
+                                if (!isBlockSourceInClaim(projectileSource, claim))
+                                {
+                                    // If the source is not a block in the same claim as the affected entity, disallow.
+                                    event.setIntensity(affected, 0);
+                                }
+                            }
+                            else
+                            {
+                                // Source is a player. Determine if they have permission to access entities in the claim.
+                                Supplier<String> override = () -> instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, claim.getOwnerName());
+                                final Supplier<String> noContainersReason = claim.checkPermission(thrower, ClaimPermission.Inventory, event, override);
+                                if (noContainersReason != null)
+                                {
+                                    event.setIntensity(affected, 0);
+                                    if (!messagedPlayer)
+                                    {
+                                        GriefPrevention.sendMessage(thrower, TextMode.Err, noContainersReason.get());
+                                        messagedPlayer = true;
+                                    }
+                                }
                             }
                         }
                     }
@@ -1528,7 +1558,11 @@ public class EntityEventHandler implements Listener
                         if (!pvpEvent.isCancelled())
                         {
                             event.setIntensity(effected, 0);
-                            GriefPrevention.sendMessage(thrower, TextMode.Err, Messages.CantFightWhileImmune);
+                            if (!messagedPlayer)
+                            {
+                                GriefPrevention.sendMessage(thrower, TextMode.Err, Messages.CantFightWhileImmune);
+                                messagedPlayer = true;
+                            }
                         }
                         continue;
                     }
@@ -1542,7 +1576,11 @@ public class EntityEventHandler implements Listener
                         if (!pvpEvent.isCancelled())
                         {
                             event.setIntensity(effected, 0);
-                            GriefPrevention.sendMessage(thrower, TextMode.Err, Messages.PlayerInPvPSafeZone);
+                            if (!messagedPlayer)
+                            {
+                                GriefPrevention.sendMessage(thrower, TextMode.Err, Messages.PlayerInPvPSafeZone);
+                                messagedPlayer = true;
+                            }
                         }
                     }
                 }
