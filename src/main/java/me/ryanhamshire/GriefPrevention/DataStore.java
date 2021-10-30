@@ -23,6 +23,7 @@ import me.ryanhamshire.GriefPrevention.events.ClaimCreatedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimDeletedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimExtendEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimModifiedEvent;
+import me.ryanhamshire.GriefPrevention.events.ClaimTransferEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
@@ -410,16 +411,23 @@ public abstract class DataStore
             ownerData = this.getPlayerData(claim.ownerID);
         }
 
+        //call event
+        ClaimTransferEvent event = new ClaimTransferEvent(claim, newOwnerID);
+        Bukkit.getPluginManager().callEvent(event);
+
+        //return if event is cancelled
+        if (event.isCancelled()) return;
+
         //determine new owner
         PlayerData newOwnerData = null;
 
-        if (newOwnerID != null)
+        if (event.getNewOwner() != null)
         {
-            newOwnerData = this.getPlayerData(newOwnerID);
+            newOwnerData = this.getPlayerData(event.getNewOwner());
         }
 
         //transfer
-        claim.ownerID = newOwnerID;
+        claim.ownerID = event.getNewOwner();
         this.saveClaim(claim);
 
         //adjust blocks and other records
