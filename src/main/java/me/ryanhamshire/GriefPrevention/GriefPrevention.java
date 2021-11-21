@@ -82,6 +82,9 @@ public class GriefPrevention extends JavaPlugin
     //this handles data storage, like player and region data
     public DataStore dataStore;
 
+    // Event handlers with common functionality
+    EntityEventHandler entityEventHandler;
+
     //this tracks item stacks expected to drop which will need protection
     ArrayList<PendingItemProtection> pendingItemWatchList = new ArrayList<>();
 
@@ -359,7 +362,7 @@ public class GriefPrevention extends JavaPlugin
         pluginManager.registerEvents(blockEventHandler, this);
 
         //entity events
-        EntityEventHandler entityEventHandler = new EntityEventHandler(this.dataStore, this);
+        entityEventHandler = new EntityEventHandler(this.dataStore, this);
         pluginManager.registerEvents(entityEventHandler, this);
 
         //siege events
