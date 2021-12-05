@@ -1731,27 +1731,28 @@ class PlayerEventHandler implements Listener
         if (clickedBlock != null && instance.config_claims_preventTheft && (
                 event.getAction() == Action.RIGHT_CLICK_BLOCK && (
                         (this.isInventoryHolder(clickedBlock) && clickedBlock.getType() != Material.LECTERN) ||
-                                clickedBlockType == Material.CAULDRON ||
-                                clickedBlockType == Material.JUKEBOX ||
                                 clickedBlockType == Material.ANVIL ||
-                                clickedBlockType == Material.CHIPPED_ANVIL ||
-                                clickedBlockType == Material.DAMAGED_ANVIL ||
-                                clickedBlockType == Material.CAKE ||
-                                Tag.CANDLE_CAKES.isTagged(clickedBlockType) ||
-                                clickedBlockType == Material.SWEET_BERRY_BUSH ||
+                                clickedBlockType == Material.BEACON ||
                                 clickedBlockType == Material.BEE_NEST ||
                                 clickedBlockType == Material.BEEHIVE ||
-                                clickedBlockType == Material.BEACON ||
                                 clickedBlockType == Material.BELL ||
-                                clickedBlockType == Material.STONECUTTER ||
-                                clickedBlockType == Material.GRINDSTONE ||
+                                clickedBlockType == Material.CAKE ||
                                 clickedBlockType == Material.CARTOGRAPHY_TABLE ||
-                                clickedBlockType == Material.LOOM ||
-                                clickedBlockType == Material.RESPAWN_ANCHOR ||
+                                clickedBlockType == Material.CAULDRON ||
                                 clickedBlockType == Material.CAVE_VINES ||
                                 clickedBlockType == Material.CAVE_VINES_PLANT ||
+                                clickedBlockType == Material.CHIPPED_ANVIL ||
+                                clickedBlockType == Material.DAMAGED_ANVIL ||
+                                clickedBlockType == Material.GRINDSTONE ||
+                                clickedBlockType == Material.JUKEBOX ||
+                                clickedBlockType == Material.LOOM ||
                                 clickedBlockType == Material.PUMPKIN ||
-                                Tag.CANDLES.isTagged(clickedBlockType)
+                                clickedBlockType == Material.RESPAWN_ANCHOR ||
+                                clickedBlockType == Material.ROOTED_DIRT ||
+                                clickedBlockType == Material.STONECUTTER ||
+                                clickedBlockType == Material.SWEET_BERRY_BUSH ||
+                                Tag.CANDLES.isTagged(clickedBlockType) ||
+                                Tag.CANDLE_CAKES.isTagged(clickedBlockType)
                         )))
         {
             if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
