@@ -1,0 +1,153 @@
+name: Bug report
+description: Report bugs or stack traces (red lines from your logs that say SomethingException).
+labels: [ "Unverified Bug" ]
+body:
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Bug Report
+
+  - type: textarea
+    attributes:
+      label: Observed Behavior
+      description: What you saw happen
+      placeholder: Untrusted players can do a bad thing inside claims.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen
+      placeholder: Claims should stop untrusted players from doing the bad thing.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Reproduction steps
+      description: This may include a build schematic, a video, or detailed instructions to help reconstruct the issue.
+      placeholder: |
+        1. Step 1.
+        2. Step 2.
+        3. ???
+        4. Profit!
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Stack trace or error log
+      description: |
+        Please paste in the entire stack trace or error log. Be careful to include both the exception itself and the cause!
+        If the logs are particularly long, please create a [gist](https://gist.github.com) and paste the link instead.
+      placeholder: |
+        [12:34:56] [Server thread/ERROR]: null
+        org.bukkit.command.CommandException: Unhandled exception executing command 'example' in plugin GriefPrevention v1.2.3
+        	at org.bukkit.command.PluginCommand.execute(PluginCommand.java:46) ~[spigot.jar:version]
+        	at org.bukkit.command.SimpleCommandMap.dispatch(SimpleCommandMap.java:141) ~[spigot.jar:version]
+        Caused by: java.lang.IllegalArgumentException: This is an example!
+        	at me.ryanhamshire.GriefPrevention.GriefPrevention.onCommand(GriefPrevention.java:1) ~[?:?]
+        	at org.bukkit.command.PluginCommand.execute(PluginCommand.java:44) ~[spigot.jar:version]
+        	... 10 more
+      render: shell
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: "## Server Information"
+
+  - type: textarea
+    attributes:
+      label: Server version
+      description: |
+        Run `/version` on your server and paste the output here.
+        "latest" is *not* a version; we require the exact output to be able to reproduce your setup.
+        Please do not provide a screenshot, it is much easier for us to use text-based output.
+      placeholder: |
+        > version
+        [12:34:56 INFO]: This server is running Server version git-Server-sample-text (MC: 1.2.3) (Implementing API version 1.2.3-R0.1-SNAPSHOT)
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: GriefPrevention version
+      description: |
+        Run `/version GriefPrevention` on your server and paste the output here.
+        "latest" is *not* a version; we require the exact output to be able to reproduce your setup.
+        Please do not provide a screenshot, it is much easier for us to use text-based output.
+      placeholder: |
+        > version GriefPrevention
+        [12:34:56 INFO]: GriefPrevention version 1.2.3
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Configuration
+      description: Please paste your entire configuration here.
+      render: yaml
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Plugin list
+      description: |
+        If relevant, run `/plugins` on your server and paste the output here.
+        Please do not provide a screenshot, it is much easier for us to use text-based output.
+      placeholder: |
+        > plugins
+        [12:34:56 INFO]: Plugins (1): GriefPrevention
+      render: shell
+    validations:
+      required: false
+
+  - type: markdown
+    attributes:
+      value: "## Debugging steps"
+
+  - type: checkboxes
+    attributes:
+      label: Running without GriefPrevention
+      description: If applicable, have you tried running the server without GriefPrevention installed?
+      options:
+        - label: I attempted running the server without GriefPrevention installed.
+        - label: The problem does _not_ occur when GriefPrevention is removed from the server.
+  - type: checkboxes
+    attributes:
+      label: Running with only GriefPrevention
+      description: Have you tried running the server with only GriefPrevention installed?
+      options:
+        - label: I attempted running only GriefPrevention on the server.
+        - label: The issue still occurs when GriefPrevention is the only plugin running.
+  - type: checkboxes
+    attributes:
+      label: Running on a fresh, clean server installation
+      description: Have you tried downloading fresh copies of the server and relevant plugins?
+      options:
+        - label: I attempted testing for the issue on a new server.
+        - label: The issue still occurs on a new server.
+  - type: checkboxes
+    attributes:
+      label: Using unmodified client
+      description: Have you tried using a vanilla (unmodified) Minecraft client?
+      options:
+        - label: I attempted testing for the issue with the vanilla client.
+        - label: The issue still occurs when using the vanilla client.
+
+  - type: markdown
+    attributes:
+      value: "## Thank you"
+
+  - type: checkboxes
+    attributes:
+      label: We appreciate you taking the time to fill out a bug report!
+      options:
+        - label: I searched for similar issues before submitting this bug report.
+          required: true
