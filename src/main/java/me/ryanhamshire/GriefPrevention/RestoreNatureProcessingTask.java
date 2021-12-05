@@ -20,6 +20,7 @@ package me.ryanhamshire.GriefPrevention;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Biome;
@@ -36,6 +37,27 @@ import java.util.Set;
 //after processing is complete, creates a main thread task to make the necessary changes to the world
 class RestoreNatureProcessingTask implements Runnable
 {
+
+    // Definitions of biomes with particularly dense log distribution. These biomes will not have logs reduced.
+    private static final Set<NamespacedKey> DENSE_LOG_BIOMES = Set.of(
+            NamespacedKey.minecraft("jungle"),
+            NamespacedKey.minecraft("bamboo_jungle"),
+            // Variants for versions < 1.18
+            NamespacedKey.minecraft("modified_jungle"),
+            NamespacedKey.minecraft("jungle_hills"),
+            NamespacedKey.minecraft("bamboo_jungle_hills")
+    );
+
+    // Definitions of biomes where sand covers surfaces instead of grass.
+    private static final Set<NamespacedKey> SAND_SOIL_BIOMES = Set.of(
+            NamespacedKey.minecraft("snowy_beach"),
+            NamespacedKey.minecraft("beach"),
+            NamespacedKey.minecraft("desert"),
+            // Variants for versions < 1.18
+            NamespacedKey.minecraft("desert_hills"),
+            NamespacedKey.minecraft("desert_lakes")
+    );
+
     //world information captured from the main thread
     //will be updated and sent back to main thread to be applied to the world
     private final BlockSnapshot[][][] snapshots;
@@ -283,7 +305,7 @@ class RestoreNatureProcessingTask implements Runnable
     {
         if (this.seaLevel < 1) return;
 
-        boolean jungleBiome = this.biome == Biome.JUNGLE || this.biome == Biome.JUNGLE_HILLS;
+        boolean jungleBiome = DENSE_LOG_BIOMES.contains(this.biome.getKey());
 
         //scan all blocks above sea level
         for (int x = 1; x < snapshots.length - 1; x++)
@@ -441,7 +463,7 @@ class RestoreNatureProcessingTask implements Runnable
 
                 if (block.typeId == Material.STONE || block.typeId == Material.GRAVEL || block.typeId == Material.FARMLAND || block.typeId == Material.DIRT || block.typeId == Material.SANDSTONE)
                 {
-                    if (this.biome == Biome.DESERT || this.biome == Biome.DESERT_HILLS || this.biome == Biome.BEACH)
+                    if (SAND_SOIL_BIOMES.contains(this.biome.getKey()))
                     {
                         this.snapshots[x][y][z].typeId = Material.SAND;
                     }
@@ -848,7 +870,7 @@ class RestoreNatureProcessingTask implements Runnable
         }
 
         //these are unnatural in sandy biomes, but not elsewhere
-        if (biome == Biome.DESERT || biome == Biome.DESERT_HILLS || biome == Biome.BEACH || environment != Environment.NORMAL)
+        if (SAND_SOIL_BIOMES.contains(biome.getKey()) || environment != Environment.NORMAL)
         {
             playerBlocks.addAll(Tag.LEAVES.getValues());
         }
