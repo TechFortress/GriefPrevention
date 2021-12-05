@@ -918,6 +918,7 @@ public abstract class DataStore
                 result.claim = parent;
                 return result;
             }
+            smally = sanitizeClaimDepth(parent, smally);
         }
 
         //creative mode claims always go to bedrock
