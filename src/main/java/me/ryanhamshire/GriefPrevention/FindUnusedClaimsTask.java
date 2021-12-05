@@ -48,10 +48,7 @@ class FindUnusedClaimsTask implements Runnable
         if (claimOwnerUUIDs.isEmpty()) return;
 
         // Don't do anything if claim expiration checking is disabled
-        if (!GriefPrevention.instance.config_claims_expirationEnabled) 
-        {
-            return;
-        }
+        if (!GriefPrevention.instance.config_claims_expirationEnabled) return;
 
         //wrap search around to beginning
         if (!claimOwnerIterator.hasNext())
