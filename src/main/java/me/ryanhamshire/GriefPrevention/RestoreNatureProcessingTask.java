@@ -283,7 +283,7 @@ class RestoreNatureProcessingTask implements Runnable
     {
         if (this.seaLevel < 1) return;
 
-        boolean jungleBiome = this.biome == Biome.JUNGLE || this.biome == Biome.JUNGLE_HILLS;
+        boolean jungleBiome = this.biome == Biome.JUNGLE || this.biome == Biome.SPARSE_JUNGLE;
 
         //scan all blocks above sea level
         for (int x = 1; x < snapshots.length - 1; x++)
@@ -441,7 +441,7 @@ class RestoreNatureProcessingTask implements Runnable
 
                 if (block.typeId == Material.STONE || block.typeId == Material.GRAVEL || block.typeId == Material.FARMLAND || block.typeId == Material.DIRT || block.typeId == Material.SANDSTONE)
                 {
-                    if (this.biome == Biome.DESERT || this.biome == Biome.DESERT_HILLS || this.biome == Biome.BEACH)
+                    if (this.biome == Biome.DESERT || this.biome == Biome.BEACH)
                     {
                         this.snapshots[x][y][z].typeId = Material.SAND;
                     }
@@ -848,7 +848,7 @@ class RestoreNatureProcessingTask implements Runnable
         }
 
         //these are unnatural in sandy biomes, but not elsewhere
-        if (biome == Biome.DESERT || biome == Biome.DESERT_HILLS || biome == Biome.BEACH || environment != Environment.NORMAL)
+        if (biome == Biome.DESERT  || biome == Biome.BEACH || environment != Environment.NORMAL)
         {
             playerBlocks.addAll(Tag.LEAVES.getValues());
         }
