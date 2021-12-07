@@ -1105,7 +1105,7 @@ public abstract class DataStore
         // case  1: maxDepth is -64, if newDepth is -32,  maxDepth is -32.
         // case  2: maxDepth is -64, if newDepth is 32,  maxDepth is 32.
         // case  3: maxDepth is 64, if newDepth is 32,  maxDepth is 64.
-        // case  4: maxDepth is 64, if newDepth is -32,  maxDepth is 0.
+        // case  4: maxDepth is 64, if newDepth is -32,  maxDepth is 64.
         newDepth = Math.max(newDepth, GriefPrevention.instance.config_claims_maxDepth);
         // Cap the depth to the world's minimum height.
         World world = Objects.requireNonNull(claim.getLesserBoundaryCorner().getWorld());
