@@ -1101,7 +1101,7 @@ public abstract class DataStore
         // Use the lowest of the old and new depths.
         newDepth = Math.min(newDepth, oldDepth);
         // Cap depth to maximum depth allowed by the configuration.
-        // default case: maxDepth is 0, if newDepth is negative, maxDepth is 0.
+        // case 0: maxDepth is 0, if newDepth is -32, maxDepth is 0.
         // case  1: maxDepth is -64, if newDepth is -32,  maxDepth is -32.
         // case  2: maxDepth is -64, if newDepth is 32,  maxDepth is 32.
         // case  3: maxDepth is 64, if newDepth is 32,  maxDepth is 64.
