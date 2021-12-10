@@ -15,7 +15,6 @@ import org.jetbrains.annotations.Nullable;
  *
  * @author Narimm on 5/08/2018.
  */
-// TODO make MessageCancellable
 public class ClaimCreatedEvent extends ClaimEvent implements Cancellable
 {
 

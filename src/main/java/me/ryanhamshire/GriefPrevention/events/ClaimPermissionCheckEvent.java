@@ -4,12 +4,12 @@ import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.ClaimPermission;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -17,7 +17,7 @@ import java.util.function.Supplier;
  * An {@link Event} called when a {@link Claim} requires a specific level of trust.
  * If the denial reason is {@code null}, the trust requirements are met and the action is allowed.
  */
-public class ClaimPermissionCheckEvent extends ClaimEvent implements MessageCancellable
+public class ClaimPermissionCheckEvent extends ClaimEvent implements Cancellable
 {
 
     private final @Nullable Player checkedPlayer;
@@ -113,7 +113,7 @@ public class ClaimPermissionCheckEvent extends ClaimEvent implements MessageCanc
         return triggeringEvent;
     }
 
-    // MessageCancellable requirements
+    // Cancellable requirements
     private @Nullable Supplier<String> cancelReason = null;
 
     @Override
@@ -136,25 +136,11 @@ public class ClaimPermissionCheckEvent extends ClaimEvent implements MessageCanc
         }
     }
 
-    @Override
-    public @NotNull Optional<Supplier<String>> getCancelReason()
-    {
-        return Optional.ofNullable(this.cancelReason);
-    }
-
-    @Override
-    public void setCancelled(@Nullable Supplier<String> reason)
-    {
-        this.cancelReason = reason;
-    }
-
     /**
      * Get the reason the ClaimPermission check failed.
      * If the check did not fail, the message will be null.
      *
      * @return the denial reason or null if permission is granted
-     * @see MessageCancellable#getCancelReason()
-     * @see MessageCancellable#isCancelled()
      */
     public @Nullable Supplier<String> getDenialReason()
     {
@@ -165,7 +151,6 @@ public class ClaimPermissionCheckEvent extends ClaimEvent implements MessageCanc
      * Set the reason for denial.
      *
      * @param denial the denial reason
-     * @see MessageCancellable#setCancelled(Supplier)
      */
     public void setDenialReason(@Nullable Supplier<String> denial)
     {

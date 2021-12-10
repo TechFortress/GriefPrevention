@@ -15,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
  * apply changes to the {@link #getFrom() existing claim} for better compatibility with add-ons holding instances.
  * Additionally, while the new claim is modifiable, modifications will not necessarily be respected by implementations.
  */
-// TODO make MessageCancellable
 public class ClaimChangeEvent extends Event implements Cancellable
 {
 
