@@ -1684,11 +1684,7 @@ public class GriefPrevention extends JavaPlugin
                             return true;
                         }
 
-                        event.getClaims().forEach(targetClaim ->
-                        {
-                            targetClaim.dropPermission(event.getIdentifier());
-                            targetClaim.dropPermission(event.getIdentifier());
-                        });
+                        event.getClaims().forEach(targetClaim -> targetClaim.dropPermission(event.getIdentifier()));
 
                         //beautify for output
                         if (args[0].equals("public"))
