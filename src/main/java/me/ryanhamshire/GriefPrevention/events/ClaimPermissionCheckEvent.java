@@ -122,6 +122,11 @@ public class ClaimPermissionCheckEvent extends ClaimEvent implements Cancellable
         return cancelReason != null;
     }
 
+    /**
+     * @deprecated If cancelling, {@link #setDenialReason(Supplier)} is preferred.
+     *
+     * @param cancelled whether the event is cancelled
+     */
     @Override
     @Deprecated
     public void setCancelled(boolean cancelled)
