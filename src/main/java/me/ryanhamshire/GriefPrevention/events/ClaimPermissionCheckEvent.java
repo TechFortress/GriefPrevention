@@ -158,17 +158,17 @@ public class ClaimPermissionCheckEvent extends ClaimEvent implements Cancellable
     }
 
     // Listenable event requirements
-    private static final HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLERS = new HandlerList();
 
     public static HandlerList getHandlerList()
     {
-        return handlers;
+        return HANDLERS;
     }
 
     @Override
     public @NotNull HandlerList getHandlers()
     {
-        return handlers;
+        return HANDLERS;
     }
 
 }
