@@ -132,7 +132,7 @@ public class FakeBlockVisualization extends BoundaryVisualization
         Block block = vector.toBlock(world);
         BlockFace direction = (isTransparent(block, waterTransparent)) ? BlockFace.DOWN : BlockFace.UP;
 
-        while (block.getY() >= 1 &&
+        while (block.getY() >= world.getMinHeight() &&
                 block.getY() < world.getMaxHeight() - 1 &&
                 (!isTransparent(block.getRelative(BlockFace.UP), waterTransparent) || isTransparent(block, waterTransparent)))
         {
