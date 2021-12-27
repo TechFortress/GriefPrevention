@@ -74,11 +74,17 @@ public abstract class BoundaryVisualization extends Visualization
         // Remember the visualization so it can be reverted.
         playerData.currentVisualization = this;
 
-        // Schedule automatic reversion in 60 seconds.
-        scheduleRevert(player, playerData, 20L * 60);
+        // Schedule automatic reversion.
+        scheduleRevert(player, playerData);
     }
 
-    protected abstract void scheduleRevert(@NotNull Player player, @NotNull PlayerData playerData, long delayTicks);
+    protected void scheduleRevert(@NotNull Player player, @NotNull PlayerData playerData)
+    {
+        GriefPrevention.instance.getServer().getScheduler().scheduleSyncDelayedTask(
+                GriefPrevention.instance,
+                () -> revert(player, playerData),
+                20L * 60);
+    }
 
     public void revert(@Nullable Player player, @NotNull PlayerData playerData)
     {

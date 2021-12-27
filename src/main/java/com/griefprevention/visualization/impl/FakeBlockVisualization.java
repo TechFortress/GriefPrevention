@@ -1,11 +1,9 @@
 package com.griefprevention.visualization.impl;
 
+import com.griefprevention.util.BlockVector;
 import com.griefprevention.visualization.BoundaryVisualization;
 import me.ryanhamshire.GriefPrevention.Claim;
-import me.ryanhamshire.GriefPrevention.GriefPrevention;
-import me.ryanhamshire.GriefPrevention.PlayerData;
 import me.ryanhamshire.GriefPrevention.VisualizationType;
-import com.griefprevention.util.BlockVector;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -15,7 +13,6 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Lightable;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 public class FakeBlockVisualization extends BoundaryVisualization
@@ -26,15 +23,6 @@ public class FakeBlockVisualization extends BoundaryVisualization
 
     public FakeBlockVisualization(@NotNull World world) {
         super(world);
-    }
-
-    @Override
-    protected void scheduleRevert(@NotNull Player player, @NotNull PlayerData playerData, long delayTicks)
-    {
-        GriefPrevention.instance.getServer().getScheduler().scheduleSyncDelayedTask(
-                GriefPrevention.instance,
-                () -> revert(player, playerData),
-                delayTicks);
     }
 
     //adds a claim's visualization to the current visualization
