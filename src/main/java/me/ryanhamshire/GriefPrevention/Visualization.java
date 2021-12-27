@@ -18,6 +18,7 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.griefprevention.visualization.BoundaryVisualization;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Tag;
@@ -29,109 +30,85 @@ import org.bukkit.block.data.Lightable;
 import org.bukkit.entity.Player;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 
 //represents a visualization sent to a player
 //FEATURE: to show players visually where claim boundaries are, we send them fake block change packets
 //the result is that those players see new blocks, but the world hasn't been changed.  other players can't see the new blocks, either.
+@Deprecated(forRemoval = true, since = "16.18")
 public class Visualization
 {
+    @Deprecated(forRemoval = true, since = "16.18")
     public ArrayList<VisualizationElement> elements = new ArrayList<>();
 
-    //sends a visualization to a player
+    @Deprecated(forRemoval = true, since = "16.18")
+    public Visualization() {}
+
+    /**
+     * Send a visualization to a {@link Player}.
+     *
+     * @deprecated Use {@link BoundaryVisualization#apply(Player)} to apply a {@code Visualization}
+     * @param player the {@code Player}
+     * @param visualization the {@code Visualization}
+     */
+    @Deprecated(forRemoval = true, since = "16.18")
     public static void Apply(Player player, Visualization visualization)
     {
-        PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
-
-        //if he has any current visualization, clear it first
-        if (playerData.currentVisualization != null)
-        {
-            Visualization.Revert(player);
-        }
-
-        //if he's online, create a task to send him the visualization
-        if (player.isOnline() && visualization.elements.size() > 0 && visualization.elements.get(0).location.getWorld().equals(player.getWorld()))
-        {
-            GriefPrevention.instance.getServer().getScheduler().scheduleSyncDelayedTask(GriefPrevention.instance, new VisualizationApplicationTask(player, playerData, visualization), 1L);
-        }
+        if (player != null) BoundaryVisualization.apply(player, visualization);
     }
 
-    //reverts a visualization by sending another block change list, this time with the real world block values
-
+    /**
+     * Revert the active visualization for a {@link Player}.
+     *
+     * @deprecated Use {@link BoundaryVisualization#revert(Player)} to revert a {@code Visualization}
+     * @param player the {@code Player}
+     */
+    @Deprecated(forRemoval = true, since = "16.18")
     public static void Revert(Player player)
     {
-        if (!player.isOnline()) return;
-
-        PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
-
-        Visualization visualization = playerData.currentVisualization;
-
-        if (playerData.currentVisualization != null)
-        {
-            //locality
-            int minx = player.getLocation().getBlockX() - 100;
-            int minz = player.getLocation().getBlockZ() - 100;
-            int maxx = player.getLocation().getBlockX() + 100;
-            int maxz = player.getLocation().getBlockZ() + 100;
-
-            //remove any elements which are too far away
-            visualization.removeElementsOutOfRange(visualization.elements, minx, minz, maxx, maxz);
-
-            //send real block information for any remaining elements
-            for (int i = 0; i < visualization.elements.size(); i++)
-            {
-                VisualizationElement element = visualization.elements.get(i);
-
-                //check player still in world where visualization exists
-                if (i == 0)
-                {
-                    if (!player.getWorld().equals(element.location.getWorld())) return;
-                }
-
-                player.sendBlockChange(element.location, element.realBlock);
-            }
-
-            playerData.currentVisualization = null;
-        }
+        if (player != null) BoundaryVisualization.revert(player);
     }
 
+    @Deprecated(forRemoval = true, since = "16.18")
     //convenience method to build a visualization from a claim
     //visualizationType determines the style (gold blocks, silver, red, diamond, etc)
-    public static Visualization FromClaim(Claim claim, int height, VisualizationType visualizationType, Location locality)
+    public static @Nullable Visualization FromClaim(Claim claim, int height, VisualizationType visualizationType, Location locality)
     {
-        //visualize only top level claims
-        if (claim.parent != null)
+        return BoundaryVisualization.fromClaim(claim, height, visualizationType, locality);
+    }
+
+    @Deprecated(forRemoval = true, since = "16.18")
+    public static void apply(@NotNull Player player, @Nullable Visualization visualization)
+    {
+        // If the visualization is null, revert existing visualizations.
+        if (visualization == null)
         {
-            return FromClaim(claim.parent, height, visualizationType, locality);
+            BoundaryVisualization.revert(player);
+            return;
         }
 
-        Visualization visualization = new Visualization();
-
-        //add subdivisions first
-        for (int i = 0; i < claim.children.size(); i++)
+        // If the visualization is a modern visualization, let it apply itself.
+        if (visualization instanceof BoundaryVisualization boundaryVisualization)
         {
-            Claim child = claim.children.get(i);
-            if (!child.inDataStore) continue;
-            visualization.addClaimElements(child, height, VisualizationType.Subdivision, locality);
+            boundaryVisualization.apply(player);
         }
-
-        //special visualization for administrative land claims
-        if (claim.isAdminClaim() && visualizationType == VisualizationType.Claim)
+        // If the visualization is a legacy visualization, convert and handle.
+        else
         {
-            visualizationType = VisualizationType.AdminClaim;
+            BoundaryVisualization boundaryVisualization = BoundaryVisualization.convert(visualization);
+            if (boundaryVisualization == null) BoundaryVisualization.revert(player);
+            else boundaryVisualization.apply(player);
         }
-
-        //add top level last so that it takes precedence (it shows on top when the child claim boundaries overlap with its boundaries)
-        visualization.addClaimElements(claim, height, visualizationType, locality);
-
-        return visualization;
     }
 
     //adds a claim's visualization to the current visualization
     //handy for combining several visualizations together, as when visualization a top level claim with several subdivisions inside
     //locality is a performance consideration.  only create visualization blocks for around 100 blocks of the locality
 
+    @Deprecated(forRemoval = true, since = "16.18")
     public void addClaimElements(Claim claim, int height, VisualizationType visualizationType, Location locality)
     {
         BlockData cornerBlockData;
@@ -167,6 +144,7 @@ public class Visualization
         addClaimElements(claim.getLesserBoundaryCorner(), claim.getGreaterBoundaryCorner(), locality, height, cornerBlockData, accentBlockData, 10);
     }
 
+    @Deprecated(forRemoval = true, since = "16.18")
     //adds a general claim cuboid (represented by min and max) visualization to the current visualization
     public void addClaimElements(Location min, Location max, Location locality, int height, BlockData cornerBlockData, BlockData accentBlockData, int STEP) {
         World world = min.getWorld();
@@ -294,49 +272,30 @@ public class Visualization
     private static boolean isTransparent(Block block, boolean waterIsTransparent)
     {
         Material blockMaterial = block.getType();
-        //Blacklist
+
+        // Custom per-material definitions.
         switch (blockMaterial)
         {
+            case WATER:
+                return waterIsTransparent;
             case SNOW:
                 return false;
         }
 
-        //Whitelist TODO: some of this might already be included in isTransparent()
-        switch (blockMaterial)
-        {
-            case AIR:
-            case OAK_FENCE:
-            case ACACIA_FENCE:
-            case BIRCH_FENCE:
-            case DARK_OAK_FENCE:
-            case JUNGLE_FENCE:
-            case NETHER_BRICK_FENCE:
-            case SPRUCE_FENCE:
-            case OAK_FENCE_GATE:
-            case ACACIA_FENCE_GATE:
-            case BIRCH_FENCE_GATE:
-            case DARK_OAK_FENCE_GATE:
-            case SPRUCE_FENCE_GATE:
-            case JUNGLE_FENCE_GATE:
-                return true;
-        }
-
-        if (Tag.SIGNS.isTagged(blockMaterial) || Tag.WALL_SIGNS.isTagged(blockMaterial))
+        if (blockMaterial.isAir()
+                || Tag.FENCES.isTagged(blockMaterial)
+                || Tag.FENCE_GATES.isTagged(blockMaterial)
+                || Tag.SIGNS.isTagged(blockMaterial)
+                || Tag.WALL_SIGNS.isTagged(blockMaterial))
             return true;
 
-        return (waterIsTransparent && block.getType() == Material.WATER) ||
-                block.getType().isTransparent();
+        return block.getType().isTransparent();
     }
 
+    @Deprecated(forRemoval = true, since = "16.18")
     public static Visualization fromClaims(Iterable<Claim> claims, int height, VisualizationType type, Location locality)
     {
-        Visualization visualization = new Visualization();
-
-        for (Claim claim : claims)
-        {
-            visualization.addClaimElements(claim, height, type, locality);
-        }
-
-        return visualization;
+        return BoundaryVisualization.fromClaims(claims, height, type, locality);
     }
+
 }

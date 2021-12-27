@@ -18,6 +18,7 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.griefprevention.visualization.BoundaryVisualization;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -122,8 +123,7 @@ class RestoreNatureExecutionTask implements Runnable
         if (player != null)
         {
             Claim claim = new Claim(lesserCorner, greaterCorner, null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null);
-            Visualization visualization = Visualization.FromClaim(claim, player.getLocation().getBlockY(), VisualizationType.RestoreNature, player.getLocation());
-            Visualization.Apply(player, visualization);
+            BoundaryVisualization.visualizeClaim(player, claim, VisualizationType.RestoreNature);
         }
     }
 }

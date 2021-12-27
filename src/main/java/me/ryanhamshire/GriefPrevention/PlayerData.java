@@ -20,6 +20,7 @@ package me.ryanhamshire.GriefPrevention;
 
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.InetAddress;
 import java.util.Calendar;
@@ -77,7 +78,7 @@ public class PlayerData
     boolean wasKicked = false;
 
     //visualization
-    public Visualization currentVisualization = null;
+    public @Nullable Visualization currentVisualization = null;
 
     //anti-camping pvp protection
     public boolean pvpImmune = false;

@@ -1,5 +1,6 @@
 package me.ryanhamshire.GriefPrevention.util;
 
+import com.griefprevention.util.BlockVector;
 import me.ryanhamshire.GriefPrevention.Claim;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -527,6 +528,16 @@ public class BoundingBox implements Cloneable
      *
      * @param position the position to include
      */
+    public void union(BlockVector position)
+    {
+        this.union(position.x(), position.y(), position.z());
+    }
+
+    /**
+     * Expands the bounding box to contain the position specified.
+     *
+     * @param position the position to include
+     */
     public void union(Vector position)
     {
         this.union(position.getBlockX(), position.getBlockY(), position.getBlockZ());
@@ -581,6 +592,17 @@ public class BoundingBox implements Cloneable
     public boolean contains2d(int x, int z)
     {
         return contains2dInternal(x, z, x, z);
+    }
+
+    /**
+     * Checks if the bounding box contains the position specified.
+     *
+     * @param position the position
+     * @return true if the specified position is inside the bounding box
+     */
+    public boolean contains2d(BlockVector position)
+    {
+        return contains2d(position.x(), position.z());
     }
 
     /**
@@ -688,6 +710,17 @@ public class BoundingBox implements Cloneable
     public boolean contains(int x, int y, int z)
     {
         return containsInternal(x, y, z, x, y, z);
+    }
+
+    /**
+     * Checks if the bounding box contains the position specified.
+     *
+     * @param position the position
+     * @return true if the specified position is inside the bounding box
+     */
+    public boolean contains(BlockVector position)
+    {
+        return contains(position.x(), position.y(), position.z());
     }
 
     /**
