@@ -2,10 +2,8 @@ package com.griefprevention.visualization.impl;
 
 import com.griefprevention.util.BlockVector;
 import com.griefprevention.visualization.BoundaryVisualization;
-import me.ryanhamshire.GriefPrevention.Claim;
-import me.ryanhamshire.GriefPrevention.VisualizationType;
+import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.World;
@@ -25,61 +23,49 @@ public class FakeBlockVisualization extends BoundaryVisualization
         super(world);
     }
 
-    //adds a claim's visualization to the current visualization
-    //handy for combining several visualizations together, as when visualization a top level claim with several subdivisions inside
-    //locality is a performance consideration.  only create visualization blocks for around 100 blocks of the locality
-
-    void addElements(Claim claim, int height, VisualizationType visualizationType, Location locality)
+    @Override
+    protected void addElements(@NotNull BoundingBox bounds, @NotNull BlockVector center, int height, @NotNull VisualizationType type)
     {
         BlockData cornerBlockData;
         BlockData accentBlockData;
 
-        if (visualizationType == VisualizationType.Claim || visualizationType == VisualizationType.AdminClaim)
+        switch (type)
         {
-            cornerBlockData = Material.GLOWSTONE.createBlockData();
-            if (claim.isAdminClaim())
-            {
+            case ADMIN_CLAIM -> {
+                cornerBlockData = Material.GLOWSTONE.createBlockData();
                 accentBlockData = Material.PUMPKIN.createBlockData();
             }
-            else
-            {
+            case SUBDIVISION -> {
+                cornerBlockData = Material.IRON_BLOCK.createBlockData();
+                accentBlockData = Material.WHITE_WOOL.createBlockData();
+            }
+            case INITIALIZE_ZONE, NATURE_RESTORATION_ZONE -> {
+                cornerBlockData = Material.DIAMOND_BLOCK.createBlockData();
+                accentBlockData = Material.DIAMOND_BLOCK.createBlockData();
+            }
+            case CONFLICT_ZONE -> {
+                cornerBlockData = Material.REDSTONE_ORE.createBlockData();
+                ((Lightable) cornerBlockData).setLit(true);
+                accentBlockData = Material.NETHERRACK.createBlockData();
+            }
+            default -> {
+                cornerBlockData = Material.GLOWSTONE.createBlockData();
                 accentBlockData = Material.GOLD_BLOCK.createBlockData();
             }
         }
-        else if (visualizationType == VisualizationType.Subdivision)
-        {
-            cornerBlockData = Material.IRON_BLOCK.createBlockData();
-            accentBlockData = Material.WHITE_WOOL.createBlockData();
-        }
-        else if (visualizationType == VisualizationType.RestoreNature)
-        {
-            cornerBlockData = Material.DIAMOND_BLOCK.createBlockData();
-            accentBlockData = Material.DIAMOND_BLOCK.createBlockData();
-        }
-        else
-        {
-            cornerBlockData = Material.REDSTONE_ORE.createBlockData();
-            ((Lightable) cornerBlockData).setLit(true);
-            accentBlockData = Material.NETHERRACK.createBlockData();
-        }
 
-        addElements(new BoundingBox(claim), locality, height, cornerBlockData, accentBlockData);
+        addElements(bounds, center, height, cornerBlockData, accentBlockData);
     }
 
     //adds a general claim cuboid (represented by min and max) visualization to the current visualization
-    private void addElements(BoundingBox area, Location location, int height, BlockData cornerBlockData, BlockData accentBlockData) {
-        World world = location.getWorld();
-
-        // Ensure world is set and loaded.
-        if (world == null) return;
-
+    private void addElements(BoundingBox area, BlockVector center, int height, BlockData cornerBlockData, BlockData accentBlockData) {
         // Set water transparency based on current location.
-        boolean waterTransparent = location.getBlock().getType() == Material.WATER;
+        boolean waterTransparent = center.toBlock(world).getType() == Material.WATER;
 
         // Square with display radius centered on current location.
         BoundingBox displayZone = new BoundingBox(
-                location.clone().add(-DISPLAY_ZONE_RADIUS, 0, -DISPLAY_ZONE_RADIUS),
-                location.clone().add(DISPLAY_ZONE_RADIUS, 0, DISPLAY_ZONE_RADIUS));
+                center.add(-DISPLAY_ZONE_RADIUS, 0, -DISPLAY_ZONE_RADIUS),
+                center.add(DISPLAY_ZONE_RADIUS, 0, DISPLAY_ZONE_RADIUS));
         // Trim to area - allows for simplified display containment check later..
         displayZone = displayZone.intersection(area);
 

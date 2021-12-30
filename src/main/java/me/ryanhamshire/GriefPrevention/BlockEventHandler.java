@@ -19,6 +19,7 @@
 package me.ryanhamshire.GriefPrevention;
 
 import com.griefprevention.visualization.BoundaryVisualization;
+import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -382,7 +383,7 @@ public class BlockEventHandler implements Listener
                             GriefPrevention.sendMessage(player, TextMode.Success, Messages.AutomaticClaimNotification);
 
                             //show the player the protected area
-                            BoundaryVisualization.visualizeClaim(player, result.claim, block, VisualizationType.Claim);
+                            BoundaryVisualization.visualizeClaim(player, result.claim, block, VisualizationType.CLAIM);
                         }
                         else
                         {
@@ -390,7 +391,7 @@ public class BlockEventHandler implements Listener
                             GriefPrevention.sendMessage(player, TextMode.Err, Messages.AutomaticClaimOtherClaimTooClose);
 
                             //show the player the protected area
-                            BoundaryVisualization.visualizeClaim(player, result.claim, block, VisualizationType.ErrorClaim);
+                            BoundaryVisualization.visualizeClaim(player, result.claim, block, VisualizationType.CONFLICT_ZONE);
                         }
                     }
                 }
@@ -443,7 +444,7 @@ public class BlockEventHandler implements Listener
 
                     if (playerData.lastClaim != null)
                     {
-                        BoundaryVisualization.visualizeClaim(player, playerData.lastClaim, block, VisualizationType.Claim);
+                        BoundaryVisualization.visualizeClaim(player, playerData.lastClaim, block, VisualizationType.CLAIM);
                     }
                 }
             }

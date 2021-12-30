@@ -35,9 +35,19 @@ public record BlockVector(int x, int y, int z)
         return new Location(world, x(), y(), z());
     }
 
-    public BlockVector toVector()
+    public org.bukkit.util.BlockVector toVector()
     {
-        return new BlockVector(x(), y(), z());
+        return new org.bukkit.util.BlockVector(x(), y(), z());
+    }
+
+    public BlockVector add(int dX, int dY, int dZ)
+    {
+        return new BlockVector(x() + dX, y() + dY, z() + dZ);
+    }
+
+    public BlockVector add(BlockVector other)
+    {
+        return new BlockVector(x() + other.x(), y() + other.y(), z() + other.z());
     }
 
     public boolean isChunkLoaded(@NotNull World world)

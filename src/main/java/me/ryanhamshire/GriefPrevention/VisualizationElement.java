@@ -21,7 +21,12 @@ package me.ryanhamshire.GriefPrevention;
 import org.bukkit.Location;
 import org.bukkit.block.data.BlockData;
 
-//represents a "fake" block sent to a player as part of a visualization
+/**
+ * Represents a fake {@link org.bukkit.block.Block Block} sent to a
+ * {@link org.bukkit.entity.Player Player} as part of a {@link Visualization}
+ * @deprecated replaced by {@link com.griefprevention.visualization.BoundaryElement BoundaryElement}
+ */
+@Deprecated(forRemoval = true, since = "16.18")
 public class VisualizationElement
 {
     public Location location;

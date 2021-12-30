@@ -19,6 +19,7 @@
 package me.ryanhamshire.GriefPrevention;
 
 import com.griefprevention.visualization.BoundaryVisualization;
+import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.events.ClaimInspectionEvent;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
@@ -92,7 +93,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.BlockIterator;
-import org.jetbrains.annotations.NotNull;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -2096,7 +2096,7 @@ class PlayerEventHandler implements Listener
                     GriefPrevention.sendMessage(player, TextMode.Info, Messages.BlockClaimed, claim.getOwnerName());
 
                     //visualize boundary
-                    BoundaryVisualization.visualizeClaim(player, claim, VisualizationType.Claim);
+                    BoundaryVisualization.visualizeClaim(player, claim, VisualizationType.CLAIM);
 
                     if (player.hasPermission("griefprevention.seeclaimsize"))
                     {
@@ -2170,7 +2170,7 @@ class PlayerEventHandler implements Listener
                 if (claim != null)
                 {
                     GriefPrevention.sendMessage(player, TextMode.Err, Messages.BlockClaimed, claim.getOwnerName());
-                    BoundaryVisualization.visualizeClaim(player, claim, clickedBlock, VisualizationType.ErrorClaim);
+                    BoundaryVisualization.visualizeClaim(player, claim, clickedBlock, VisualizationType.CONFLICT_ZONE);
                     return;
                 }
 
@@ -2430,7 +2430,7 @@ class PlayerEventHandler implements Listener
                             if (!result.succeeded)
                             {
                                 GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateSubdivisionOverlap);
-                                BoundaryVisualization.visualizeClaim(player, result.claim, clickedBlock, VisualizationType.ErrorClaim);
+                                BoundaryVisualization.visualizeClaim(player, result.claim, clickedBlock, VisualizationType.CONFLICT_ZONE);
 
                                 return;
                             }
@@ -2439,7 +2439,7 @@ class PlayerEventHandler implements Listener
                             else
                             {
                                 GriefPrevention.sendMessage(player, TextMode.Success, Messages.SubdivisionSuccess);
-                                BoundaryVisualization.visualizeClaim(player, result.claim, clickedBlock, VisualizationType.Claim);
+                                BoundaryVisualization.visualizeClaim(player, result.claim, clickedBlock, VisualizationType.CLAIM);
                                 playerData.lastShovelLocation = null;
                                 playerData.claimSubdividing = null;
                             }
@@ -2451,7 +2451,7 @@ class PlayerEventHandler implements Listener
                     else
                     {
                         GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlap);
-                        BoundaryVisualization.visualizeClaim(player, claim, clickedBlock, VisualizationType.Claim);
+                        BoundaryVisualization.visualizeClaim(player, claim, clickedBlock, VisualizationType.CLAIM);
                     }
                 }
 
@@ -2459,7 +2459,7 @@ class PlayerEventHandler implements Listener
                 else
                 {
                     GriefPrevention.sendMessage(player, TextMode.Err, noEditReason.get());
-                    BoundaryVisualization.visualizeClaim(player, claim, clickedBlock, VisualizationType.ErrorClaim);
+                    BoundaryVisualization.visualizeClaim(player, claim, clickedBlock, VisualizationType.CONFLICT_ZONE);
                 }
 
                 return;
@@ -2493,7 +2493,7 @@ class PlayerEventHandler implements Listener
 
                 //show him where he's working
                 Claim newClaim = new Claim(clickedBlock.getLocation(), clickedBlock.getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null);
-                BoundaryVisualization.visualizeClaim(player, newClaim, clickedBlock, VisualizationType.RestoreNature);
+                BoundaryVisualization.visualizeClaim(player, newClaim, clickedBlock, VisualizationType.INITIALIZE_ZONE);
             }
 
             //otherwise, he's trying to finish creating a claim by setting the other boundary corner
@@ -2575,7 +2575,7 @@ class PlayerEventHandler implements Listener
                     if (result.claim != null)
                     {
                         GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlapShort);
-                        BoundaryVisualization.visualizeClaim(player, result.claim, clickedBlock, VisualizationType.ErrorClaim);
+                        BoundaryVisualization.visualizeClaim(player, result.claim, clickedBlock, VisualizationType.CONFLICT_ZONE);
                     }
                     else
                     {
@@ -2589,7 +2589,7 @@ class PlayerEventHandler implements Listener
                 else
                 {
                     GriefPrevention.sendMessage(player, TextMode.Success, Messages.CreateClaimSuccess);
-                    BoundaryVisualization.visualizeClaim(player, result.claim, clickedBlock, VisualizationType.Claim);
+                    BoundaryVisualization.visualizeClaim(player, result.claim, clickedBlock, VisualizationType.CLAIM);
                     playerData.lastShovelLocation = null;
 
                     //if it's a big claim, tell the player about subdivisions

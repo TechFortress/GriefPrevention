@@ -19,7 +19,7 @@
 package me.ryanhamshire.GriefPrevention;
 
 import com.griefprevention.visualization.BoundaryVisualization;
-import com.griefprevention.visualization.VisualizationProvider;
+import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
 import me.ryanhamshire.GriefPrevention.events.PreventBlockBreakEvent;
 import me.ryanhamshire.GriefPrevention.events.SaveTrappedPlayerEvent;
@@ -52,7 +52,6 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.PluginManager;
-import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -375,9 +374,6 @@ public class GriefPrevention extends JavaPlugin
         //vault-based economy integration
         economyHandler = new EconomyHandler(this);
         pluginManager.registerEvents(economyHandler, this);
-
-        // Register default visualization provider.
-        getServer().getServicesManager().register(VisualizationProvider.class, BoundaryVisualization.DEFAULT_PROVIDER, this, ServicePriority.Lowest);
 
         //cache offline players
         OfflinePlayer[] offlinePlayers = this.getServer().getOfflinePlayers();
@@ -1086,7 +1082,7 @@ public class GriefPrevention extends JavaPlugin
                 {
                     GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlapShort);
 
-                    BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.ErrorClaim);
+                    BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE);
                 }
                 else
                 {
@@ -1102,11 +1098,11 @@ public class GriefPrevention extends JavaPlugin
                 {
                     GriefPrevention.sendMessage(player, TextMode.Instr, Messages.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
                 }
-                else if (GriefPrevention.instance.claimsEnabledForWorld(player.getLocation().getWorld()))
+                else if (GriefPrevention.instance.claimsEnabledForWorld(player.getWorld()))
                 {
                     GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
                 }
-                BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.Claim);
+                BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM);
                 playerData.claimResizing = null;
                 playerData.lastShovelLocation = null;
 
@@ -1327,7 +1323,7 @@ public class GriefPrevention extends JavaPlugin
             GriefPrevention.sendMessage(player, TextMode.Success, Messages.SuccessfulAbandon, String.valueOf(remainingBlocks));
 
             //revert any current visualization
-            BoundaryVisualization.revert(player);
+            playerData.setVisibleBoundaries(null);
 
             return true;
         }
@@ -2006,7 +2002,7 @@ public class GriefPrevention extends JavaPlugin
                         GriefPrevention.AddLogEntry(player.getName() + " deleted " + claim.getOwnerName() + "'s claim at " + GriefPrevention.getfriendlyLocationString(claim.getLesserBoundaryCorner()), CustomLogEntryTypes.AdminActivity);
 
                         //revert any current visualization
-                        BoundaryVisualization.revert(player);
+                        playerData.setVisibleBoundaries(null);
 
                         playerData.warnedAboutMajorDeletion = false;
                     }
@@ -2075,7 +2071,10 @@ public class GriefPrevention extends JavaPlugin
                 GriefPrevention.AddLogEntry(player.getName() + " deleted all claims belonging to " + otherPlayer.getName() + ".", CustomLogEntryTypes.AdminActivity);
 
                 //revert any current visualization
-                BoundaryVisualization.revert(player);
+                if (player.isOnline())
+                {
+                    this.dataStore.getPlayerData(player.getUniqueId()).setVisibleBoundaries(null);
+                }
             }
 
             return true;
@@ -2284,7 +2283,7 @@ public class GriefPrevention extends JavaPlugin
                 GriefPrevention.AddLogEntry(player.getName() + " deleted all administrative claims.", CustomLogEntryTypes.AdminActivity);
 
                 //revert any current visualization
-                BoundaryVisualization.revert(player);
+                this.dataStore.getPlayerData(player.getUniqueId()).setVisibleBoundaries(null);
             }
 
             return true;
@@ -2928,7 +2927,7 @@ public class GriefPrevention extends JavaPlugin
             GriefPrevention.sendMessage(player, TextMode.Success, Messages.AbandonSuccess, String.valueOf(remainingBlocks));
 
             //revert any current visualization
-            BoundaryVisualization.revert(player);
+            playerData.setVisibleBoundaries(null);
 
             playerData.warnedAboutMajorDeletion = false;
         }

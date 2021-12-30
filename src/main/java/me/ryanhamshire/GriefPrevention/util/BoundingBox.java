@@ -129,6 +129,17 @@ public class BoundingBox implements Cloneable
      * @param pos1 the position of the first corner
      * @param pos2 the position of the second corner
      */
+    public BoundingBox(BlockVector pos1, BlockVector pos2)
+    {
+        this(pos1.x(), pos1.y(), pos1.z(), pos2.x(), pos2.y(), pos2.z(), true);
+    }
+
+    /**
+     * Construct a new bounding box with the given corners.
+     *
+     * @param pos1 the position of the first corner
+     * @param pos2 the position of the second corner
+     */
     public BoundingBox(Vector pos1, Vector pos2)
     {
         this(pos1.getBlockX(), pos1.getBlockY(), pos1.getBlockZ(),

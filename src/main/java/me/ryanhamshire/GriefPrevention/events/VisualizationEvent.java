@@ -1,7 +1,7 @@
 package me.ryanhamshire.GriefPrevention.events;
 
-import com.griefprevention.visualization.BoundaryVisualization;
 import me.ryanhamshire.GriefPrevention.Claim;
+import me.ryanhamshire.GriefPrevention.Visualization;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
@@ -15,66 +15,26 @@ import java.util.HashSet;
 
 /**
  * An {@link org.bukkit.event.Event Event} called when a {@link Player} receives {@link Claim} visuals.
+ *
+ * @deprecated Replaced with {@link BoundaryVisualizationEvent}
  */
+@Deprecated(forRemoval = true, since = "16.18")
 public class VisualizationEvent extends PlayerEvent
 {
 
+    private final @Nullable Visualization visualization;
     private final @NotNull @Unmodifiable Collection<Claim> claims;
     private final boolean showSubdivides;
     private final boolean visualizingNearbyClaims;
-    private @Nullable BoundaryVisualization visualization;
 
     /**
      * Construct a new {@code VisualizationEvent} for a single {@link Claim} and its children.
      *
      * @param player the {@link Player} receiving visuals
-     * @param visualization the {@link me.ryanhamshire.GriefPrevention.Visualization} to send
+     * @param visualization the {@link Visualization} to send
      * @param claim the {@code Claim} being visualized with subdivisions
      */
-    @Deprecated(forRemoval = true, since = "16.18")
-    public VisualizationEvent(@NotNull Player player, @Nullable me.ryanhamshire.GriefPrevention.Visualization visualization, @NotNull Claim claim)
-    {
-        this(player, BoundaryVisualization.convert(visualization), claim);
-    }
-
-    /**
-     * Construct a new {@code VisualizationEvent} for multiple {@link Claim Claims}.
-     *
-     * @param player the {@link Player} receiving visuals
-     * @param visualization the {@link me.ryanhamshire.GriefPrevention.Visualization} to send
-     * @param claims the {@code Claims} being visualized without subdivisions
-     */
-    @Deprecated(forRemoval = true, since = "16.18")
-    public VisualizationEvent(@NotNull Player player, @Nullable me.ryanhamshire.GriefPrevention.Visualization visualization, @NotNull Collection<Claim> claims)
-    {
-        this(player, visualization, claims, false);
-    }
-
-    /**
-     * Construct a new {@code VisualizationEvent} for multiple {@link Claim Claims}.
-     *
-     * @param player the {@link Player} receiving visuals
-     * @param visualization the {@link me.ryanhamshire.GriefPrevention.Visualization} to send
-     * @param claims the {@code Claims} being visualized without subdivisions
-     * @param visualizingNearbyClaims whether the visualization includes area claims or just the target location
-     */
-    @Deprecated(forRemoval = true, since = "16.18")
-    public VisualizationEvent(@NotNull Player player, @Nullable me.ryanhamshire.GriefPrevention.Visualization visualization, @NotNull Collection<Claim> claims, boolean visualizingNearbyClaims)
-    {
-        this(player, BoundaryVisualization.convert(visualization), claims, visualizingNearbyClaims);
-    }
-
-    /**
-     * Construct a new {@code VisualizationEvent} for a single {@link Claim} and its children.
-     *
-     * @param player the {@link Player} receiving visuals
-     * @param visualization the {@link BoundaryVisualization} to send
-     * @param claim the {@code Claim} being visualized with subdivisions
-     */
-    public VisualizationEvent(
-            @NotNull Player player,
-            @Nullable BoundaryVisualization visualization,
-            @NotNull Claim claim)
+    public VisualizationEvent(@NotNull Player player, @Nullable Visualization visualization, @NotNull Claim claim)
     {
         super(player);
         this.visualization = visualization;
@@ -87,13 +47,10 @@ public class VisualizationEvent extends PlayerEvent
      * Construct a new {@code VisualizationEvent} for multiple {@link Claim Claims}.
      *
      * @param player the {@link Player} receiving visuals
-     * @param visualization the {@link BoundaryVisualization} to send
+     * @param visualization the {@link Visualization} to send
      * @param claims the {@code Claims} being visualized without subdivisions
      */
-    public VisualizationEvent(
-            @NotNull Player player,
-            @Nullable BoundaryVisualization visualization,
-            @NotNull Collection<Claim> claims)
+    public VisualizationEvent(@NotNull Player player, @Nullable Visualization visualization, @NotNull Collection<Claim> claims)
     {
         this(player, visualization, claims, false);
     }
@@ -102,15 +59,11 @@ public class VisualizationEvent extends PlayerEvent
      * Construct a new {@code VisualizationEvent} for multiple {@link Claim Claims}.
      *
      * @param player the {@link Player} receiving visuals
-     * @param visualization the {@link BoundaryVisualization} to send
+     * @param visualization the {@link Visualization} to send
      * @param claims the {@code Claims} being visualized without subdivisions
      * @param visualizingNearbyClaims whether the visualization includes area claims or just the target location
      */
-    public VisualizationEvent(
-            @NotNull Player player,
-            @Nullable BoundaryVisualization visualization,
-            @NotNull Collection<Claim> claims,
-            boolean visualizingNearbyClaims)
+    public VisualizationEvent(@NotNull Player player, @Nullable Visualization visualization, @NotNull Collection<Claim> claims, boolean visualizingNearbyClaims)
     {
         super(player);
         this.visualization = visualization;
@@ -120,27 +73,17 @@ public class VisualizationEvent extends PlayerEvent
     }
 
     /**
-     * Get the {@link BoundaryVisualization}. May be {@code null} if being removed.
+     * Get the {@link Visualization}. May be {@code null} if being removed.
      *
-     * @return the {@code BoundaryVisualization} object
+     * @return the {@code Visualization} object
      */
-    public @Nullable BoundaryVisualization getVisualization()
+    public @Nullable Visualization getVisualization()
     {
         return visualization;
     }
 
     /**
-     * Set the {@link BoundaryVisualization}. May be {@code null} to remove active {@code BoundaryVisualization}.
-     *
-     * @param visualization the {@code BoundaryVisualization}
-     */
-    public void setVisualization(@Nullable BoundaryVisualization visualization)
-    {
-        this.visualization = visualization;
-    }
-
-    /**
-     * Get the {@link Claim Claims} displayed by the {@link BoundaryVisualization}.
+     * Get the {@link Claim Claims} displayed by the {@link Visualization}.
      *
      * <p>The {@link Collection} is unmodifiable, manipulation is not allowed.
      *
