@@ -2058,17 +2058,18 @@ class PlayerEventHandler implements Listener
                     return;
                 }
 
+                playerData = this.dataStore.getPlayerData(player.getUniqueId());
+
                 //air indicates too far away
                 if (clickedBlockType == Material.AIR)
                 {
                     GriefPrevention.sendMessage(player, TextMode.Err, Messages.TooFarAway);
 
-                    // alert plugins of a visualization
-                    BoundaryVisualization.visualizeNothing(player);
+                    // Remove visualizations
+                    playerData.setVisibleBoundaries(null);
                     return;
                 }
 
-                if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
                 Claim claim = this.dataStore.getClaimAt(clickedBlock.getLocation(), false /*ignore height*/, playerData.lastClaim);
 
                 //no claim case
@@ -2081,7 +2082,7 @@ class PlayerEventHandler implements Listener
 
                     GriefPrevention.sendMessage(player, TextMode.Info, Messages.BlockNotClaimed);
 
-                    BoundaryVisualization.visualizeNothing(player);
+                    playerData.setVisibleBoundaries(null);
                 }
 
                 //claim case

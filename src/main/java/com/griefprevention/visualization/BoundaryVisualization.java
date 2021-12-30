@@ -119,7 +119,7 @@ public abstract class BoundaryVisualization
         return Stream.concat(
                 Stream.of(new BoundaryDefinition(claim, type)),
                 claim.children.stream().map(child -> new BoundaryDefinition(child, VisualizationType.SUBDIVISION)))
-                .collect(Collectors.toUnmodifiableSet());
+                .collect(Collectors.toSet());
     }
 
     public static void visualizeNearbyClaims(
@@ -133,7 +133,7 @@ public abstract class BoundaryVisualization
                 claims.stream().map(claim -> new BoundaryDefinition(
                         claim,
                         claim.isAdminClaim() ? VisualizationType.ADMIN_CLAIM :  VisualizationType.CLAIM))
-                        .collect(Collectors.toUnmodifiableSet()));
+                        .collect(Collectors.toSet()));
         visualizeClaims(event, blockVector, height);
     }
 
