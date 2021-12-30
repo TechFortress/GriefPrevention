@@ -383,7 +383,7 @@ public class BlockEventHandler implements Listener
                             GriefPrevention.sendMessage(player, TextMode.Success, Messages.AutomaticClaimNotification);
 
                             //show the player the protected area
-                            BoundaryVisualization.visualizeClaim(player, result.claim, block, VisualizationType.CLAIM);
+                            BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM, block);
                         }
                         else
                         {
@@ -391,7 +391,7 @@ public class BlockEventHandler implements Listener
                             GriefPrevention.sendMessage(player, TextMode.Err, Messages.AutomaticClaimOtherClaimTooClose);
 
                             //show the player the protected area
-                            BoundaryVisualization.visualizeClaim(player, result.claim, block, VisualizationType.CONFLICT_ZONE);
+                            BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE, block);
                         }
                     }
                 }
@@ -444,7 +444,7 @@ public class BlockEventHandler implements Listener
 
                     if (playerData.lastClaim != null)
                     {
-                        BoundaryVisualization.visualizeClaim(player, playerData.lastClaim, block, VisualizationType.CLAIM);
+                        BoundaryVisualization.visualizeClaim(player, playerData.lastClaim, VisualizationType.CLAIM, block);
                     }
                 }
             }

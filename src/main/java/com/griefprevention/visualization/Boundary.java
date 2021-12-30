@@ -5,20 +5,20 @@ import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record BoundaryDefinition(
+public record Boundary(
         @NotNull BoundingBox bounds,
         @NotNull VisualizationType type,
-        @Nullable Long claimId)
+        @Nullable Claim claim)
 {
 
-    public BoundaryDefinition(@NotNull BoundingBox bounds, @NotNull VisualizationType type)
+    public Boundary(@NotNull BoundingBox bounds, @NotNull VisualizationType type)
     {
         this(bounds, type, null);
     }
 
-    public BoundaryDefinition(@NotNull Claim claim, @NotNull VisualizationType type)
+    public Boundary(@NotNull Claim claim, @NotNull VisualizationType type)
     {
-        this(new BoundingBox(claim), type, claim.getID());
+        this(new BoundingBox(claim), type, claim);
     }
 
 }

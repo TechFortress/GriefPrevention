@@ -1,7 +1,7 @@
 package com.griefprevention.visualization.impl;
 
 import com.griefprevention.visualization.BoundaryElement;
-import com.griefprevention.util.BlockVector;
+import com.griefprevention.util.IntVector;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
@@ -14,11 +14,11 @@ public class FakeBlockElement extends BoundaryElement
     private final @NotNull BlockData visualizedBlock;
 
     public FakeBlockElement(
-            @NotNull BlockVector blockVector,
+            @NotNull IntVector intVector,
             @NotNull BlockData realBlock,
             @NotNull BlockData visualizedBlock)
     {
-        super(blockVector);
+        super(intVector);
         this.realBlock = realBlock;
         this.visualizedBlock = visualizedBlock;
     }

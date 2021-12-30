@@ -3,24 +3,25 @@ package com.griefprevention.util;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.util.BlockVector;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public record BlockVector(int x, int y, int z)
+public record IntVector(int x, int y, int z)
 {
 
-    public BlockVector(@NotNull Block block)
+    public IntVector(@NotNull Block block)
     {
         this(block.getX(), block.getY(), block.getZ());
     }
 
-    public BlockVector(@NotNull Location location)
+    public IntVector(@NotNull Location location)
     {
         this(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
-    public BlockVector(@NotNull Vector vector)
+    public IntVector(@NotNull Vector vector)
     {
         this(vector.getBlockX(), vector.getBlockY(), vector.getBlockZ());
     }
@@ -35,19 +36,19 @@ public record BlockVector(int x, int y, int z)
         return new Location(world, x(), y(), z());
     }
 
-    public org.bukkit.util.BlockVector toVector()
+    public BlockVector toVector()
     {
-        return new org.bukkit.util.BlockVector(x(), y(), z());
+        return new BlockVector(x(), y(), z());
     }
 
-    public BlockVector add(int dX, int dY, int dZ)
+    public IntVector add(int dX, int dY, int dZ)
     {
-        return new BlockVector(x() + dX, y() + dY, z() + dZ);
+        return new IntVector(x() + dX, y() + dY, z() + dZ);
     }
 
-    public BlockVector add(BlockVector other)
+    public IntVector add(IntVector other)
     {
-        return new BlockVector(x() + other.x(), y() + other.y(), z() + other.z());
+        return new IntVector(x() + other.x(), y() + other.y(), z() + other.z());
     }
 
     public boolean isChunkLoaded(@NotNull World world)

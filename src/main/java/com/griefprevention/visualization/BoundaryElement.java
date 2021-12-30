@@ -1,6 +1,6 @@
 package com.griefprevention.visualization;
 
-import com.griefprevention.util.BlockVector;
+import com.griefprevention.util.IntVector;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
@@ -11,13 +11,13 @@ import java.util.Objects;
 public abstract class BoundaryElement
 {
 
-    private final @NotNull BlockVector vector;
+    private final @NotNull IntVector vector;
 
-    public BoundaryElement(@NotNull BlockVector vector) {
+    public BoundaryElement(@NotNull IntVector vector) {
         this.vector = vector;
     }
 
-    public @NotNull BlockVector getVector()
+    public @NotNull IntVector getVector()
     {
         return vector;
     }

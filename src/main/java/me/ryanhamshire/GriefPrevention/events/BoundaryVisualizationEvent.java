@@ -1,6 +1,7 @@
 package me.ryanhamshire.GriefPrevention.events;
 
-import com.griefprevention.visualization.BoundaryDefinition;
+import com.griefprevention.util.IntVector;
+import com.griefprevention.visualization.Boundary;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationProvider;
 import org.bukkit.entity.Player;
@@ -14,29 +15,43 @@ import java.util.Collection;
 public class BoundaryVisualizationEvent extends PlayerEvent
 {
 
-    private final @NotNull Collection<BoundaryDefinition> boundaries;
+    private final @NotNull Collection<Boundary> boundaries;
+    private final int height;
     private @NotNull VisualizationProvider provider;
 
     public BoundaryVisualizationEvent(
             @NotNull Player player,
-            @NotNull Collection<BoundaryDefinition> boundaries
+            @NotNull Collection<Boundary> boundaries,
+            int height
     ) {
-        this(player, boundaries, BoundaryVisualization.DEFAULT_PROVIDER);
+        this(player, boundaries, height, BoundaryVisualization.DEFAULT_PROVIDER);
     }
 
     public BoundaryVisualizationEvent(
             @NotNull Player player,
-            @NotNull Collection<BoundaryDefinition> boundaries,
+            @NotNull Collection<Boundary> boundaries,
+            int height,
             @NotNull VisualizationProvider provider
     ) {
         super(player);
         this.boundaries = new ArrayList<>(boundaries);
+        this.height = height;
         this.provider = provider;
     }
 
-    public @NotNull Collection<BoundaryDefinition> getBoundaries()
+    public @NotNull Collection<Boundary> getBoundaries()
     {
         return boundaries;
+    }
+
+    public @NotNull IntVector getCenter()
+    {
+        return new IntVector(player.getLocation());
+    }
+
+    public int getHeight()
+    {
+        return height;
     }
 
     public @NotNull VisualizationProvider getProvider()

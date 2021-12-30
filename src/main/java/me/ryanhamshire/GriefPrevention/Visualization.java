@@ -18,8 +18,7 @@
 
 package me.ryanhamshire.GriefPrevention;
 
-import com.griefprevention.util.BlockVector;
-import com.griefprevention.visualization.BoundaryDefinition;
+import com.griefprevention.visualization.Boundary;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.events.BoundaryVisualizationEvent;
@@ -51,7 +50,7 @@ public class Visualization
      */
     @Deprecated(forRemoval = true, since = "16.18")
     public ArrayList<VisualizationElement> elements = new ArrayList<>();
-    private final Collection<BoundaryDefinition> boundaries = new ArrayList<>();
+    private final Collection<Boundary> boundaries = new ArrayList<>();
 
     @Deprecated(forRemoval = true, since = "16.18")
     public Visualization() {}
@@ -94,10 +93,10 @@ public class Visualization
         if (type == VisualizationType.CLAIM && claim.isAdminClaim()) type = VisualizationType.ADMIN_CLAIM;
 
         Visualization visualization = new Visualization();
-        visualization.boundaries.add(new BoundaryDefinition(claim, type));
+        visualization.boundaries.add(new Boundary(claim, type));
         visualization.boundaries.addAll(
                 claim.children.stream()
-                        .map(child -> new BoundaryDefinition(child, com.griefprevention.visualization.VisualizationType.SUBDIVISION))
+                        .map(child -> new Boundary(child, com.griefprevention.visualization.VisualizationType.SUBDIVISION))
                         .collect(Collectors.toUnmodifiableSet()));
 
         return visualization;
@@ -122,8 +121,8 @@ public class Visualization
             return;
         }
 
-        BoundaryVisualizationEvent event = new BoundaryVisualizationEvent(player, visualization.boundaries);
-        BoundaryVisualization.visualizeClaims(event, new BlockVector(player.getLocation()), player.getEyeLocation().getBlockY());
+        BoundaryVisualization.callAndVisualize(
+                new BoundaryVisualizationEvent(player, visualization.boundaries, player.getEyeLocation().getBlockY()));
     }
 
     /**
@@ -134,7 +133,7 @@ public class Visualization
     @Deprecated(forRemoval = true, since = "16.18")
     public void addClaimElements(Claim claim, int height, me.ryanhamshire.GriefPrevention.VisualizationType visualizationType, Location locality)
     {
-        this.boundaries.add(new BoundaryDefinition(claim, visualizationType.convert()));
+        this.boundaries.add(new Boundary(claim, visualizationType.convert()));
     }
 
     /**
@@ -145,7 +144,7 @@ public class Visualization
     @Deprecated(forRemoval = true, since = "16.18")
     //adds a general claim cuboid (represented by min and max) visualization to the current visualization
     public void addClaimElements(Location min, Location max, Location locality, int height, BlockData cornerBlockData, BlockData accentBlockData, int STEP) {
-        this.boundaries.add(new BoundaryDefinition(new BoundingBox(min, max), me.ryanhamshire.GriefPrevention.VisualizationType.ofBlockData(accentBlockData)));
+        this.boundaries.add(new Boundary(new BoundingBox(min, max), me.ryanhamshire.GriefPrevention.VisualizationType.ofBlockData(accentBlockData)));
     }
 
     @Deprecated(forRemoval = true, since = "16.18")

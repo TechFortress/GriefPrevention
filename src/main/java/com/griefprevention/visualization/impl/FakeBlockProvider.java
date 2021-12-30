@@ -1,5 +1,6 @@
 package com.griefprevention.visualization.impl;
 
+import com.griefprevention.util.IntVector;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationProvider;
 import org.bukkit.World;
@@ -9,9 +10,9 @@ public class FakeBlockProvider implements VisualizationProvider
 {
 
     @Override
-    public @NotNull BoundaryVisualization create(World world)
+    public @NotNull BoundaryVisualization create(@NotNull World world, @NotNull IntVector visualizeFrom, int height)
     {
-        return new FakeBlockVisualization(world);
+        return new FakeBlockVisualization(world, visualizeFrom, height);
     }
 
 }
