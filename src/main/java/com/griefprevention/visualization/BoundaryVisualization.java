@@ -3,7 +3,7 @@ package com.griefprevention.visualization;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.PlayerData;
-import me.ryanhamshire.GriefPrevention.events.BoundaryVisualizationEvent;
+import com.griefprevention.events.BoundaryVisualizationEvent;
 import com.griefprevention.util.IntVector;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.Bukkit;
@@ -21,6 +21,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * A representation of a system for displaying rectangular {@link Boundary Boundaries} to {@link Player Players}.
+ *
+ * This is used to display claim areas, visualize affected area during nature restoration, and more.
+ */
 public abstract class BoundaryVisualization
 {
 
@@ -31,6 +36,13 @@ public abstract class BoundaryVisualization
     protected final @NotNull IntVector visualizeFrom;
     protected final int height;
 
+    /**
+     * Construct a new {@code BoundaryVisualization}.
+     *
+     * @param world the {@link World} being visualized in
+     * @param visualizeFrom the {@link IntVector} representing the world coordinate being visualized from
+     * @param height the height of the visualization
+     */
     protected BoundaryVisualization(@NotNull World world, @NotNull IntVector visualizeFrom, int height)
     {
         this.world = world;
@@ -38,34 +50,24 @@ public abstract class BoundaryVisualization
         this.height = height;
     }
 
-    protected final void addElements(@NotNull Collection<Boundary> elements)
-    {
-        elements.stream().filter(Objects::nonNull).forEach(this.elements::add);
-    }
-
-    protected void scheduleApply(@NotNull Player player)
-    {
-        PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
-
-        // If they have a visualization active, clear it first.
-        playerData.setVisibleBoundaries(null);
-
-        // If they are online and in the same world as the visualization, display the visualization next tick.
-        if (canVisualize(player))
-        {
-            GriefPrevention.instance.getServer().getScheduler().scheduleSyncDelayedTask(
-                    GriefPrevention.instance,
-                    () -> apply(player, playerData),
-                    1L);
-        }
-    }
-
+    /**
+     * Check if a {@link Player} can visualize the {@code BoundaryVisualization}.
+     *
+     * @param player the visualization target
+     * @return true if able to visualize
+     */
     @Contract("null -> false")
     protected boolean canVisualize(@Nullable Player player) {
         return player != null && player.isOnline() && !elements.isEmpty() && Objects.equals(world, player.getWorld());
     }
 
-    protected void apply(@NotNull Player player, @NotNull PlayerData playerData)
+    /**
+     * Apply the {@code BoundaryVisualization} to a {@link Player}.
+     *
+     * @param player the visualization target
+     * @param playerData the {@link PlayerData} of the visualization target
+     */
+    private void apply(@NotNull Player player, @NotNull PlayerData playerData)
     {
         // Remember the visualization so it can be reverted.
         playerData.setVisibleBoundaries(this);
@@ -77,18 +79,39 @@ public abstract class BoundaryVisualization
         scheduleRevert(player, playerData);
     }
 
+    /**
+     * Draw a {@link Boundary} in the visualization for a {@link Player}.
+     *
+     * @param player the visualization target
+     * @param boundary the {@code Boundary} to draw
+     */
     protected abstract void draw(@NotNull Player player, @NotNull Boundary boundary);
 
+    /**
+     * Schedule automatic reversion of the visualization.
+     *
+     * <p>Some implementations may automatically revert without additional help and may wish to override this method to
+     * prevent extra task scheduling.</p>
+     *
+     * @param player the visualization target
+     * @param playerData the {@link PlayerData} of the visualization target
+     */
     protected void scheduleRevert(@NotNull Player player, @NotNull PlayerData playerData)
     {
         GriefPrevention.instance.getServer().getScheduler().scheduleSyncDelayedTask(
                 GriefPrevention.instance,
                 () -> {
+                    // Only revert if this is the active visualization.
                     if (playerData.getVisibleBoundaries() == this) revert(player);
                 },
                 20L * 60);
     }
 
+    /**
+     * Revert the visualization for a {@link Player}.
+     *
+     * @param player the visualization target
+     */
     public void revert(@Nullable Player player)
     {
         // If the player cannot visualize the blocks, they should already be effectively reverted.
@@ -101,8 +124,21 @@ public abstract class BoundaryVisualization
         elements.forEach(element -> erase(player, element));
     }
 
+    /**
+     * Erase a {@link Boundary} in the visualization for a {@link Player}.
+     *
+     * @param player the visualization target
+     * @param boundary the {@code Boundary} to erase
+     */
     protected abstract void erase(@NotNull Player player, @NotNull Boundary boundary);
 
+    /**
+     * Helper method for quickly visualizing an area.
+     *
+     * @param player the {@link Player} visualizing the area
+     * @param boundingBox the {@link BoundingBox} being visualized
+     * @param type the {@link VisualizationType type of visualization}
+     */
     public static void visualizeArea(
             @NotNull Player player,
             @NotNull BoundingBox boundingBox,
@@ -110,9 +146,16 @@ public abstract class BoundaryVisualization
         BoundaryVisualizationEvent event = new BoundaryVisualizationEvent(player,
                 Set.of(new Boundary(boundingBox, type)),
                 player.getEyeLocation().getBlockY());
-        BoundaryVisualization.callAndVisualize(event);
+        callAndVisualize(event);
     }
 
+    /**
+     * Helper method for quickly visualizing a claim and all its children.
+     *
+     * @param player the {@link Player} visualizing the area
+     * @param claim the {@link Claim} being visualized
+     * @param type the {@link VisualizationType type of visualization}
+     */
     public static void visualizeClaim(
             @NotNull Player player,
             @NotNull Claim claim,
@@ -121,6 +164,14 @@ public abstract class BoundaryVisualization
         visualizeClaim(player, claim, type, player.getEyeLocation().getBlockY());
     }
 
+    /**
+     * Helper method for quickly visualizing a claim and all its children.
+     *
+     * @param player the {@link Player} visualizing the area
+     * @param claim the {@link Claim} being visualized
+     * @param type the {@link VisualizationType type of visualization}
+     * @param block the {@link Block} on which the visualization was initiated
+     */
     public static void visualizeClaim(
             @NotNull Player player,
             @NotNull Claim claim,
@@ -130,6 +181,14 @@ public abstract class BoundaryVisualization
         visualizeClaim(player, claim, type, block.getY());
     }
 
+    /**
+     * Helper method for quickly visualizing a claim and all its children.
+     *
+     * @param player the {@link Player} visualizing the area
+     * @param claim the {@link Claim} being visualized
+     * @param type the {@link VisualizationType}
+     * @param height the height at which the visualization was initiated
+     */
     private static void visualizeClaim(
             @NotNull Player player,
             @NotNull Claim claim,
@@ -140,6 +199,13 @@ public abstract class BoundaryVisualization
         callAndVisualize(event);
     }
 
+    /**
+     * Define {@link Boundary Boundaries} for a claim and its children.
+     *
+     * @param claim the {@link Claim}
+     * @param type the {@link VisualizationType}
+     * @return the resulting {@code Boundary} values
+     */
     private static Collection<Boundary> defineBoundaries(Claim claim, VisualizationType type)
     {
         if (type == VisualizationType.CLAIM && claim.isAdminClaim()) type = VisualizationType.ADMIN_CLAIM;
@@ -150,6 +216,13 @@ public abstract class BoundaryVisualization
                 .collect(Collectors.toSet());
     }
 
+    /**
+     * Helper method for quickly visualizing a collection of nearby claims.
+     *
+     * @param player the {@link Player} visualizing the area
+     * @param claims the {@link Claim Claims} being visualized
+     * @param height the height at which the visualization was initiated
+     */
     public static void visualizeNearbyClaims(
             @NotNull Player player,
             @NotNull Collection<Claim> claims,
@@ -165,11 +238,31 @@ public abstract class BoundaryVisualization
         callAndVisualize(event);
     }
 
+    /**
+     * Call a {@link BoundaryVisualizationEvent} and use the resulting values to create and apply a visualization.
+     *
+     * @param event the {@code BoundaryVisualizationEvent}
+     */
     public static void callAndVisualize(@NotNull BoundaryVisualizationEvent event) {
         Bukkit.getPluginManager().callEvent(event);
-        BoundaryVisualization visualization = event.getProvider().create(event.getPlayer().getWorld(), event.getCenter(), event.getHeight());
-        visualization.addElements(event.getBoundaries());
-        visualization.scheduleApply(event.getPlayer());
+
+        Player player = event.getPlayer();
+        BoundaryVisualization visualization = event.getProvider().create(player.getWorld(), event.getCenter(), event.getHeight());
+        event.getBoundaries().stream().filter(Objects::nonNull).forEach(visualization.elements::add);
+
+        PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
+
+        // If they have a visualization active, clear it first.
+        playerData.setVisibleBoundaries(null);
+
+        // If they are online and in the same world as the visualization, display the visualization next tick.
+        if (visualization.canVisualize(player))
+        {
+            GriefPrevention.instance.getServer().getScheduler().scheduleSyncDelayedTask(
+                    GriefPrevention.instance,
+                    () -> visualization.apply(player, playerData),
+                    1L);
+        }
     }
 
 }

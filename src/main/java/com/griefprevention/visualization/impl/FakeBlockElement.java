@@ -10,13 +10,13 @@ import org.jetbrains.annotations.NotNull;
 /**
  * A {@link BlockElement} that displays itself as a clientside block.
  */
-public final class FakeBlockElement extends BlockElement
+final class FakeBlockElement extends BlockElement
 {
 
     private final @NotNull BlockData realBlock;
     private final @NotNull BlockData visualizedBlock;
 
-    public FakeBlockElement(
+    FakeBlockElement(
             @NotNull IntVector intVector,
             @NotNull BlockData realBlock,
             @NotNull BlockData visualizedBlock)
@@ -30,14 +30,15 @@ public final class FakeBlockElement extends BlockElement
     protected void draw(@NotNull Player player, @NotNull World world)
     {
         // Send the player a fake block change event only if the chunk is loaded.
-        if (!getVector().isChunkLoaded(world)) return;
-        player.sendBlockChange(getVector().toLocation(world), visualizedBlock);
+        if (!getCoordinate().isChunkLoaded(world)) return;
+
+        player.sendBlockChange(getCoordinate().toLocation(world), visualizedBlock);
     }
 
     @Override
     protected void erase(@NotNull Player player, @NotNull World world)
     {
-        player.sendBlockChange(getVector().toLocation(world), realBlock);
+        player.sendBlockChange(getCoordinate().toLocation(world), realBlock);
     }
 
     @Override
@@ -48,6 +49,18 @@ public final class FakeBlockElement extends BlockElement
         if (getClass() != other.getClass()) return false;
         FakeBlockElement that = (FakeBlockElement) other;
         return realBlock.equals(that.realBlock) && visualizedBlock.equals(that.visualizedBlock);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        /*
+         * We specifically use the BlockElement hashcode because we
+         * want elements at conflicting locations to be overwritten
+         * by the last element added - elements are stored in a Set
+         * and corners are added last.
+         */
+        return super.hashCode();
     }
 
 }

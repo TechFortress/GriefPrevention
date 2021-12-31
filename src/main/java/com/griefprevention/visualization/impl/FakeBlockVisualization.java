@@ -22,7 +22,8 @@ import java.util.function.Function;
  */
 public class FakeBlockVisualization extends BlockBoundaryVisualization
 {
-    private final boolean waterTransparent;
+
+    protected final boolean waterTransparent;
 
     /**
      * Construct a new {@code FakeBlockVisualization}.
@@ -33,46 +34,54 @@ public class FakeBlockVisualization extends BlockBoundaryVisualization
      */
     public FakeBlockVisualization(@NotNull World world, @NotNull IntVector visualizeFrom, int height) {
         super(world, visualizeFrom, height);
+
+        // Water is considered transparent based on whether the visualization is initiated in water.
         waterTransparent = visualizeFrom.toBlock(world).getType() == Material.WATER;
     }
 
     @Override
-    protected @NotNull Function<@NotNull IntVector, @NotNull BlockElement> cornerBlock(@NotNull Boundary boundary)
+    protected @NotNull Function<@NotNull IntVector, @NotNull BlockElement> createCorner(@NotNull Boundary boundary)
     {
-        BlockData fakeData;
-        switch (boundary.type())
+        return createFakeVisibleBlock(switch (boundary.type())
         {
-            case SUBDIVISION -> fakeData = Material.IRON_BLOCK.createBlockData();
-            case INITIALIZE_ZONE, NATURE_RESTORATION_ZONE -> fakeData = Material.DIAMOND_BLOCK.createBlockData();
+            case SUBDIVISION -> Material.IRON_BLOCK.createBlockData();
+            case INITIALIZE_ZONE, NATURE_RESTORATION_ZONE -> Material.DIAMOND_BLOCK.createBlockData();
             case CONFLICT_ZONE -> {
-                fakeData = Material.REDSTONE_ORE.createBlockData();
+                BlockData fakeData = Material.REDSTONE_ORE.createBlockData();
                 ((Lightable) fakeData).setLit(true);
+                yield fakeData;
             }
-            default -> fakeData = Material.GLOWSTONE.createBlockData();
-        }
-
-        return vector -> {
-            Block visibleLocation = getVisibleLocation(vector);
-            return new FakeBlockElement(new IntVector(visibleLocation), visibleLocation.getBlockData(), fakeData);
-        };
+            default -> Material.GLOWSTONE.createBlockData();
+        });
     }
 
 
     @Override
-    protected @NotNull Function<@NotNull IntVector, @NotNull BlockElement> sideBlock(@NotNull Boundary boundary)
+    protected @NotNull Function<@NotNull IntVector, @NotNull BlockElement> createSide(@NotNull Boundary boundary)
     {
-        BlockData fakeData;
-        switch (boundary.type())
+        // Determine BlockData from boundary type to cache for reuse in function.
+        return createFakeVisibleBlock(switch (boundary.type())
         {
-            case ADMIN_CLAIM -> fakeData = Material.PUMPKIN.createBlockData();
-            case SUBDIVISION -> fakeData = Material.WHITE_WOOL.createBlockData();
-            case INITIALIZE_ZONE, NATURE_RESTORATION_ZONE -> fakeData = Material.DIAMOND_BLOCK.createBlockData();
-            case CONFLICT_ZONE -> fakeData = Material.NETHERRACK.createBlockData();
-            default -> fakeData = Material.GOLD_BLOCK.createBlockData();
-        }
+            case ADMIN_CLAIM -> Material.PUMPKIN.createBlockData();
+            case SUBDIVISION -> Material.WHITE_WOOL.createBlockData();
+            case INITIALIZE_ZONE, NATURE_RESTORATION_ZONE -> Material.DIAMOND_BLOCK.createBlockData();
+            case CONFLICT_ZONE -> Material.NETHERRACK.createBlockData();
+            default -> Material.GOLD_BLOCK.createBlockData();
+        });
+    }
 
+    /**
+     * Create a function for determining an appropriate {@link FakeBlockElement} with the given fake data.
+     *
+     * @param fakeData the fake {@link BlockData}
+     * @return the function for determining a visible fake block location
+     */
+    private @NotNull Function<@NotNull IntVector, @NotNull BlockElement> createFakeVisibleBlock(@NotNull BlockData fakeData)
+    {
         return vector -> {
+            // Obtain visible location from starting point.
             Block visibleLocation = getVisibleLocation(vector);
+            // Create an element using our fake data and the determined block's real data.
             return new FakeBlockElement(new IntVector(visibleLocation), visibleLocation.getBlockData(), fakeData);
         };
     }
@@ -101,10 +110,10 @@ public class FakeBlockVisualization extends BlockBoundaryVisualization
     /**
      * Helper method for determining if a {@link Block} is transparent from the top down.
      *
-     * @param block the {@code block}
+     * @param block the {@code Block}
      * @return true if transparent
      */
-    private boolean isTransparent(@NotNull Block block)
+    protected boolean isTransparent(@NotNull Block block)
     {
         Material blockMaterial = block.getType();
 

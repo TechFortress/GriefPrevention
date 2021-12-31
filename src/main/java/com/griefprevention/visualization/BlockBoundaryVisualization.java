@@ -5,6 +5,7 @@ import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -13,18 +14,32 @@ import java.util.function.Function;
 public abstract class BlockBoundaryVisualization extends BoundaryVisualization
 {
 
-    /** Distance between side elements. */
     private final int step;
-    /** Radius to render within. */
-    private final int displayZoneRadius;
-    /** Drawn elements */
+    private final BoundingBox displayZoneArea;
     private final Collection<BlockElement> elements = new HashSet<>();
 
+    /**
+     * Construct a new {@code BlockBoundaryVisualization} with a step size of {@code 10} and a display radius of
+     * {@code 75}.
+     *
+     * @param world the {@link World} being visualized in
+     * @param visualizeFrom the {@link IntVector} representing the world coordinate being visualized from
+     * @param height the height of the visualization
+     */
     protected BlockBoundaryVisualization(@NotNull World world, @NotNull IntVector visualizeFrom, int height)
     {
         this(world, visualizeFrom, height, 10, 75);
     }
 
+    /**
+     * Construct a new {@code BlockBoundaryVisualization}.
+     *
+     * @param world the {@link World} being visualized in
+     * @param visualizeFrom the {@link IntVector} representing the world coordinate being visualized from
+     * @param height the height of the visualization
+     * @param step the distance between individual side elements
+     * @param displayZoneRadius the radius in which elements are visible from the visualization location
+     */
     protected BlockBoundaryVisualization(
             @NotNull World world,
             @NotNull IntVector visualizeFrom,
@@ -34,29 +49,24 @@ public abstract class BlockBoundaryVisualization extends BoundaryVisualization
     {
         super(world, visualizeFrom, height);
         this.step = step;
-        this.displayZoneRadius = displayZoneRadius;
+        this.displayZoneArea = new BoundingBox(
+                visualizeFrom.add(-displayZoneRadius, -displayZoneRadius, -displayZoneRadius),
+                visualizeFrom.add(displayZoneRadius, displayZoneRadius, displayZoneRadius));;
     }
 
     @Override
     protected void draw(@NotNull Player player, @NotNull Boundary boundary)
     {
-        elements.clear();
-
-        // Square with display radius centered on current location.
-        BoundingBox displayZone = new BoundingBox(
-                visualizeFrom.add(-displayZoneRadius, 0, -displayZoneRadius),
-                visualizeFrom.add(displayZoneRadius, 0, displayZoneRadius));
-
         BoundingBox area = boundary.bounds();
 
         // Trim to area - allows for simplified display containment check later.
-        displayZone = displayZone.intersection(area);
+        BoundingBox displayZone = displayZoneArea.intersection(area);
 
         // If area is not inside display zone, there is nothing to display.
         if (displayZone == null) return;
 
-        Function<@NotNull IntVector, @NotNull BlockElement> getCorner = cornerBlock(boundary);
-        Function<@NotNull IntVector, @NotNull BlockElement> getSide = sideBlock(boundary);
+        Function<@NotNull IntVector, @NotNull BlockElement> getCorner = createCorner(boundary);
+        Function<@NotNull IntVector, @NotNull BlockElement> getSide = createSide(boundary);
 
         // North and south boundaries
         for (int x = Math.max(area.getMinX() + step, displayZone.getMinX()); x < area.getMaxX() - step / 2 && x < displayZone.getMaxX(); x += step)
@@ -96,15 +106,36 @@ public abstract class BlockBoundaryVisualization extends BoundaryVisualization
         elements.forEach(element -> element.draw(player, world));
     }
 
-    protected abstract @NotNull Function<@NotNull IntVector, @NotNull BlockElement> cornerBlock(@NotNull Boundary boundary);
+    /**
+     * Create {@link Function} yielding a corner {@link BlockElement} for the given {@link IntVector} coordinate based
+     * on the {@link Boundary} being drawn.
+     *
+     * @param boundary the {@code Boundary}
+     * @return the corner element function
+     */
+    protected abstract @NotNull Function<@NotNull IntVector, @NotNull BlockElement> createCorner(@NotNull Boundary boundary);
 
-    protected abstract @NotNull Function<@NotNull IntVector, @NotNull BlockElement> sideBlock(@NotNull Boundary boundary);
+    /**
+     * Create {@link Function} yielding a side {@link BlockElement} for the given {@link IntVector} coordinate based
+     * on the {@link Boundary} being drawn.
+     *
+     * @param boundary the {@code Boundary}
+     * @return the corner element function
+     */
+    protected abstract @NotNull Function<@NotNull IntVector, @NotNull BlockElement> createSide(@NotNull Boundary boundary);
 
     protected boolean isAccessible(@NotNull BoundingBox displayZone, @NotNull IntVector coordinate)
     {
         return displayZone.contains2d(coordinate) && coordinate.isChunkLoaded(world);
     }
 
+    /**
+     * Add a display element if accessible.
+     *
+     * @param displayZone the zone in which elements may be displayed
+     * @param coordinate the coordinate being displayed
+     * @param getElement the function for obtaining the element displayed
+     */
     private void addDisplayed(
             @NotNull BoundingBox displayZone,
             @NotNull IntVector coordinate,
@@ -114,6 +145,18 @@ public abstract class BlockBoundaryVisualization extends BoundaryVisualization
         if (isAccessible(displayZone, coordinate)) {
             this.elements.add(getElement.apply(coordinate));
         }
+    }
+
+    @Override
+    public void revert(@Nullable Player player)
+    {
+        // If the player cannot visualize the blocks, they should already be effectively reverted.
+        if (!canVisualize(player))
+        {
+            return;
+        }
+
+        this.elements.forEach(element -> element.erase(player, world));
     }
 
     @Override
