@@ -51,7 +51,7 @@ public abstract class BlockBoundaryVisualization extends BoundaryVisualization
         this.step = step;
         this.displayZoneArea = new BoundingBox(
                 visualizeFrom.add(-displayZoneRadius, -displayZoneRadius, -displayZoneRadius),
-                visualizeFrom.add(displayZoneRadius, displayZoneRadius, displayZoneRadius));;
+                visualizeFrom.add(displayZoneRadius, displayZoneRadius, displayZoneRadius));
     }
 
     @Override
@@ -136,7 +136,7 @@ public abstract class BlockBoundaryVisualization extends BoundaryVisualization
      * @param coordinate the coordinate being displayed
      * @param getElement the function for obtaining the element displayed
      */
-    private void addDisplayed(
+    protected void addDisplayed(
             @NotNull BoundingBox displayZone,
             @NotNull IntVector coordinate,
             @NotNull Function<@NotNull IntVector,
@@ -156,6 +156,7 @@ public abstract class BlockBoundaryVisualization extends BoundaryVisualization
             return;
         }
 
+        // Elements do not track the boundary they're attached to - all elements are reverted individually instead.
         this.elements.forEach(element -> element.erase(player, world));
     }
 

@@ -4,6 +4,9 @@ import com.griefprevention.util.IntVector;
 import com.griefprevention.visualization.Boundary;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationProvider;
+import com.griefprevention.visualization.impl.AntiCheatCompatVisualization;
+import com.griefprevention.visualization.impl.FakeBlockVisualization;
+import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
@@ -17,6 +20,15 @@ import java.util.Collection;
  */
 public class BoundaryVisualizationEvent extends PlayerEvent
 {
+
+    private static final VisualizationProvider DEFAULT_PROVIDER = (world, visualizeFrom, height) ->
+    {
+        if (GriefPrevention.instance.config_visualizationAntiCheatCompat)
+        {
+            return new AntiCheatCompatVisualization(world, visualizeFrom, height);
+        }
+        return new FakeBlockVisualization(world, visualizeFrom, height);
+    };
 
     private final @NotNull Collection<Boundary> boundaries;
     private final int height;
@@ -35,7 +47,7 @@ public class BoundaryVisualizationEvent extends PlayerEvent
             @NotNull Collection<Boundary> boundaries,
             int height
     ) {
-        this(player, boundaries, height, BoundaryVisualization.DEFAULT_PROVIDER);
+        this(player, boundaries, height, DEFAULT_PROVIDER);
     }
 
     /**
