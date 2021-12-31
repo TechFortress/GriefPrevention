@@ -26,6 +26,7 @@ public abstract class BoundaryVisualization
 
     public static final VisualizationProvider DEFAULT_PROVIDER = new com.griefprevention.visualization.impl.FakeBlockProvider();
 
+    // TODO -> Collection<Boundary> and -> BoundaryDisplaySomething? Not all visualizations will need per-block, CUI etc.
     private final Collection<BoundaryElement> elements = new HashSet<>();
     protected final @NotNull World world;
     protected final @NotNull IntVector visualizeFrom;

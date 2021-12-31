@@ -7,7 +7,10 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-public class FakeBlockElement extends BoundaryElement
+/**
+ * A {@link BoundaryElement} that displays itself as a clientside block.
+ */
+public final class FakeBlockElement extends BoundaryElement
 {
 
     private final @NotNull BlockData realBlock;
