@@ -1,6 +1,6 @@
 package com.griefprevention.visualization.impl;
 
-import com.griefprevention.visualization.BoundaryElement;
+import com.griefprevention.visualization.BlockElement;
 import com.griefprevention.util.IntVector;
 import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
@@ -8,9 +8,9 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A {@link BoundaryElement} that displays itself as a clientside block.
+ * A {@link BlockElement} that displays itself as a clientside block.
  */
-public final class FakeBlockElement extends BoundaryElement
+public final class FakeBlockElement extends BlockElement
 {
 
     private final @NotNull BlockData realBlock;
@@ -27,7 +27,7 @@ public final class FakeBlockElement extends BoundaryElement
     }
 
     @Override
-    protected void apply(@NotNull Player player, @NotNull World world)
+    protected void draw(@NotNull Player player, @NotNull World world)
     {
         // Send the player a fake block change event only if the chunk is loaded.
         if (!getVector().isChunkLoaded(world)) return;
@@ -35,7 +35,7 @@ public final class FakeBlockElement extends BoundaryElement
     }
 
     @Override
-    protected void revert(@NotNull Player player, @NotNull World world)
+    protected void erase(@NotNull Player player, @NotNull World world)
     {
         player.sendBlockChange(getVector().toLocation(world), realBlock);
     }

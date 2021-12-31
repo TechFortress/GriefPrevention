@@ -18,13 +18,14 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.griefprevention.visualization.BlockElement;
 import org.bukkit.Location;
 import org.bukkit.block.data.BlockData;
 
 /**
  * Represents a fake {@link org.bukkit.block.Block Block} sent to a
  * {@link org.bukkit.entity.Player Player} as part of a {@link Visualization}
- * @deprecated replaced by {@link com.griefprevention.visualization.BoundaryElement BoundaryElement}
+ * @deprecated replaced by {@link BlockElement BlockElement}
  */
 @Deprecated(forRemoval = true, since = "16.18")
 public class VisualizationElement

@@ -8,12 +8,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
-public abstract class BoundaryElement
+public abstract class BlockElement
 {
 
     private final @NotNull IntVector vector;
 
-    public BoundaryElement(@NotNull IntVector vector) {
+    public BlockElement(@NotNull IntVector vector) {
         this.vector = vector;
     }
 
@@ -22,16 +22,16 @@ public abstract class BoundaryElement
         return vector;
     }
 
-    protected abstract void apply(@NotNull Player player, @NotNull World world);
+    protected abstract void draw(@NotNull Player player, @NotNull World world);
 
-    protected abstract void revert(@NotNull Player player, @NotNull World world);
+    protected abstract void erase(@NotNull Player player, @NotNull World world);
 
     @Override
     public boolean equals(@Nullable Object other)
     {
         if (this == other) return true;
         if (other == null || !getClass().isAssignableFrom(other.getClass())) return false;
-        BoundaryElement that = (BoundaryElement) other;
+        BlockElement that = (BlockElement) other;
         return vector.equals(that.vector);
     }
 

@@ -18,6 +18,7 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.griefprevention.visualization.BlockElement;
 import com.griefprevention.visualization.Boundary;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
@@ -44,7 +45,7 @@ import java.util.stream.Collectors;
 public class Visualization
 {
     /**
-     * @deprecated {@link com.griefprevention.visualization.BoundaryElement BoundaryElements} are only supplied by
+     * @deprecated {@link BlockElement BoundaryElements} are only supplied by
      * the provider as various providers may have different needs for element removal. If you wish to add more,
      * implement your own provider.
      */

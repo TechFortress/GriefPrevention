@@ -26,8 +26,7 @@ public abstract class BoundaryVisualization
 
     public static final VisualizationProvider DEFAULT_PROVIDER = new com.griefprevention.visualization.impl.FakeBlockProvider();
 
-    // TODO -> Collection<Boundary> and -> BoundaryDisplaySomething? Not all visualizations will need per-block, CUI etc.
-    private final Collection<BoundaryElement> elements = new HashSet<>();
+    private final Collection<Boundary> elements = new HashSet<>();
     protected final @NotNull World world;
     protected final @NotNull IntVector visualizeFrom;
     protected final int height;
@@ -39,11 +38,10 @@ public abstract class BoundaryVisualization
         this.height = height;
     }
 
-    protected final void addElement(BoundaryElement element) {
-        elements.add(element);
+    protected final void addElements(@NotNull Collection<Boundary> elements)
+    {
+        elements.stream().filter(Objects::nonNull).forEach(this.elements::add);
     }
-
-    protected abstract void addElements(@NotNull BoundingBox bounds, @NotNull VisualizationType type);
 
     protected void scheduleApply(@NotNull Player player)
     {
@@ -73,11 +71,13 @@ public abstract class BoundaryVisualization
         playerData.setVisibleBoundaries(this);
 
         // Apply all visualization elements.
-        elements.forEach(element -> element.apply(player, world));
+        elements.forEach(element -> draw(player, element));
 
         // Schedule automatic reversion.
         scheduleRevert(player, playerData);
     }
+
+    protected abstract void draw(@NotNull Player player, @NotNull Boundary boundary);
 
     protected void scheduleRevert(@NotNull Player player, @NotNull PlayerData playerData)
     {
@@ -98,8 +98,10 @@ public abstract class BoundaryVisualization
         }
 
         // Revert data as necessary for any sent elements.
-        elements.forEach(element -> element.revert(player, world));
+        elements.forEach(element -> erase(player, element));
     }
+
+    protected abstract void erase(@NotNull Player player, @NotNull Boundary boundary);
 
     public static void visualizeArea(
             @NotNull Player player,
@@ -166,10 +168,7 @@ public abstract class BoundaryVisualization
     public static void callAndVisualize(@NotNull BoundaryVisualizationEvent event) {
         Bukkit.getPluginManager().callEvent(event);
         BoundaryVisualization visualization = event.getProvider().create(event.getPlayer().getWorld(), event.getCenter(), event.getHeight());
-        for (Boundary boundary : event.getBoundaries())
-        {
-            visualization.addElements(boundary.bounds(), boundary.type());
-        }
+        visualization.addElements(event.getBoundaries());
         visualization.scheduleApply(event.getPlayer());
     }
 

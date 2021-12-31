@@ -1,9 +1,10 @@
 package com.griefprevention.visualization.impl;
 
 import com.griefprevention.util.IntVector;
+import com.griefprevention.visualization.BlockBoundaryVisualization;
+import com.griefprevention.visualization.BlockElement;
+import com.griefprevention.visualization.Boundary;
 import com.griefprevention.visualization.BoundaryVisualization;
-import com.griefprevention.visualization.VisualizationType;
-import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.World;
@@ -13,17 +14,15 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Lightable;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.Function;
+
 /**
  * A {@link BoundaryVisualization} implementation that displays clientside blocks along
  * {@link com.griefprevention.visualization.Boundary Boundaries}.
  */
-public class FakeBlockVisualization extends BoundaryVisualization
+public class FakeBlockVisualization extends BlockBoundaryVisualization
 {
-
-    /** Distance between side elements. */
-    private static final int STEP = 10;
-    /** Radius to render within. */
-    private static final int DISPLAY_ZONE_RADIUS = 75;
+    private final boolean waterTransparent;
 
     /**
      * Construct a new {@code FakeBlockVisualization}.
@@ -34,131 +33,64 @@ public class FakeBlockVisualization extends BoundaryVisualization
      */
     public FakeBlockVisualization(@NotNull World world, @NotNull IntVector visualizeFrom, int height) {
         super(world, visualizeFrom, height);
+        waterTransparent = visualizeFrom.toBlock(world).getType() == Material.WATER;
     }
 
     @Override
-    protected void addElements(@NotNull BoundingBox bounds, @NotNull VisualizationType type)
+    protected @NotNull Function<@NotNull IntVector, @NotNull BlockElement> cornerBlock(@NotNull Boundary boundary)
     {
-        BlockData cornerBlockData;
-        BlockData accentBlockData;
-
-        switch (type)
+        BlockData fakeData;
+        switch (boundary.type())
         {
-            case ADMIN_CLAIM -> {
-                cornerBlockData = Material.GLOWSTONE.createBlockData();
-                accentBlockData = Material.PUMPKIN.createBlockData();
-            }
-            case SUBDIVISION -> {
-                cornerBlockData = Material.IRON_BLOCK.createBlockData();
-                accentBlockData = Material.WHITE_WOOL.createBlockData();
-            }
-            case INITIALIZE_ZONE, NATURE_RESTORATION_ZONE -> {
-                cornerBlockData = Material.DIAMOND_BLOCK.createBlockData();
-                accentBlockData = Material.DIAMOND_BLOCK.createBlockData();
-            }
+            case SUBDIVISION -> fakeData = Material.IRON_BLOCK.createBlockData();
+            case INITIALIZE_ZONE, NATURE_RESTORATION_ZONE -> fakeData = Material.DIAMOND_BLOCK.createBlockData();
             case CONFLICT_ZONE -> {
-                cornerBlockData = Material.REDSTONE_ORE.createBlockData();
-                ((Lightable) cornerBlockData).setLit(true);
-                accentBlockData = Material.NETHERRACK.createBlockData();
+                fakeData = Material.REDSTONE_ORE.createBlockData();
+                ((Lightable) fakeData).setLit(true);
             }
-            default -> {
-                cornerBlockData = Material.GLOWSTONE.createBlockData();
-                accentBlockData = Material.GOLD_BLOCK.createBlockData();
-            }
+            default -> fakeData = Material.GLOWSTONE.createBlockData();
         }
 
-        addElements(bounds, cornerBlockData, accentBlockData);
+        return vector -> {
+            Block visibleLocation = getVisibleLocation(vector);
+            return new FakeBlockElement(new IntVector(visibleLocation), visibleLocation.getBlockData(), fakeData);
+        };
     }
 
-    /**
-     * Add new elements for a {@link BoundingBox} with the specified fake blocks.
-     *
-     * @param area the {@code BoundingBox defined}
-     * @param cornerBlockData the {@link BlockData} for the corner blocks
-     * @param accentBlockData the {@link BlockData} for the non-corner blocks
-     */
-    //adds a general claim cuboid (represented by min and max) visualization to the current visualization
-    private void addElements(@NotNull BoundingBox area, @NotNull BlockData cornerBlockData, @NotNull BlockData accentBlockData) {
-        // Set water transparency based on current location.
-        boolean waterTransparent = visualizeFrom.toBlock(world).getType() == Material.WATER;
 
-        // Square with display radius centered on current location.
-        BoundingBox displayZone = new BoundingBox(
-                visualizeFrom.add(-DISPLAY_ZONE_RADIUS, 0, -DISPLAY_ZONE_RADIUS),
-                visualizeFrom.add(DISPLAY_ZONE_RADIUS, 0, DISPLAY_ZONE_RADIUS));
-        // Trim to area - allows for simplified display containment check later..
-        displayZone = displayZone.intersection(area);
-
-        // If area is not inside display zone, there is nothing to display.
-        if (displayZone == null) return;
-
-        // North and south boundaries
-        for (int x = Math.max(area.getMinX() + STEP, displayZone.getMinX()); x < area.getMaxX() - STEP / 2 && x < displayZone.getMaxX(); x += STEP)
-        {
-            addDisplayed(displayZone, new IntVector(x, height, area.getMaxZ()), accentBlockData, waterTransparent);
-            addDisplayed(displayZone, new IntVector(x, height, area.getMinZ()), accentBlockData, waterTransparent);
-        }
-        // First and last step are always directly adjacent to corners
-        addDisplayed(displayZone, new IntVector(area.getMinX() + 1, height, area.getMaxZ()), accentBlockData, waterTransparent);
-        addDisplayed(displayZone, new IntVector(area.getMinX() + 1, height, area.getMinZ()), accentBlockData, waterTransparent);
-        addDisplayed(displayZone, new IntVector(area.getMaxX() - 1, height, area.getMaxZ()), accentBlockData, waterTransparent);
-        addDisplayed(displayZone, new IntVector(area.getMaxX() - 1, height, area.getMinZ()), accentBlockData, waterTransparent);
-
-        // East and west boundaries
-        for (int z = Math.max(area.getMinZ() + STEP, displayZone.getMinZ()); z < area.getMaxZ() - STEP / 2 && z < displayZone.getMaxZ(); z += STEP)
-        {
-            addDisplayed(displayZone, new IntVector(area.getMinX(), height, z), accentBlockData, waterTransparent);
-            addDisplayed(displayZone, new IntVector(area.getMaxX(), height, z), accentBlockData, waterTransparent);
-        }
-        addDisplayed(displayZone, new IntVector(area.getMinX(), height, area.getMinZ() + 1), accentBlockData, waterTransparent);
-        addDisplayed(displayZone, new IntVector(area.getMaxX(), height, area.getMinZ() + 1), accentBlockData, waterTransparent);
-        addDisplayed(displayZone, new IntVector(area.getMinX(), height, area.getMaxZ() - 1), accentBlockData, waterTransparent);
-        addDisplayed(displayZone, new IntVector(area.getMaxX(), height, area.getMaxZ() - 1), accentBlockData, waterTransparent);
-
-        // Add corners last to override any other elements created by very small claims.
-        addDisplayed(displayZone, new IntVector(area.getMinX(), height, area.getMaxZ()), cornerBlockData, waterTransparent);
-        addDisplayed(displayZone, new IntVector(area.getMaxX(), height, area.getMaxZ()), cornerBlockData, waterTransparent);
-        addDisplayed(displayZone, new IntVector(area.getMinX(), height, area.getMinZ()), cornerBlockData, waterTransparent);
-        addDisplayed(displayZone, new IntVector(area.getMaxX(), height, area.getMinZ()), cornerBlockData, waterTransparent);
-    }
-
-    /**
-     * Attempt to add a visible display element.
-     *
-     * @param displayZone the {@link BoundingBox} of displayed area
-     * @param vector the {@link IntVector} of the display location
-     * @param data the {@link BlockData} of the fake marker block
-     * @param waterTransparent whether water is considered transparent for display purposes
-     */
-    private void addDisplayed(
-            @NotNull BoundingBox displayZone,
-            @NotNull IntVector vector,
-            @NotNull BlockData data,
-            boolean waterTransparent)
+    @Override
+    protected @NotNull Function<@NotNull IntVector, @NotNull BlockElement> sideBlock(@NotNull Boundary boundary)
     {
-        if (!displayZone.contains2d(vector) || !vector.isChunkLoaded(world)) {
-            return;
+        BlockData fakeData;
+        switch (boundary.type())
+        {
+            case ADMIN_CLAIM -> fakeData = Material.PUMPKIN.createBlockData();
+            case SUBDIVISION -> fakeData = Material.WHITE_WOOL.createBlockData();
+            case INITIALIZE_ZONE, NATURE_RESTORATION_ZONE -> fakeData = Material.DIAMOND_BLOCK.createBlockData();
+            case CONFLICT_ZONE -> fakeData = Material.NETHERRACK.createBlockData();
+            default -> fakeData = Material.GOLD_BLOCK.createBlockData();
         }
 
-        Block displayLoc = getVisibleLocation(vector, waterTransparent);
-        this.addElement(new FakeBlockElement(new IntVector(displayLoc), displayLoc.getBlockData(), data));
+        return vector -> {
+            Block visibleLocation = getVisibleLocation(vector);
+            return new FakeBlockElement(new IntVector(visibleLocation), visibleLocation.getBlockData(), fakeData);
+        };
     }
 
     /**
      * Find a location that should be visible to players. This causes the visualization to "cling" to the ground.
      *
      * @param vector the {@link IntVector} of the display location
-     * @param waterTransparent whether water is considered transparent for display purposes
      * @return the located {@link Block}
      */
-    private Block getVisibleLocation(@NotNull IntVector vector, boolean waterTransparent)
+    private Block getVisibleLocation(@NotNull IntVector vector)
     {
         Block block = vector.toBlock(world);
-        BlockFace direction = (isTransparent(block, waterTransparent)) ? BlockFace.DOWN : BlockFace.UP;
+        BlockFace direction = (isTransparent(block)) ? BlockFace.DOWN : BlockFace.UP;
 
         while (block.getY() >= world.getMinHeight() &&
                 block.getY() < world.getMaxHeight() - 1 &&
-                (!isTransparent(block.getRelative(BlockFace.UP), waterTransparent) || isTransparent(block, waterTransparent)))
+                (!isTransparent(block.getRelative(BlockFace.UP)) || isTransparent(block)))
         {
             block = block.getRelative(direction);
         }
@@ -170,10 +102,9 @@ public class FakeBlockVisualization extends BoundaryVisualization
      * Helper method for determining if a {@link Block} is transparent from the top down.
      *
      * @param block the {@code block}
-     * @param waterIsTransparent whether water is considered transparent for display purposes
      * @return true if transparent
      */
-    private boolean isTransparent(@NotNull Block block, boolean waterIsTransparent)
+    private boolean isTransparent(@NotNull Block block)
     {
         Material blockMaterial = block.getType();
 
@@ -181,7 +112,7 @@ public class FakeBlockVisualization extends BoundaryVisualization
         switch (blockMaterial)
         {
             case WATER:
-                return waterIsTransparent;
+                return waterTransparent;
             case SNOW:
                 return false;
         }
