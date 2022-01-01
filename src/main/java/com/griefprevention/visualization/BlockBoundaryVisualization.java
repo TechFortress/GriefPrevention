@@ -9,14 +9,14 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 public abstract class BlockBoundaryVisualization extends BoundaryVisualization
 {
 
     private final int step;
     private final BoundingBox displayZoneArea;
-    private final Collection<BlockElement> elements = new HashSet<>();
+    protected final Collection<BlockElement> elements = new HashSet<>();
 
     /**
      * Construct a new {@code BlockBoundaryVisualization} with a step size of {@code 10} and a display radius of
@@ -65,64 +65,62 @@ public abstract class BlockBoundaryVisualization extends BoundaryVisualization
         // If area is not inside display zone, there is nothing to display.
         if (displayZone == null) return;
 
-        Function<@NotNull IntVector, @NotNull BlockElement> getCorner = createCorner(boundary);
-        Function<@NotNull IntVector, @NotNull BlockElement> getSide = createSide(boundary);
+        Consumer<@NotNull IntVector> addCorner = addCornerElements(boundary);
+        Consumer<@NotNull IntVector> addSide = addSideElements(boundary);
 
         // North and south boundaries
         for (int x = Math.max(area.getMinX() + step, displayZone.getMinX()); x < area.getMaxX() - step / 2 && x < displayZone.getMaxX(); x += step)
         {
-            addDisplayed(displayZone, new IntVector(x, height, area.getMaxZ()), getSide);
-            addDisplayed(displayZone, new IntVector(x, height, area.getMinZ()), getSide);
+            addDisplayed(displayZone, new IntVector(x, height, area.getMaxZ()), addSide);
+            addDisplayed(displayZone, new IntVector(x, height, area.getMinZ()), addSide);
         }
         // First and last step are always directly adjacent to corners
         if (area.getLength() > 2)
         {
-            addDisplayed(displayZone, new IntVector(area.getMinX() + 1, height, area.getMaxZ()), getSide);
-            addDisplayed(displayZone, new IntVector(area.getMinX() + 1, height, area.getMinZ()), getSide);
-            addDisplayed(displayZone, new IntVector(area.getMaxX() - 1, height, area.getMaxZ()), getSide);
-            addDisplayed(displayZone, new IntVector(area.getMaxX() - 1, height, area.getMinZ()), getSide);
+            addDisplayed(displayZone, new IntVector(area.getMinX() + 1, height, area.getMaxZ()), addSide);
+            addDisplayed(displayZone, new IntVector(area.getMinX() + 1, height, area.getMinZ()), addSide);
+            addDisplayed(displayZone, new IntVector(area.getMaxX() - 1, height, area.getMaxZ()), addSide);
+            addDisplayed(displayZone, new IntVector(area.getMaxX() - 1, height, area.getMinZ()), addSide);
         }
 
         // East and west boundaries
         for (int z = Math.max(area.getMinZ() + step, displayZone.getMinZ()); z < area.getMaxZ() - step / 2 && z < displayZone.getMaxZ(); z += step)
         {
-            addDisplayed(displayZone, new IntVector(area.getMinX(), height, z), getSide);
-            addDisplayed(displayZone, new IntVector(area.getMaxX(), height, z), getSide);
+            addDisplayed(displayZone, new IntVector(area.getMinX(), height, z), addSide);
+            addDisplayed(displayZone, new IntVector(area.getMaxX(), height, z), addSide);
         }
         if (area.getWidth() > 2)
         {
-            addDisplayed(displayZone, new IntVector(area.getMinX(), height, area.getMinZ() + 1), getSide);
-            addDisplayed(displayZone, new IntVector(area.getMaxX(), height, area.getMinZ() + 1), getSide);
-            addDisplayed(displayZone, new IntVector(area.getMinX(), height, area.getMaxZ() - 1), getSide);
-            addDisplayed(displayZone, new IntVector(area.getMaxX(), height, area.getMaxZ() - 1), getSide);
+            addDisplayed(displayZone, new IntVector(area.getMinX(), height, area.getMinZ() + 1), addSide);
+            addDisplayed(displayZone, new IntVector(area.getMaxX(), height, area.getMinZ() + 1), addSide);
+            addDisplayed(displayZone, new IntVector(area.getMinX(), height, area.getMaxZ() - 1), addSide);
+            addDisplayed(displayZone, new IntVector(area.getMaxX(), height, area.getMaxZ() - 1), addSide);
         }
 
         // Add corners last to override any other elements created by very small claims.
-        addDisplayed(displayZone, new IntVector(area.getMinX(), height, area.getMaxZ()), getCorner);
-        addDisplayed(displayZone, new IntVector(area.getMaxX(), height, area.getMaxZ()), getCorner);
-        addDisplayed(displayZone, new IntVector(area.getMinX(), height, area.getMinZ()), getCorner);
-        addDisplayed(displayZone, new IntVector(area.getMaxX(), height, area.getMinZ()), getCorner);
+        addDisplayed(displayZone, new IntVector(area.getMinX(), height, area.getMaxZ()), addCorner);
+        addDisplayed(displayZone, new IntVector(area.getMaxX(), height, area.getMaxZ()), addCorner);
+        addDisplayed(displayZone, new IntVector(area.getMinX(), height, area.getMinZ()), addCorner);
+        addDisplayed(displayZone, new IntVector(area.getMaxX(), height, area.getMinZ()), addCorner);
 
         elements.forEach(element -> element.draw(player, world));
     }
 
     /**
-     * Create {@link Function} yielding a corner {@link BlockElement} for the given {@link IntVector} coordinate based
-     * on the {@link Boundary} being drawn.
+     * Create a {@link Consumer} that adds a corner element for the given {@link IntVector}.
      *
      * @param boundary the {@code Boundary}
-     * @return the corner element function
+     * @return the corner element consumer
      */
-    protected abstract @NotNull Function<@NotNull IntVector, @NotNull BlockElement> createCorner(@NotNull Boundary boundary);
+    protected abstract @NotNull Consumer<@NotNull IntVector> addCornerElements(@NotNull Boundary boundary);
 
     /**
-     * Create {@link Function} yielding a side {@link BlockElement} for the given {@link IntVector} coordinate based
-     * on the {@link Boundary} being drawn.
+     * Create a {@link Consumer} that adds a side element for the given {@link IntVector}.
      *
      * @param boundary the {@code Boundary}
-     * @return the corner element function
+     * @return the side element consumer
      */
-    protected abstract @NotNull Function<@NotNull IntVector, @NotNull BlockElement> createSide(@NotNull Boundary boundary);
+    protected abstract @NotNull Consumer<@NotNull IntVector> addSideElements(@NotNull Boundary boundary);
 
     protected boolean isAccessible(@NotNull BoundingBox displayZone, @NotNull IntVector coordinate)
     {
@@ -134,16 +132,15 @@ public abstract class BlockBoundaryVisualization extends BoundaryVisualization
      *
      * @param displayZone the zone in which elements may be displayed
      * @param coordinate the coordinate being displayed
-     * @param getElement the function for obtaining the element displayed
+     * @param addElement the function for obtaining the element displayed
      */
     protected void addDisplayed(
             @NotNull BoundingBox displayZone,
             @NotNull IntVector coordinate,
-            @NotNull Function<@NotNull IntVector,
-                    @NotNull BlockElement> getElement)
+            @NotNull Consumer<@NotNull IntVector> addElement)
     {
         if (isAccessible(displayZone, coordinate)) {
-            this.elements.add(getElement.apply(coordinate));
+            addElement.accept(coordinate);
         }
     }
 

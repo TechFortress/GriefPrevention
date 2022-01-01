@@ -2,7 +2,6 @@ package com.griefprevention.visualization.impl;
 
 import com.griefprevention.util.IntVector;
 import com.griefprevention.visualization.BlockBoundaryVisualization;
-import com.griefprevention.visualization.BlockElement;
 import com.griefprevention.visualization.Boundary;
 import com.griefprevention.visualization.BoundaryVisualization;
 import org.bukkit.Material;
@@ -14,7 +13,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Lightable;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 /**
  * A {@link BoundaryVisualization} implementation that displays clientside blocks along
@@ -40,9 +39,9 @@ public class FakeBlockVisualization extends BlockBoundaryVisualization
     }
 
     @Override
-    protected @NotNull Function<@NotNull IntVector, @NotNull BlockElement> createCorner(@NotNull Boundary boundary)
+    protected @NotNull Consumer<@NotNull IntVector> addCornerElements(@NotNull Boundary boundary)
     {
-        return createFakeVisibleBlock(switch (boundary.type())
+        return addBlockElement(switch (boundary.type())
         {
             case SUBDIVISION -> Material.IRON_BLOCK.createBlockData();
             case INITIALIZE_ZONE, NATURE_RESTORATION_ZONE -> Material.DIAMOND_BLOCK.createBlockData();
@@ -57,10 +56,10 @@ public class FakeBlockVisualization extends BlockBoundaryVisualization
 
 
     @Override
-    protected @NotNull Function<@NotNull IntVector, @NotNull BlockElement> createSide(@NotNull Boundary boundary)
+    protected @NotNull Consumer<@NotNull IntVector> addSideElements(@NotNull Boundary boundary)
     {
         // Determine BlockData from boundary type to cache for reuse in function.
-        return createFakeVisibleBlock(switch (boundary.type())
+        return addBlockElement(switch (boundary.type())
         {
             case ADMIN_CLAIM -> Material.PUMPKIN.createBlockData();
             case SUBDIVISION -> Material.WHITE_WOOL.createBlockData();
@@ -71,18 +70,18 @@ public class FakeBlockVisualization extends BlockBoundaryVisualization
     }
 
     /**
-     * Create a function for determining an appropriate {@link FakeBlockElement} with the given fake data.
+     * Create a {@link Consumer} that adds an appropriate {@link FakeBlockElement} for the given {@link IntVector}.
      *
      * @param fakeData the fake {@link BlockData}
      * @return the function for determining a visible fake block location
      */
-    private @NotNull Function<@NotNull IntVector, @NotNull BlockElement> createFakeVisibleBlock(@NotNull BlockData fakeData)
+    private @NotNull Consumer<@NotNull IntVector> addBlockElement(@NotNull BlockData fakeData)
     {
         return vector -> {
             // Obtain visible location from starting point.
             Block visibleLocation = getVisibleLocation(vector);
             // Create an element using our fake data and the determined block's real data.
-            return new FakeBlockElement(new IntVector(visibleLocation), visibleLocation.getBlockData(), fakeData);
+            elements.add(new FakeBlockElement(new IntVector(visibleLocation), visibleLocation.getBlockData(), fakeData));
         };
     }
 
