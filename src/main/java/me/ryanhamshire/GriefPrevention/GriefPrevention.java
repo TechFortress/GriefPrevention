@@ -117,7 +117,7 @@ public class GriefPrevention extends JavaPlugin
     public int config_claims_accruedIdleThreshold;                    //how far (in blocks) a player must move in order to not be considered afk/idle when determining accrued claim blocks
     public int config_claims_accruedIdlePercent;                    //how much percentage of claim block accruals should idle players get
     public int config_claims_maxDepth;                                //limit on how deep claims can go
-    public int config_claims_expirationEnabled;                     //whether automatic claim expiration is enabled (default true)
+    public boolean config_claims_expirationEnabled;                 //whether automatic claim expiration is enabled (default true)
     public int config_claims_expirationDays;                        //how many days of inactivity before a player loses his claims
     public int config_claims_expirationExemptionTotalBlocks;        //total claim blocks amount which will exempt a player from claim expiration
     public int config_claims_expirationExemptionBonusBlocks;        //bonus claim blocks amount which will exempt a player from claim expiration
