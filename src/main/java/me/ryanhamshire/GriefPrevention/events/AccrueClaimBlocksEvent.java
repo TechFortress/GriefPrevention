@@ -1,66 +1,68 @@
 package me.ryanhamshire.GriefPrevention.events;
 
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.player.PlayerEvent;
+import org.jetbrains.annotations.NotNull;
 
 /**
- * Called when GP is about to deliver claim blocks to a player (~every 10 minutes)
+ * An {@link org.bukkit.event.Event Event} called when a {@link Player} is about to receive claim blocks.
+ * GriefPrevention calls this event 6 times hourly, once every 10 minutes.
  *
- * @author RoboMWM
- * 11/15/2016.
+ * @author RoboMWM on 11/15/2016
  */
-public class AccrueClaimBlocksEvent extends Event
+public class AccrueClaimBlocksEvent extends PlayerEvent implements Cancellable
 {
-    // Custom Event Requirements
-    private static final HandlerList handlers = new HandlerList();
 
-    public static HandlerList getHandlerList()
-    {
-        return handlers;
-    }
-
-    @Override
-    public HandlerList getHandlers()
-    {
-        return handlers;
-    }
-
-    private final Player player;
     private int blocksToAccrue;
-    private boolean isIdle = false;
-    private boolean cancelled = false;
+    private boolean isIdle;
 
     /**
-     * @param player Player receiving accruals
-     * @param blocksToAccrue Blocks to accrue
+     * Construct a new {@code AccrueClaimBlocksEvent}.
+     *
+     * <p>Note that this event was designed for simple internal usage. Because of that,
+     * it is assumed GriefPrevention is handling block delivery at its standard rate of
+     * 6 times per hour.
+     * <br>To achieve a specific number of blocks to accrue, either multiply in advance or set
+     * using {@link #setBlocksToAccrue(int)} after construction.
+     *
+     * @param player the {@link Player} receiving accruals
+     * @param blocksToAccruePerHour the number of claim blocks to accrue multiplied by 6
+     * @see #setBlocksToAccruePerHour(int)
      * @deprecated Use {@link #AccrueClaimBlocksEvent(Player, int, boolean)} instead
      */
-    public AccrueClaimBlocksEvent(Player player, int blocksToAccrue)
+    @Deprecated
+    public AccrueClaimBlocksEvent(@NotNull Player player, int blocksToAccruePerHour)
     {
-        this.player = player;
-        this.blocksToAccrue = blocksToAccrue / 6;
+        this(player, blocksToAccruePerHour, false);
     }
 
     /**
-     * @param player Player receiving accruals
-     * @param blocksToAccrue Blocks to accrue
-     * @param isIdle Whether player is detected as idle
+     * Construct a new {@code AccrueClaimBlocksEvent}.
+     *
+     * <p>Note that this event was designed for simple internal usage. Because of that,
+     * it is assumed GriefPrevention is handling block delivery at its standard rate of
+     * 6 times per hour.
+     * <br>To achieve a specific number of blocks to accrue, either multiply in advance or set
+     * using {@link #setBlocksToAccrue(int)} after construction.
+     *
+     * @param player the {@link Player} receiving accruals
+     * @param blocksToAccruePerHour the number of claim blocks to accrue multiplied by 6
+     * @param isIdle whether player is detected as idle
+     * @see #setBlocksToAccruePerHour(int)
      */
-    public AccrueClaimBlocksEvent(Player player, int blocksToAccrue, boolean isIdle)
+    public AccrueClaimBlocksEvent(@NotNull Player player, int blocksToAccruePerHour, boolean isIdle)
     {
-        this.player = player;
-        this.blocksToAccrue = blocksToAccrue / 6;
+        super(player);
+        this.blocksToAccrue = blocksToAccruePerHour / 6;
         this.isIdle = isIdle;
     }
 
-    public Player getPlayer()
-    {
-        return this.player;
-    }
-
     /**
-     * @return amount of claim blocks GP will deliver to the player for this 10 minute interval
+     * Get the number of claim blocks that will be delivered to the {@link Player}.
+     *
+     * @return the number of new claim blocks
      */
     public int getBlocksToAccrue()
     {
@@ -68,20 +70,7 @@ public class AccrueClaimBlocksEvent extends Event
     }
 
     /**
-     * @return whether the player was detected as idle (used for idle accrual percentage)
-     */
-    public boolean isIdle()
-    {
-        return this.isIdle;
-    }
-
-    public boolean isCancelled()
-    {
-        return this.cancelled;
-    }
-
-    /**
-     * Modify the amount of claim blocks to deliver to the player for this 10 minute interval
+     * Set the number of claim blocks to be delivered to the {@link Player}.
      *
      * @param blocksToAccrue blocks to deliver
      */
@@ -91,18 +80,65 @@ public class AccrueClaimBlocksEvent extends Event
     }
 
     /**
-     * Similar to setBlocksToAccrue(int), but automatically converting from a per-hour rate value to a 10-minute rate value
+     * Set the number of blocks to accrue per hour. This assumes GriefPrevention is
+     * handling block delivery at its standard rate of 6 times per hour.
      *
      * @param blocksToAccruePerHour the per-hour rate of blocks to deliver
+     * @see #setBlocksToAccrue(int)
      */
-
     public void setBlocksToAccruePerHour(int blocksToAccruePerHour)
     {
         this.blocksToAccrue = blocksToAccruePerHour / 6;
     }
 
-    public void setCancelled(boolean cancel)
+    /**
+     * Get whether the {@link Player} is idle. This can be used to modify accrual rate
+     * for players who are inactive.
+     *
+     * @return whether the {@code Player} is idle
+     */
+    public boolean isIdle()
     {
-        this.cancelled = cancel;
+        return this.isIdle;
     }
+
+    /**
+     * Set whether the {@link Player} is idle.
+     *
+     * @param idle whether the {@code Player} is idle
+     */
+    public void setIdle(boolean idle)
+    {
+        isIdle = idle;
+    }
+
+    // Listenable event requirements
+    private static final HandlerList HANDLERS = new HandlerList();
+
+    public static HandlerList getHandlerList()
+    {
+        return HANDLERS;
+    }
+
+    @Override
+    public @NotNull HandlerList getHandlers()
+    {
+        return HANDLERS;
+    }
+
+    // Cancellable requirements
+    private boolean cancelled = false;
+
+    @Override
+    public boolean isCancelled()
+    {
+        return cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancelled)
+    {
+        this.cancelled = cancelled;
+    }
+
 }

@@ -5,28 +5,33 @@ import me.ryanhamshire.GriefPrevention.Visualization;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 
 /**
- * Called when GriefPrevention is sending claim visuals to a player
+ * An {@link org.bukkit.event.Event Event} called when a {@link Player} receives {@link Claim} visuals.
  */
 public class VisualizationEvent extends PlayerEvent
 {
-    private static final HandlerList handlers = new HandlerList();
-    private final Visualization visualization;
-    private final Collection<Claim> claims;
+
+    private final @Nullable Visualization visualization;
+    private final @NotNull @Unmodifiable Collection<Claim> claims;
     private final boolean showSubdivides;
     private final boolean visualizingNearbyClaims;
 
     /**
-     * New visualization being sent to player
+     * Construct a new {@code VisualizationEvent} for a single {@link Claim} and its children.
      *
-     * @param player Player receiving visuals
-     * @param claim The claim being visualized (with subdivides), or null if visuals being removed
+     * @param player the {@link Player} receiving visuals
+     * @param visualization the {@link Visualization} to send
+     * @param claim the {@code Claim} being visualized with subdivisions
      */
-    public VisualizationEvent(Player player, Visualization visualization, Claim claim)
+    public VisualizationEvent(@NotNull Player player, @Nullable Visualization visualization, @NotNull Claim claim)
     {
         super(player);
         this.visualization = visualization;
@@ -36,56 +41,60 @@ public class VisualizationEvent extends PlayerEvent
     }
 
     /**
-     * New visualization being sent to player
+     * Construct a new {@code VisualizationEvent} for multiple {@link Claim Claims}.
      *
-     * @param player Player receiving visuals
-     * @param claims Claims being visualized (without subdivides)
+     * @param player the {@link Player} receiving visuals
+     * @param visualization the {@link Visualization} to send
+     * @param claims the {@code Claims} being visualized without subdivisions
      */
-    public VisualizationEvent(Player player, Visualization visualization, Collection<Claim> claims)
+    public VisualizationEvent(@NotNull Player player, @Nullable Visualization visualization, @NotNull Collection<Claim> claims)
     {
         this(player, visualization, claims, false);
     }
 
     /**
-     * New visualization being sent to player
+     * Construct a new {@code VisualizationEvent} for multiple {@link Claim Claims}.
      *
-     * @param player Player receiving visuals
-     * @param claims Claims being visualized (without subdivides)
-     * @param visualizingNearbyClaims If the event is called on nearby claims (shift inspecting)
+     * @param player the {@link Player} receiving visuals
+     * @param visualization the {@link Visualization} to send
+     * @param claims the {@code Claims} being visualized without subdivisions
+     * @param visualizingNearbyClaims whether the visualization includes area claims or just the target location
      */
-    public VisualizationEvent(Player player, Visualization visualization, Collection<Claim> claims, boolean visualizingNearbyClaims)
+    public VisualizationEvent(@NotNull Player player, @Nullable Visualization visualization, @NotNull Collection<Claim> claims, boolean visualizingNearbyClaims)
     {
         super(player);
         this.visualization = visualization;
-        this.claims = claims;
+        this.claims = Collections.unmodifiableCollection(new HashSet<>(claims));
         this.showSubdivides = false;
         this.visualizingNearbyClaims = visualizingNearbyClaims;
     }
 
     /**
-     * Get the visualization, or null if visualization being removed
+     * Get the {@link Visualization}. May be {@code null} if being removed.
      *
-     * @return The visualization object
+     * @return the {@code Visualization} object
      */
-    public Visualization getVisualization()
+    public @Nullable Visualization getVisualization()
     {
         return visualization;
     }
 
     /**
-     * Get the claims being visualized, or an empty list if visualization being removed
+     * Get the {@link Claim Claims} displayed by the {@link Visualization}.
      *
-     * @return Claims being visualized
+     * <p>The {@link Collection} is unmodifiable, manipulation is not allowed.
+     *
+     * @return an unmodifiable {@code Collection} of {@code Claims}
      */
-    public Collection<Claim> getClaims()
+    public @NotNull @Unmodifiable Collection<Claim> getClaims()
     {
         return claims;
     }
 
     /**
-     * Check if subdivide claims are being shown
+     * Check whether {@link Claim} subdivisions (children) are being displayed.
      *
-     * @return True if subdivide claims are being shown
+     * @return true if subdivisions are displayed
      */
     public boolean showSubdivides()
     {
@@ -93,22 +102,28 @@ public class VisualizationEvent extends PlayerEvent
     }
 
     /**
-     * Check if event was called through shift-inspecting with the inspection tool.
-     * @return True if shift-inspecting
+     * Check whether the {@link Player} is visualizing nearby {@link Claim Claims}
+     * or just the target location.
+     *
+     * @return true if nearby {@code Claims} are displayed
      */
     public boolean isVisualizingNearbyClaims()
     {
         return visualizingNearbyClaims;
     }
 
-    @Override
-    public HandlerList getHandlers()
-    {
-        return handlers;
-    }
+    // Listenable event requirements
+    private static final HandlerList HANDLERS = new HandlerList();
 
     public static HandlerList getHandlerList()
     {
-        return handlers;
+        return HANDLERS;
     }
+
+    @Override
+    public @NotNull HandlerList getHandlers()
+    {
+        return HANDLERS;
+    }
+
 }

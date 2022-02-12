@@ -3,53 +3,71 @@ package me.ryanhamshire.GriefPrevention.events;
 import me.ryanhamshire.GriefPrevention.Claim;
 import org.bukkit.Location;
 import org.bukkit.event.Cancellable;
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-//if destination field is set, then GriefPrevention will send the player to that location instead of searching for one
-public class SaveTrappedPlayerEvent extends Event implements Cancellable
+/**
+ * An {@link org.bukkit.event.Event Event} called when a user is rescued from a {@link Claim}.
+ */
+public class SaveTrappedPlayerEvent extends ClaimEvent implements Cancellable
 {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled = false;
-    private Location destination = null;
 
-    public static HandlerList getHandlerList()
+    private @Nullable Location destination = null;
+
+    /**
+     * Construct a new {@code ClaimChangeEvent}.
+     *
+     * @param claim {@link Claim} the user is to be rescued from
+     */
+    public SaveTrappedPlayerEvent(@NotNull Claim claim)
     {
-        return handlers;
+        super(claim);
     }
 
-    Claim claim;
-
-    public SaveTrappedPlayerEvent(Claim claim)
-    {
-        this.claim = claim;
-    }
-
-    public Location getDestination()
+    /**
+     * Get the destination that the user will be sent to. This is {@code null} by default,
+     * indicating that GriefPrevention will search for a safe location.
+     *
+     * @return the destination to send the {@code Player} to
+     */
+    public @Nullable Location getDestination()
     {
         return destination;
     }
 
-    public void setDestination(Location destination)
+    /**
+     * Set the destination that the user will be sent to. If {@code null},
+     * GriefPrevention will search for a location.
+     *
+     * @param destination the destination to send the {@code Player} to
+     */
+    public void setDestination(@Nullable Location destination)
     {
         this.destination = destination;
     }
 
-    public Claim getClaim()
+    // Listenable event requirements
+    private static final HandlerList HANDLERS = new HandlerList();
+
+    public static HandlerList getHandlerList()
     {
-        return this.claim;
+        return HANDLERS;
     }
 
     @Override
-    public HandlerList getHandlers()
+    public @NotNull HandlerList getHandlers()
     {
-        return handlers;
+        return HANDLERS;
     }
+
+    // Cancellable requirements
+    private boolean cancelled = false;
 
     @Override
     public boolean isCancelled()
     {
-        return this.cancelled;
+        return cancelled;
     }
 
     @Override
@@ -57,4 +75,5 @@ public class SaveTrappedPlayerEvent extends Event implements Cancellable
     {
         this.cancelled = cancelled;
     }
+
 }

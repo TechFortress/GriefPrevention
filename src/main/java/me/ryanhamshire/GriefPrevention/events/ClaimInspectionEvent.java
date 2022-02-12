@@ -6,35 +6,32 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
 
 /**
- * Event is called whenever a user inspects a block using the inspection tool.
+ * An {@link org.bukkit.event.Event Event} called when a {@link Player} uses the claim inspection tool.
+ *
  * @author FrankHeijden
  */
 public class ClaimInspectionEvent extends PlayerEvent implements Cancellable
 {
-    private static final HandlerList handlers = new HandlerList();
 
-    public static HandlerList getHandlerList()
-    {
-        return handlers;
-    }
-
-    private final Collection<Claim> claims;
-    private final Block inspectedBlock;
+    private final @NotNull Collection<Claim> claims;
+    private final @Nullable Block inspectedBlock;
     private final boolean inspectingNearbyClaims;
-    private boolean cancelled;
 
     /**
-     * Constructs a new ClaimInspectionEvent with a player and claim instance.
-     * @param player The player actor
-     * @param inspectedBlock The inspected block
-     * @param claim The claim involved
+     * Construct a new {@code ClaimInspectionEvent} for a {@link Player} inspecting a {@link Block}.
+     *
+     * @param player the inspecting {@code Player}
+     * @param inspectedBlock the inspected {@code Block}
+     * @param claim the {@link Claim} present or {@code null} if not claimed
      */
-    public ClaimInspectionEvent(Player player, Block inspectedBlock, Claim claim)
+    public ClaimInspectionEvent(@NotNull Player player, @NotNull Block inspectedBlock, @Nullable Claim claim)
     {
         super(player);
 
@@ -45,19 +42,24 @@ public class ClaimInspectionEvent extends PlayerEvent implements Cancellable
         }
         else
         {
-            this.claims = null;
+            this.claims = Collections.emptyList();
         }
         this.inspectingNearbyClaims = false;
     }
 
     /**
-     * Constructs a new ClaimInspectionEvent with a player, list of claims and boolean flag inspectingNearbyClaims.
-     * @param player The player actor
-     * @param inspectedBlock The inspected block
-     * @param claims The list of claims involved
-     * @param inspectingNearbyClaims Whether or not the user is inspecting nearby claims ("shift-clicking")
+     * Construct a new {@code ClaimInspectionEvent}.
+     *
+     * @param player the inspecting {@link Player}
+     * @param inspectedBlock the inspected {@link Block} or {@code null} if no block was clicked
+     * @param claims a {@link Collection} of all claims inspected
+     * @param inspectingNearbyClaims whether the user is inspecting nearby claims ("shift-clicking")
      */
-    public ClaimInspectionEvent(Player player, Block inspectedBlock, Collection<Claim> claims, boolean inspectingNearbyClaims)
+    public ClaimInspectionEvent(
+            @NotNull Player player,
+            @Nullable Block inspectedBlock,
+            @NotNull Collection<Claim> claims,
+            boolean inspectingNearbyClaims)
     {
         super(player);
         this.inspectedBlock = inspectedBlock;
@@ -65,26 +67,52 @@ public class ClaimInspectionEvent extends PlayerEvent implements Cancellable
         this.inspectingNearbyClaims = inspectingNearbyClaims;
     }
 
-    public Block getInspectedBlock()
+    /**
+     * Get the inspected {@link Block}. May be {@code null} if inspecting nearby claims.
+     *
+     * @return the inspected {@code Block} or {@code null} if no block was clicked
+     */
+    public @Nullable Block getInspectedBlock()
     {
         return inspectedBlock;
     }
 
-    public Collection<Claim> getClaims()
+    /**
+     * Get a {@link Collection} of the claims being inspected.
+     *
+     * @return the inspected claims
+     */
+    public @NotNull Collection<Claim> getClaims()
     {
         return claims;
     }
 
+    /**
+     * Check if nearby claims are being inspected.
+     *
+     * @return whether the user is inspecting nearby claims
+     */
     public boolean isInspectingNearbyClaims()
     {
         return inspectingNearbyClaims;
     }
 
-    @Override
-    public HandlerList getHandlers()
+    // Listenable event requirements
+    private static final HandlerList HANDLERS = new HandlerList();
+
+    public static HandlerList getHandlerList()
     {
-        return handlers;
+        return HANDLERS;
     }
+
+    @Override
+    public @NotNull HandlerList getHandlers()
+    {
+        return HANDLERS;
+    }
+
+    // Cancellable requirements
+    private boolean cancelled = false;
 
     @Override
     public boolean isCancelled()
@@ -97,4 +125,5 @@ public class ClaimInspectionEvent extends PlayerEvent implements Cancellable
     {
         this.cancelled = cancelled;
     }
+
 }

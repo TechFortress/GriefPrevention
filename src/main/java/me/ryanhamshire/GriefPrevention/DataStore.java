@@ -19,10 +19,11 @@
 package me.ryanhamshire.GriefPrevention;
 
 import com.google.common.io.Files;
+import me.ryanhamshire.GriefPrevention.events.ClaimResizeEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimCreatedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimDeletedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimExtendEvent;
-import me.ryanhamshire.GriefPrevention.events.ClaimModifiedEvent;
+import me.ryanhamshire.GriefPrevention.events.ClaimTransferEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
@@ -55,10 +56,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 //singleton class which manages all GriefPrevention data (except for config options)
 public abstract class DataStore
@@ -198,8 +201,7 @@ public abstract class DataStore
             GriefPrevention.AddLogEntry("Successfully hooked into WorldGuard.");
         }
         //if failed, world guard compat features will just be disabled.
-        catch (ClassNotFoundException exception) { }
-        catch (NoClassDefFoundError exception) { }
+        catch (IllegalStateException | IllegalArgumentException | ClassCastException | NoClassDefFoundError ignored) { }
     }
 
     private void loadSoftMutes()
@@ -409,16 +411,23 @@ public abstract class DataStore
             ownerData = this.getPlayerData(claim.ownerID);
         }
 
+        //call event
+        ClaimTransferEvent event = new ClaimTransferEvent(claim, newOwnerID);
+        Bukkit.getPluginManager().callEvent(event);
+
+        //return if event is cancelled
+        if (event.isCancelled()) return;
+
         //determine new owner
         PlayerData newOwnerData = null;
 
-        if (newOwnerID != null)
+        if (event.getNewOwner() != null)
         {
-            newOwnerData = this.getPlayerData(newOwnerID);
+            newOwnerData = this.getPlayerData(event.getNewOwner());
         }
 
         //transfer
-        claim.ownerID = newOwnerID;
+        claim.ownerID = event.getNewOwner();
         this.saveClaim(claim);
 
         //adjust blocks and other records
@@ -868,8 +877,9 @@ public abstract class DataStore
 
         int smallx, bigx, smally, bigy, smallz, bigz;
 
-        if (y1 < GriefPrevention.instance.config_claims_maxDepth) y1 = GriefPrevention.instance.config_claims_maxDepth;
-        if (y2 < GriefPrevention.instance.config_claims_maxDepth) y2 = GriefPrevention.instance.config_claims_maxDepth;
+        int worldMinY = world.getMinHeight();
+        y1 = Math.max(worldMinY, Math.max(GriefPrevention.instance.config_claims_maxDepth, y1));
+        y2 = Math.max(worldMinY, Math.max(GriefPrevention.instance.config_claims_maxDepth, y2));
 
         //determine small versus big inputs
         if (x1 < x2)
@@ -915,12 +925,13 @@ public abstract class DataStore
                 result.claim = parent;
                 return result;
             }
+            smally = sanitizeClaimDepth(parent, smally);
         }
 
         //creative mode claims always go to bedrock
         if (GriefPrevention.instance.config_claims_worldModes.get(world) == ClaimsMode.Creative)
         {
-            smally = 0;
+            smally = world.getMinHeight();
         }
 
         //create a new claim instance (but don't save it, yet)
@@ -1057,10 +1068,9 @@ public abstract class DataStore
     //respects the max depth config variable
     synchronized public void extendClaim(Claim claim, int newDepth)
     {
-        if (newDepth < GriefPrevention.instance.config_claims_maxDepth)
-            newDepth = GriefPrevention.instance.config_claims_maxDepth;
-
         if (claim.parent != null) claim = claim.parent;
+
+        newDepth = sanitizeClaimDepth(claim, newDepth);
 
         //call event and return if event got cancelled
         ClaimExtendEvent event = new ClaimExtendEvent(claim, newDepth);
@@ -1068,17 +1078,52 @@ public abstract class DataStore
         if (event.isCancelled()) return;
 
         //adjust to new depth
-        claim.lesserBoundaryCorner.setY(newDepth);
-        claim.greaterBoundaryCorner.setY(newDepth);
-        for (Claim subdivision : claim.children)
-        {
-            subdivision.lesserBoundaryCorner.setY(newDepth);
-            subdivision.greaterBoundaryCorner.setY(newDepth);
-            this.saveClaim(subdivision);
-        }
+        setNewDepth(claim, event.getNewDepth());
+    }
 
-        //save changes
-        this.saveClaim(claim);
+    /**
+     * Helper method for sanitizing claim depth to find the minimum expected value.
+     *
+     * @param claim the claim
+     * @param newDepth the new depth
+     * @return the sanitized new depth
+     */
+    private int sanitizeClaimDepth(Claim claim, int newDepth) {
+        if (claim.parent != null) claim = claim.parent;
+
+        // Get the old depth including the depth of the lowest subdivision.
+        int oldDepth = Math.min(
+                claim.getLesserBoundaryCorner().getBlockY(),
+                claim.children.stream().mapToInt(child -> child.getLesserBoundaryCorner().getBlockY())
+                        .min().orElse(Integer.MAX_VALUE));
+
+        // Use the lowest of the old and new depths.
+        newDepth = Math.min(newDepth, oldDepth);
+        // Cap depth to maximum depth allowed by the configuration.
+        newDepth = Math.max(newDepth, GriefPrevention.instance.config_claims_maxDepth);
+        // Cap the depth to the world's minimum height.
+        World world = Objects.requireNonNull(claim.getLesserBoundaryCorner().getWorld());
+        newDepth = Math.max(newDepth, world.getMinHeight());
+
+        return newDepth;
+    }
+
+    /**
+     * Helper method for sanitizing and setting claim depth. Saves affected claims.
+     *
+     * @param claim the claim
+     * @param newDepth the new depth
+     */
+    private void setNewDepth(Claim claim, int newDepth) {
+        if (claim.parent != null) claim = claim.parent;
+
+        final int depth = sanitizeClaimDepth(claim, newDepth);
+
+        Stream.concat(Stream.of(claim), claim.children.stream()).forEach(localClaim -> {
+            localClaim.lesserBoundaryCorner.setY(depth);
+            localClaim.greaterBoundaryCorner.setY(Math.max(localClaim.greaterBoundaryCorner.getBlockY(), depth));
+            this.saveClaim(localClaim);
+        });
     }
 
     //starts a siege on a claim
@@ -1285,7 +1330,12 @@ public abstract class DataStore
         if (claim.isAdminClaim()) return;
 
         //player must have some level of permission to be sieged in a claim
-        if (claim.allowAccess(player) != null) return;
+        Claim currentClaim = claim;
+        while (!currentClaim.hasExplicitPermission(player, ClaimPermission.Access))
+        {
+            if (currentClaim.parent == null) return;
+            currentClaim = currentClaim.parent;
+        }
 
         //otherwise extend the siege
         playerData.siegeData.claims.add(claim);
@@ -1332,11 +1382,11 @@ public abstract class DataStore
             // copy the boundary from the claim created in the dry run of createClaim() to our existing claim
             claim.lesserBoundaryCorner = result.claim.lesserBoundaryCorner;
             claim.greaterBoundaryCorner = result.claim.greaterBoundaryCorner;
+            // Sanitize claim depth, expanding parent down to the lowest subdivision and subdivisions down to parent.
+            // Also saves affected claims.
+            setNewDepth(claim, claim.getLesserBoundaryCorner().getBlockY());
             result.claim = claim;
             addToChunkClaimMap(claim); // add the new boundary to the chunk cache
-
-            //save those changes
-            this.saveClaim(result.claim);
         }
 
         return result;
@@ -1390,7 +1440,7 @@ public abstract class DataStore
         newClaim.greaterBoundaryCorner = new Location(world, newx2, newy2, newz2);
 
         //call event here to check if it has been cancelled
-        ClaimModifiedEvent event = new ClaimModifiedEvent(oldClaim, newClaim, player);
+        ClaimResizeEvent event = new ClaimResizeEvent(oldClaim, newClaim, player);
         Bukkit.getPluginManager().callEvent(event);
 
         //return here if event is cancelled
@@ -1412,7 +1462,15 @@ public abstract class DataStore
         }
 
         //ask the datastore to try and resize the claim, this checks for conflicts with other claims
-        CreateClaimResult result = GriefPrevention.instance.dataStore.resizeClaim(playerData.claimResizing, newx1, newx2, newy1, newy2, newz1, newz2, player);
+        CreateClaimResult result = GriefPrevention.instance.dataStore.resizeClaim(
+                playerData.claimResizing,
+                newClaim.getLesserBoundaryCorner().getBlockX(),
+                newClaim.getGreaterBoundaryCorner().getBlockX(),
+                newClaim.getLesserBoundaryCorner().getBlockY(),
+                newClaim.getGreaterBoundaryCorner().getBlockY(),
+                newClaim.getLesserBoundaryCorner().getBlockZ(),
+                newClaim.getGreaterBoundaryCorner().getBlockZ(),
+                player);
 
         if (result.succeeded)
         {

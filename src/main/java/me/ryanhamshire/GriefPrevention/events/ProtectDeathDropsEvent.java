@@ -4,40 +4,59 @@ import me.ryanhamshire.GriefPrevention.Claim;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-//if cancelled, GriefPrevention will not protect items dropped by a player on death
+/**
+ * An {@link Event} called when GriefPrevention protects items after a death.
+ * If cancelled, GriefPrevention will allow the event to complete normally.
+ */
 public class ProtectDeathDropsEvent extends Event implements Cancellable
 {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled = false;
 
-    public static HandlerList getHandlerList()
-    {
-        return handlers;
-    }
+    private final @Nullable Claim claim;
 
-    Claim claim;
-
-    public ProtectDeathDropsEvent(Claim claim)
+    /**
+     * Construct a new {@code ProtectDeathDropsEvent}.
+     *
+     * @param claim the claim in which the death occurred
+     */
+    public ProtectDeathDropsEvent(@Nullable Claim claim)
     {
         this.claim = claim;
     }
 
-    public Claim getClaim()
+    /**
+     * Get the claim in which the death occurred. May be {@code null}.
+     *
+     * @return the claim in which the death occurred
+     */
+    public @Nullable Claim getClaim()
     {
         return this.claim;
     }
 
-    @Override
-    public HandlerList getHandlers()
+    // Listenable event requirements
+    private static final HandlerList HANDLERS = new HandlerList();
+
+    public static HandlerList getHandlerList()
     {
-        return handlers;
+        return HANDLERS;
     }
+
+    @Override
+    public @NotNull HandlerList getHandlers()
+    {
+        return HANDLERS;
+    }
+
+    // Cancellable requirements
+    private boolean cancelled = false;
 
     @Override
     public boolean isCancelled()
     {
-        return this.cancelled;
+        return cancelled;
     }
 
     @Override
@@ -45,4 +64,5 @@ public class ProtectDeathDropsEvent extends Event implements Cancellable
     {
         this.cancelled = cancelled;
     }
+
 }

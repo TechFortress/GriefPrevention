@@ -1,58 +1,73 @@
 package me.ryanhamshire.GriefPrevention.events;
 
 import me.ryanhamshire.GriefPrevention.Claim;
-import org.bukkit.event.Cancellable;
-import org.bukkit.event.Event;
-import org.bukkit.event.HandlerList;
+import org.bukkit.Location;
+import org.jetbrains.annotations.NotNull;
 
 /**
- * A cancellable event which is called when a claim's depth (lower y bound) is about to be extended.
+ * An {@link org.bukkit.event.Event Event} for when a {@link Claim Claim's} depth (lower Y bound) is to be extended.
+ *
+ * <p>Note that changes to the {@link #getTo() new claim} other than {@link #setNewDepth(int) setting new depth} will
+ * not be respected.
+ *
  * @author FrankHeijden
  */
-public class ClaimExtendEvent extends Event implements Cancellable
+public class ClaimExtendEvent extends ClaimChangeEvent
 {
-    private static final HandlerList handlers = new HandlerList();
 
-    public static HandlerList getHandlerList()
+    private int newDepth;
+
+    /**
+     * Construct a new {@code ClaimExtendEvent}.
+     *
+     * @param claim the {@link Claim} extending downwards
+     * @param newDepth the new depth of the {@code Claim}
+     */
+    public ClaimExtendEvent(@NotNull Claim claim, int newDepth)
     {
-        return handlers;
-    }
-
-    private final Claim claim;
-    private final int newDepth;
-    private boolean cancelled;
-
-    public ClaimExtendEvent(Claim claim, int newDepth)
-    {
-        this.claim = claim;
+        super(claim, new Claim(claim) {
+            @Override
+            public Location getLesserBoundaryCorner()
+            {
+                Location lesserBoundaryCorner = super.getLesserBoundaryCorner();
+                lesserBoundaryCorner.setY(newDepth);
+                return lesserBoundaryCorner;
+            }
+        });
         this.newDepth = newDepth;
     }
 
-    @Override
-    public HandlerList getHandlers()
+    /**
+     * Get the resulting {@link Claim} after modification.
+     *
+     * @return the resulting {@code Claim}
+     * @deprecated Use {@link #getTo() getTo} instead.
+     */
+    @Deprecated
+    public @NotNull Claim getClaim()
     {
-        return handlers;
+        return getTo();
     }
 
-    public Claim getClaim()
-    {
-        return claim;
-    }
-
+    /**
+     * Get the new lowest depth that the {@link Claim} will encompass in the Y axis.
+     *
+     * @return the new depth
+     */
     public int getNewDepth()
     {
         return newDepth;
     }
 
-    @Override
-    public boolean isCancelled()
-    {
-        return cancelled;
+    /**
+     * Set the new lowest depth that the {@link Claim} will encompass in the Y axis.
+     *
+     * <p>Note that this value is not necessarily final - it will be modified to respect configuration and world limits.
+     *
+     * @param newDepth the new depth
+     */
+    public void setNewDepth(int newDepth) {
+        this.newDepth = newDepth;
     }
 
-    @Override
-    public void setCancelled(boolean cancelled)
-    {
-        this.cancelled = cancelled;
-    }
 }

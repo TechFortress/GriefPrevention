@@ -4,39 +4,57 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.jetbrains.annotations.NotNull;
 
-//if cancelled, GriefPrevention will allow a block to be broken which it would not have otherwise
+/**
+ * An {@link Event} called when GriefPrevention prevents a {@link BlockBreakEvent}.
+ * If cancelled, GriefPrevention will allow the event to complete normally.
+ */
 public class PreventBlockBreakEvent extends Event implements Cancellable
 {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled = false;
-    private final BlockBreakEvent innerEvent;
+    private final @NotNull BlockBreakEvent innerEvent;
 
-    public static HandlerList getHandlerList()
-    {
-        return handlers;
-    }
-
-    public PreventBlockBreakEvent(BlockBreakEvent innerEvent)
+    /**
+     * Construct a new {@code PreventBlockBreakEvent}.
+     *
+     * @param innerEvent the inner {@link BlockBreakEvent}
+     */
+    public PreventBlockBreakEvent(@NotNull BlockBreakEvent innerEvent)
     {
         this.innerEvent = innerEvent;
     }
 
-    public BlockBreakEvent getInnerEvent()
+    /**
+     * Get the {@link BlockBreakEvent} being cancelled by GriefPrevention.
+     *
+     * @return the inner {@code BlockBreakEvent}
+     */
+    public @NotNull BlockBreakEvent getInnerEvent()
     {
         return this.innerEvent;
     }
 
-    @Override
-    public HandlerList getHandlers()
+    // Listenable event requirements
+    private static final HandlerList HANDLERS = new HandlerList();
+
+    public static HandlerList getHandlerList()
     {
-        return handlers;
+        return HANDLERS;
     }
+
+    @Override
+    public @NotNull HandlerList getHandlers()
+    {
+        return HANDLERS;
+    }
+
+    // Cancellable requirements
+    private boolean cancelled = false;
 
     @Override
     public boolean isCancelled()
     {
-        return this.cancelled;
+        return cancelled;
     }
 
     @Override
@@ -44,4 +62,5 @@ public class PreventBlockBreakEvent extends Event implements Cancellable
     {
         this.cancelled = cancelled;
     }
+
 }

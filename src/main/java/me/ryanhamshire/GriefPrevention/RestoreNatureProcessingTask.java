@@ -20,6 +20,7 @@ package me.ryanhamshire.GriefPrevention;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Tag;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Biome;
@@ -36,6 +37,27 @@ import java.util.Set;
 //after processing is complete, creates a main thread task to make the necessary changes to the world
 class RestoreNatureProcessingTask implements Runnable
 {
+
+    // Definitions of biomes with particularly dense log distribution. These biomes will not have logs reduced.
+    private static final Set<NamespacedKey> DENSE_LOG_BIOMES = Set.of(
+            NamespacedKey.minecraft("jungle"),
+            NamespacedKey.minecraft("bamboo_jungle"),
+            // Variants for versions < 1.18
+            NamespacedKey.minecraft("modified_jungle"),
+            NamespacedKey.minecraft("jungle_hills"),
+            NamespacedKey.minecraft("bamboo_jungle_hills")
+    );
+
+    // Definitions of biomes where sand covers surfaces instead of grass.
+    private static final Set<NamespacedKey> SAND_SOIL_BIOMES = Set.of(
+            NamespacedKey.minecraft("snowy_beach"),
+            NamespacedKey.minecraft("beach"),
+            NamespacedKey.minecraft("desert"),
+            // Variants for versions < 1.18
+            NamespacedKey.minecraft("desert_hills"),
+            NamespacedKey.minecraft("desert_lakes")
+    );
+
     //world information captured from the main thread
     //will be updated and sent back to main thread to be applied to the world
     private final BlockSnapshot[][][] snapshots;
@@ -283,7 +305,7 @@ class RestoreNatureProcessingTask implements Runnable
     {
         if (this.seaLevel < 1) return;
 
-        boolean jungleBiome = this.biome == Biome.JUNGLE || this.biome == Biome.JUNGLE_HILLS;
+        boolean jungleBiome = DENSE_LOG_BIOMES.contains(this.biome.getKey());
 
         //scan all blocks above sea level
         for (int x = 1; x < snapshots.length - 1; x++)
@@ -441,7 +463,7 @@ class RestoreNatureProcessingTask implements Runnable
 
                 if (block.typeId == Material.STONE || block.typeId == Material.GRAVEL || block.typeId == Material.FARMLAND || block.typeId == Material.DIRT || block.typeId == Material.SANDSTONE)
                 {
-                    if (this.biome == Biome.DESERT || this.biome == Biome.DESERT_HILLS || this.biome == Biome.BEACH)
+                    if (SAND_SOIL_BIOMES.contains(this.biome.getKey()))
                     {
                         this.snapshots[x][y][z].typeId = Material.SAND;
                     }
@@ -656,12 +678,16 @@ class RestoreNatureProcessingTask implements Runnable
         playerBlocks.addAll(Tag.BEDS.getValues());
         playerBlocks.addAll(Tag.BUTTONS.getValues());
         playerBlocks.addAll(Tag.CAMPFIRES.getValues());
+        playerBlocks.addAll(Tag.CANDLE_CAKES.getValues());
+        playerBlocks.addAll(Tag.CANDLES.getValues());
         playerBlocks.addAll(Tag.CARPETS.getValues());
+        playerBlocks.addAll(Tag.CAULDRONS.getValues());
         playerBlocks.addAll(Tag.DOORS.getValues());
-        playerBlocks.addAll(Tag.FENCES.getValues());
         playerBlocks.addAll(Tag.FENCE_GATES.getValues());
+        playerBlocks.addAll(Tag.FENCES.getValues());
         playerBlocks.addAll(Tag.FIRE.getValues());
         playerBlocks.addAll(Tag.FLOWER_POTS.getValues());
+        playerBlocks.addAll(Tag.IMPERMEABLE.getValues()); // Glass block variants
         playerBlocks.addAll(Tag.LOGS.getValues());
         playerBlocks.addAll(Tag.PLANKS.getValues());
         playerBlocks.addAll(Tag.PRESSURE_PLATES.getValues());
@@ -678,7 +704,6 @@ class RestoreNatureProcessingTask implements Runnable
         playerBlocks.add(Material.BREWING_STAND);
         playerBlocks.add(Material.BRICK);
         playerBlocks.add(Material.COBBLESTONE);
-        playerBlocks.add(Material.GLASS);
         playerBlocks.add(Material.LAPIS_BLOCK);
         playerBlocks.add(Material.DISPENSER);
         playerBlocks.add(Material.NOTE_BLOCK);
@@ -711,7 +736,6 @@ class RestoreNatureProcessingTask implements Runnable
         playerBlocks.add(Material.GLASS_PANE);
         playerBlocks.add(Material.MELON_STEM);
         playerBlocks.add(Material.ENCHANTING_TABLE);
-        playerBlocks.add(Material.CAULDRON);
         playerBlocks.add(Material.COBWEB);
         playerBlocks.add(Material.GRAVEL);
         playerBlocks.add(Material.SANDSTONE);
@@ -729,22 +753,6 @@ class RestoreNatureProcessingTask implements Runnable
         playerBlocks.add(Material.PLAYER_HEAD);
         playerBlocks.add(Material.DRAGON_HEAD);
         playerBlocks.add(Material.SPONGE);
-        playerBlocks.add(Material.WHITE_STAINED_GLASS);
-        playerBlocks.add(Material.ORANGE_STAINED_GLASS);
-        playerBlocks.add(Material.MAGENTA_STAINED_GLASS);
-        playerBlocks.add(Material.LIGHT_BLUE_STAINED_GLASS);
-        playerBlocks.add(Material.YELLOW_STAINED_GLASS);
-        playerBlocks.add(Material.LIME_STAINED_GLASS);
-        playerBlocks.add(Material.PINK_STAINED_GLASS);
-        playerBlocks.add(Material.GRAY_STAINED_GLASS);
-        playerBlocks.add(Material.LIGHT_GRAY_STAINED_GLASS);
-        playerBlocks.add(Material.CYAN_STAINED_GLASS);
-        playerBlocks.add(Material.PURPLE_STAINED_GLASS);
-        playerBlocks.add(Material.BLUE_STAINED_GLASS);
-        playerBlocks.add(Material.BROWN_STAINED_GLASS);
-        playerBlocks.add(Material.GREEN_STAINED_GLASS);
-        playerBlocks.add(Material.RED_STAINED_GLASS);
-        playerBlocks.add(Material.BLACK_STAINED_GLASS);
         playerBlocks.add(Material.WHITE_STAINED_GLASS_PANE);
         playerBlocks.add(Material.ORANGE_STAINED_GLASS_PANE);
         playerBlocks.add(Material.MAGENTA_STAINED_GLASS_PANE);
@@ -774,26 +782,47 @@ class RestoreNatureProcessingTask implements Runnable
         playerBlocks.add(Material.SEA_LANTERN);
         playerBlocks.add(Material.COAL_BLOCK);
         playerBlocks.add(Material.REDSTONE_LAMP);
-        playerBlocks.add(Material.PURPUR_BLOCK);
-        playerBlocks.add(Material.PURPUR_PILLAR);
         playerBlocks.add(Material.RED_NETHER_BRICKS);
+        playerBlocks.add(Material.POLISHED_ANDESITE);
+        playerBlocks.add(Material.POLISHED_DIORITE);
+        playerBlocks.add(Material.POLISHED_GRANITE);
+        playerBlocks.add(Material.POLISHED_BASALT);
+        playerBlocks.add(Material.POLISHED_DEEPSLATE);
+        playerBlocks.add(Material.DEEPSLATE_BRICKS);
+        playerBlocks.add(Material.CRACKED_DEEPSLATE_BRICKS);
+        playerBlocks.add(Material.DEEPSLATE_TILES);
+        playerBlocks.add(Material.CRACKED_DEEPSLATE_TILES);
+        playerBlocks.add(Material.CHISELED_DEEPSLATE);
+        playerBlocks.add(Material.RAW_COPPER_BLOCK);
+        playerBlocks.add(Material.RAW_IRON_BLOCK);
+        playerBlocks.add(Material.RAW_GOLD_BLOCK);
+        playerBlocks.add(Material.LIGHTNING_ROD);
+
+        //these are unnatural in the nether and end
+        if (environment != Environment.NORMAL && environment != Environment.CUSTOM)
+        {
+            playerBlocks.addAll(Tag.BASE_STONE_OVERWORLD.getValues());
+            playerBlocks.addAll(Tag.DIRT.getValues());
+            playerBlocks.addAll(Tag.SAND.getValues());
+        }
 
         //these are unnatural in the standard world, but not in the nether
         if (environment != Environment.NETHER)
         {
             playerBlocks.addAll(Tag.NYLIUM.getValues());
             playerBlocks.addAll(Tag.WART_BLOCKS.getValues());
+            playerBlocks.addAll(Tag.BASE_STONE_NETHER.getValues());
+            playerBlocks.add(Material.POLISHED_BLACKSTONE);
+            playerBlocks.add(Material.CHISELED_POLISHED_BLACKSTONE);
+            playerBlocks.add(Material.CRACKED_POLISHED_BLACKSTONE_BRICKS);
+            playerBlocks.add(Material.GILDED_BLACKSTONE);
             playerBlocks.add(Material.BONE_BLOCK);
-            playerBlocks.add(Material.NETHERRACK);
             playerBlocks.add(Material.SOUL_SAND);
             playerBlocks.add(Material.SOUL_SOIL);
             playerBlocks.add(Material.GLOWSTONE);
             playerBlocks.add(Material.NETHER_BRICK);
             playerBlocks.add(Material.MAGMA_BLOCK);
             playerBlocks.add(Material.ANCIENT_DEBRIS);
-            playerBlocks.add(Material.BASALT);
-            playerBlocks.add(Material.BLACKSTONE);
-            playerBlocks.add(Material.GILDED_BLACKSTONE);
             playerBlocks.add(Material.CHAIN);
             playerBlocks.add(Material.SHROOMLIGHT);
             playerBlocks.add(Material.NETHER_GOLD_ORE);
@@ -824,15 +853,24 @@ class RestoreNatureProcessingTask implements Runnable
         //these are unnatural in the standard and nether worlds, but not in the end
         if (environment != Environment.THE_END)
         {
-            playerBlocks.add(Material.OBSIDIAN);
-            playerBlocks.add(Material.END_STONE);
-            playerBlocks.add(Material.END_PORTAL_FRAME);
             playerBlocks.add(Material.CHORUS_PLANT);
             playerBlocks.add(Material.CHORUS_FLOWER);
+            playerBlocks.add(Material.END_ROD);
+            playerBlocks.add(Material.END_STONE);
+            playerBlocks.add(Material.END_STONE_BRICKS);
+            playerBlocks.add(Material.OBSIDIAN);
+            playerBlocks.add(Material.PURPUR_BLOCK);
+            playerBlocks.add(Material.PURPUR_PILLAR);
+        }
+        //blocks from tags that are natural in the end
+        else
+        {
+            playerBlocks.remove(Material.PURPUR_SLAB);
+            playerBlocks.remove(Material.PURPUR_STAIRS);
         }
 
         //these are unnatural in sandy biomes, but not elsewhere
-        if (biome == Biome.DESERT || biome == Biome.DESERT_HILLS || biome == Biome.BEACH || environment != Environment.NORMAL)
+        if (SAND_SOIL_BIOMES.contains(biome.getKey()) || environment != Environment.NORMAL)
         {
             playerBlocks.addAll(Tag.LEAVES.getValues());
         }

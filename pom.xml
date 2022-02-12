@@ -4,7 +4,7 @@
 
     <groupId>com.griefprevention</groupId>
     <artifactId>GriefPrevention</artifactId>
-    <version>16.17.2-SNAPSHOT</version>
+    <version>16.18-RC2-SNAPSHOT</version>
 
     <name>GriefPrevention</name>
     <description>The official self-service anti-griefing Bukkit plugin for Minecraft servers since 2011.</description>
@@ -30,7 +30,7 @@
 
     <scm>
         <developerConnection>scm:git:https://github.com/TechFortress/GriefPrevention.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>16.18-RC1</tag>
     </scm>
 
     <repositories>
@@ -69,8 +69,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>16</source>
+                    <target>16</target>
                 </configuration>
             </plugin>
             <!-- Append git commit hash to version -->
@@ -140,7 +140,7 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>1.16.1-R0.1-SNAPSHOT</version>
+            <version>1.17-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <!-- Worldguard dependency -->
@@ -176,6 +176,14 @@
                     <artifactId>bukkit</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <!-- Annotations for nullity and other behaviors -->
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>23.0.0</version>
+            <!-- Annotations are not required at runtime, only during compilation. -->
+            <scope>provided</scope>
         </dependency>
         <!-- Tests -->
         <dependency>

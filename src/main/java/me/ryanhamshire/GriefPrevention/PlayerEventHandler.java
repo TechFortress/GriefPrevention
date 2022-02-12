@@ -57,6 +57,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
@@ -104,6 +106,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 class PlayerEventHandler implements Listener
@@ -528,10 +531,10 @@ class PlayerEventHandler implements Listener
             if (claim != null)
             {
                 playerData.lastClaim = claim;
-                String reason = claim.allowAccess(player);
+                Supplier<String> reason = claim.checkPermission(player, ClaimPermission.Access, event);
                 if (reason != null)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, reason);
+                    GriefPrevention.sendMessage(player, TextMode.Err, reason.get());
                     event.setCancelled(true);
                 }
             }
@@ -949,7 +952,7 @@ class PlayerEventHandler implements Listener
         }
 
         //silence notifications when the player is banned
-        if (isBanned)
+        if (isBanned && instance.config_silenceBans)
         {
             event.setQuitMessage(null);
         }
@@ -1089,10 +1092,10 @@ class PlayerEventHandler implements Listener
             if (toClaim != null)
             {
                 playerData.lastClaim = toClaim;
-                String noAccessReason = toClaim.allowAccess(player);
+                Supplier<String> noAccessReason = toClaim.checkPermission(player, ClaimPermission.Access, event);
                 if (noAccessReason != null)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, noAccessReason);
+                    GriefPrevention.sendMessage(player, TextMode.Err, noAccessReason.get());
                     event.setCancelled(true);
                     if (cause == TeleportCause.ENDER_PEARL)
                         player.getInventory().addItem(new ItemStack(Material.ENDER_PEARL));
@@ -1140,12 +1143,12 @@ class PlayerEventHandler implements Listener
         Player player = event.getPlayer();
         PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
 
-        Claim toClaim = this.dataStore.getClaimAt(player.getLocation(), false, playerData.lastClaim);
-        if (toClaim == null)
+        Claim claim = this.dataStore.getClaimAt(player.getLocation(), false, playerData.lastClaim);
+        if (claim == null)
             return;
 
-        playerData.lastClaim = toClaim;
-        if (toClaim.allowBuild(player, Material.AIR) == null)
+        playerData.lastClaim = claim;
+        if (claim.checkPermission(player, ClaimPermission.Build, event) == null)
             return;
 
         event.setCancelled(true);
@@ -1289,10 +1292,10 @@ class PlayerEventHandler implements Listener
                 //for storage entities, apply container rules (this is a potential theft)
                 if (entity instanceof InventoryHolder)
                 {
-                    String noContainersReason = claim.allowContainers(player);
+                    Supplier<String> noContainersReason = claim.checkPermission(player, ClaimPermission.Inventory, event);
                     if (noContainersReason != null)
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Err, noContainersReason);
+                        GriefPrevention.sendMessage(player, TextMode.Err, noContainersReason.get());
                         event.setCancelled(true);
                         return;
                     }
@@ -1307,31 +1310,52 @@ class PlayerEventHandler implements Listener
             Claim claim = this.dataStore.getClaimAt(entity.getLocation(), false, null);
             if (claim != null)
             {
-                if (claim.allowContainers(player) != null)
+                Supplier<String> override = () ->
                 {
                     String message = instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, claim.getOwnerName());
                     if (player.hasPermission("griefprevention.ignoreclaims"))
                         message += "  " + instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
-                    GriefPrevention.sendMessage(player, TextMode.Err, message);
+
+                    return message;
+                };
+                final Supplier<String> noContainersReason = claim.checkPermission(player, ClaimPermission.Inventory, event, override);
+                if (noContainersReason != null)
+                {
+                    GriefPrevention.sendMessage(player, TextMode.Err, noContainersReason.get());
                     event.setCancelled(true);
                     return;
                 }
             }
         }
 
+        ItemStack itemInHand = instance.getItemInHand(player, event.getHand());
+
         //if preventing theft, prevent leashing claimed creatures
-        if (instance.config_claims_preventTheft && entity instanceof Creature && instance.getItemInHand(player, event.getHand()).getType() == Material.LEAD)
+        if (instance.config_claims_preventTheft && entity instanceof Creature && itemInHand.getType() == Material.LEAD)
         {
             Claim claim = this.dataStore.getClaimAt(entity.getLocation(), false, playerData.lastClaim);
             if (claim != null)
             {
-                String failureReason = claim.allowContainers(player);
+                Supplier<String> failureReason = claim.checkPermission(player, ClaimPermission.Inventory, event);
                 if (failureReason != null)
                 {
                     event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, failureReason);
+                    GriefPrevention.sendMessage(player, TextMode.Err, failureReason.get());
                     return;
                 }
+            }
+        }
+
+        // Name tags may only be used on entities that the player is allowed to kill.
+        if (itemInHand.getType() == Material.NAME_TAG)
+        {
+            EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(player, entity, EntityDamageEvent.DamageCause.CUSTOM, 0);
+            instance.entityEventHandler.onEntityDamage(damageEvent);
+            if (damageEvent.isCancelled())
+            {
+                event.setCancelled(true);
+                // Don't print message - damage event handler should have handled it.
+                return;
             }
         }
     }
@@ -1345,18 +1369,18 @@ class PlayerEventHandler implements Listener
         Claim claim = this.dataStore.getClaimAt(event.getEgg().getLocation(), false, playerData.lastClaim);
 
         //allow throw egg if player is in ignore claims mode
-        if (playerData.ignoreClaims) return;
+        if (playerData.ignoreClaims || claim == null) return;
 
-        if (claim != null && claim.allowContainers(player) != null)
+        Supplier<String> failureReason = claim.checkPermission(player, ClaimPermission.Inventory, event);
+        if (failureReason != null)
         {
-            String message = this.instance.dataStore.getMessage(Messages.NoContainersPermission, claim.getOwnerName());
-
+            String reason = failureReason.get();
             if (player.hasPermission("griefprevention.ignoreclaims"))
             {
-                message += "  " + instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                reason += "  " + instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
             }
 
-            GriefPrevention.sendMessage(player, TextMode.Err, message);
+            GriefPrevention.sendMessage(player, TextMode.Err, reason);
 
             //cancel the event by preventing hatching
             event.setHatching(false);
@@ -1385,7 +1409,7 @@ class PlayerEventHandler implements Listener
             if (claim != null)
             {
                 //if no permission, cancel
-                String errorMessage = claim.allowContainers(player);
+                Supplier<String> errorMessage = claim.checkPermission(player, ClaimPermission.Inventory, event);
                 if (errorMessage != null)
                 {
                     event.setCancelled(true);
@@ -1659,7 +1683,7 @@ class PlayerEventHandler implements Listener
             {
                 playerData.lastClaim = claim;
 
-                String noAccessReason = claim.allowBreak(player, clickedBlockType);
+                Supplier<String> noAccessReason = claim.checkPermission(player, ClaimPermission.Build, event);
                 if (noAccessReason != null)
                 {
                     event.setCancelled(true);
@@ -1684,11 +1708,11 @@ class PlayerEventHandler implements Listener
                     {
                         playerData.lastClaim = claim;
 
-                        String noBuildReason = claim.allowBuild(player, Material.AIR);
+                        Supplier<String> noBuildReason = claim.checkPermission(player, ClaimPermission.Build, event);
                         if (noBuildReason != null)
                         {
                             event.setCancelled(true);
-                            GriefPrevention.sendMessage(player, TextMode.Err, noBuildReason);
+                            GriefPrevention.sendMessage(player, TextMode.Err, noBuildReason.get());
                             player.sendBlockChange(adjacentBlock.getLocation(), adjacentBlock.getType(), adjacentBlock.getData());
                             return;
                         }
@@ -1707,21 +1731,28 @@ class PlayerEventHandler implements Listener
         if (clickedBlock != null && instance.config_claims_preventTheft && (
                 event.getAction() == Action.RIGHT_CLICK_BLOCK && (
                         (this.isInventoryHolder(clickedBlock) && clickedBlock.getType() != Material.LECTERN) ||
-                                clickedBlockType == Material.CAULDRON ||
-                                clickedBlockType == Material.JUKEBOX ||
                                 clickedBlockType == Material.ANVIL ||
-                                clickedBlockType == Material.CHIPPED_ANVIL ||
-                                clickedBlockType == Material.DAMAGED_ANVIL ||
-                                clickedBlockType == Material.CAKE ||
-                                clickedBlockType == Material.SWEET_BERRY_BUSH ||
+                                clickedBlockType == Material.BEACON ||
                                 clickedBlockType == Material.BEE_NEST ||
                                 clickedBlockType == Material.BEEHIVE ||
-                                clickedBlockType == Material.BEACON ||
                                 clickedBlockType == Material.BELL ||
-                                clickedBlockType == Material.STONECUTTER ||
-                                clickedBlockType == Material.GRINDSTONE ||
+                                clickedBlockType == Material.CAKE ||
                                 clickedBlockType == Material.CARTOGRAPHY_TABLE ||
+                                clickedBlockType == Material.CAULDRON ||
+                                clickedBlockType == Material.CAVE_VINES ||
+                                clickedBlockType == Material.CAVE_VINES_PLANT ||
+                                clickedBlockType == Material.CHIPPED_ANVIL ||
+                                clickedBlockType == Material.DAMAGED_ANVIL ||
+                                clickedBlockType == Material.GRINDSTONE ||
+                                clickedBlockType == Material.JUKEBOX ||
                                 clickedBlockType == Material.LOOM ||
+                                clickedBlockType == Material.PUMPKIN ||
+                                clickedBlockType == Material.RESPAWN_ANCHOR ||
+                                clickedBlockType == Material.ROOTED_DIRT ||
+                                clickedBlockType == Material.STONECUTTER ||
+                                clickedBlockType == Material.SWEET_BERRY_BUSH ||
+                                Tag.CANDLES.isTagged(clickedBlockType) ||
+                                Tag.CANDLE_CAKES.isTagged(clickedBlockType) ||
                                 clickedBlockType == Material.RESPAWN_ANCHOR ||
                                 clickedBlockType == Material.SPAWNER
                         )))
@@ -1750,11 +1781,11 @@ class PlayerEventHandler implements Listener
             {
                 playerData.lastClaim = claim;
 
-                String noContainersReason = claim.allowContainers(player);
+                Supplier<String> noContainersReason = claim.checkPermission(player, ClaimPermission.Inventory, event);
                 if (noContainersReason != null)
                 {
                     event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, noContainersReason);
+                    GriefPrevention.sendMessage(player, TextMode.Err, noContainersReason.get());
                     return;
                 }
             }
@@ -1787,11 +1818,11 @@ class PlayerEventHandler implements Listener
             {
                 playerData.lastClaim = claim;
 
-                String noAccessReason = claim.allowAccess(player);
+                Supplier<String> noAccessReason = claim.checkPermission(player, ClaimPermission.Access, event);
                 if (noAccessReason != null)
                 {
                     event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, noAccessReason);
+                    GriefPrevention.sendMessage(player, TextMode.Err, noAccessReason.get());
                     return;
                 }
             }
@@ -1806,18 +1837,18 @@ class PlayerEventHandler implements Listener
             {
                 playerData.lastClaim = claim;
 
-                String noAccessReason = claim.allowAccess(player);
+                Supplier<String> noAccessReason = claim.checkPermission(player, ClaimPermission.Access, event);
                 if (noAccessReason != null)
                 {
                     event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, noAccessReason);
+                    GriefPrevention.sendMessage(player, TextMode.Err, noAccessReason.get());
                     return;
                 }
             }
         }
 
         //otherwise apply rule for cake
-        else if (clickedBlock != null && instance.config_claims_preventTheft && clickedBlockType == Material.CAKE)
+        else if (clickedBlock != null && instance.config_claims_preventTheft && (clickedBlockType == Material.CAKE || Tag.CANDLE_CAKES.isTagged(clickedBlockType)))
         {
             if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
             Claim claim = this.dataStore.getClaimAt(clickedBlock.getLocation(), false, playerData.lastClaim);
@@ -1825,11 +1856,11 @@ class PlayerEventHandler implements Listener
             {
                 playerData.lastClaim = claim;
 
-                String noContainerReason = claim.allowAccess(player);
+                Supplier<String> noContainerReason = claim.checkPermission(player, ClaimPermission.Access, event);
                 if (noContainerReason != null)
                 {
                     event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, noContainerReason);
+                    GriefPrevention.sendMessage(player, TextMode.Err, noContainerReason.get());
                     return;
                 }
             }
@@ -1851,11 +1882,11 @@ class PlayerEventHandler implements Listener
             Claim claim = this.dataStore.getClaimAt(clickedBlock.getLocation(), false, playerData.lastClaim);
             if (claim != null)
             {
-                String noBuildReason = claim.allowBuild(player, clickedBlockType);
+                Supplier<String> noBuildReason = claim.checkPermission(player, ClaimPermission.Build, event);
                 if (noBuildReason != null)
                 {
                     event.setCancelled(true);
-                    GriefPrevention.sendMessage(player, TextMode.Err, noBuildReason);
+                    GriefPrevention.sendMessage(player, TextMode.Err, noBuildReason.get());
                     return;
                 }
             }
@@ -1884,13 +1915,15 @@ class PlayerEventHandler implements Listener
                     dyes.add(material);
             }
 
-
             //if it's bonemeal, armor stand, spawn egg, etc - check for build permission //RoboMWM: also check flint and steel to stop TNT ignition
+            //add glowing ink sac and ink sac, due to their usage on signs
             if (clickedBlock != null && (materialInHand == Material.BONE_MEAL
                     || materialInHand == Material.ARMOR_STAND
                     || (spawn_eggs.contains(materialInHand) && GriefPrevention.instance.config_claims_preventGlobalMonsterEggs)
                     || materialInHand == Material.END_CRYSTAL
                     || materialInHand == Material.FLINT_AND_STEEL
+                    || materialInHand == Material.INK_SAC
+                    || materialInHand == Material.GLOW_INK_SAC
                     || dyes.contains(materialInHand)))
             {
                 String noBuildReason = instance
@@ -1911,10 +1944,10 @@ class PlayerEventHandler implements Listener
                 Claim claim = this.dataStore.getClaimAt(clickedBlock.getLocation(), false, playerData.lastClaim);
                 if (claim != null)
                 {
-                    String reason = claim.allowContainers(player);
+                    Supplier<String> reason = claim.checkPermission(player, ClaimPermission.Inventory, event);
                     if (reason != null)
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Err, reason);
+                        GriefPrevention.sendMessage(player, TextMode.Err, reason.get());
                         event.setCancelled(true);
                     }
                 }
@@ -1935,10 +1968,10 @@ class PlayerEventHandler implements Listener
                 Claim claim = this.dataStore.getClaimAt(clickedBlock.getLocation(), false, playerData.lastClaim);
                 if (claim != null)
                 {
-                    String reason = claim.allowContainers(player);
+                    Supplier<String> reason = claim.checkPermission(player, ClaimPermission.Inventory, event);
                     if (reason != null)
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Err, reason);
+                        GriefPrevention.sendMessage(player, TextMode.Err, reason.get());
                         event.setCancelled(true);
                     }
                 }
@@ -1953,6 +1986,7 @@ class PlayerEventHandler implements Listener
                     materialInHand == Material.TNT_MINECART ||
                     materialInHand == Material.ARMOR_STAND ||
                     materialInHand == Material.ITEM_FRAME ||
+                    materialInHand == Material.GLOW_ITEM_FRAME ||
                     spawn_eggs.contains(materialInHand) ||
                     materialInHand == Material.INFESTED_STONE ||
                     materialInHand == Material.INFESTED_COBBLESTONE ||
@@ -2216,7 +2250,7 @@ class PlayerEventHandler implements Listener
                 int minz = centerBlock.getZ() - playerData.fillRadius;
                 int maxz = centerBlock.getZ() + playerData.fillRadius;
                 int minHeight = maxHeight - 10;
-                if (minHeight < 0) minHeight = 0;
+                minHeight = Math.max(minHeight, clickedBlock.getWorld().getMinHeight());
 
                 Claim cachedClaim = null;
                 for (int x = minx; x <= maxx; x++)
@@ -2363,7 +2397,7 @@ class PlayerEventHandler implements Listener
             if (claim != null)
             {
                 //if the player has permission to edit the claim or subdivision
-                String noEditReason = claim.allowEdit(player);
+                Supplier<String> noEditReason = claim.checkPermission(player, ClaimPermission.Edit, event, () -> instance.dataStore.getMessage(Messages.CreateClaimFailOverlapOtherPlayer, claim.getOwnerName()));
                 if (noEditReason == null)
                 {
                     //if he clicked on a corner, start resizing it
@@ -2464,7 +2498,7 @@ class PlayerEventHandler implements Listener
                 //otherwise tell the player he can't claim here because it's someone else's claim, and show him the claim
                 else
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlapOtherPlayer, claim.getOwnerName());
+                    GriefPrevention.sendMessage(player, TextMode.Err, noEditReason.get());
                     Visualization visualization = Visualization.FromClaim(claim, clickedBlock.getY(), VisualizationType.ErrorClaim, player.getLocation());
 
                     // alert plugins of a visualization
@@ -2642,12 +2676,12 @@ class PlayerEventHandler implements Listener
         if (claim != null)
         {
             playerData.lastClaim = claim;
-            String noContainerReason = claim.allowContainers(player);
+            Supplier<String> noContainerReason = claim.checkPermission(player, ClaimPermission.Inventory, event);
             if (noContainerReason != null)
             {
                 event.setCancelled(true);
                 player.closeInventory();
-                GriefPrevention.sendMessage(player, TextMode.Err, noContainerReason);
+                GriefPrevention.sendMessage(player, TextMode.Err, noContainerReason.get());
             }
         }
     }
