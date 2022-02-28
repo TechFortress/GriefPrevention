@@ -156,6 +156,30 @@ public class PlayerData
         return true;
     }
 
+    // getter for fillRadius
+    public int getFillRadius()
+    {
+        return fillRadius;
+    }
+
+    // setter for fillRadius
+    public void setFillRadius(int fillRadius)
+    {
+        this.fillRadius = fillRadius;
+    }
+
+    // setter for petGiveawayRecipient
+    public void setPetGiveawayRecipient(OfflinePlayer petGiveawayRecipient)
+    {
+        this.petGiveawayRecipient = petGiveawayRecipient;
+    }
+
+    // setter for dropsAreUnlocked
+    public void setDropsAreUnlocked(boolean dropsAreUnlocked)
+    {
+        this.dropsAreUnlocked = dropsAreUnlocked;
+    }
+
     //the number of claim blocks a player has available for claiming land
     public int getRemainingClaimBlocks()
     {

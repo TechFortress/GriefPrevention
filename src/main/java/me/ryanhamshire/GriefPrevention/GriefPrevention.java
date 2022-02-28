@@ -93,6 +93,9 @@ public class GriefPrevention extends JavaPlugin
     //log entry manager for GP's custom log files
     CustomLogger customLogger;
 
+    //this handles all commands
+    public CommandHandler commandHandler;
+
     //configuration variables, loaded/saved from a config.yml
 
     //claim mode for each world
@@ -182,7 +185,7 @@ public class GriefPrevention extends JavaPlugin
     public boolean config_lockDeathDropsInPvpWorlds;                //whether players' dropped on death items are protected in pvp worlds
     public boolean config_lockDeathDropsInNonPvpWorlds;             //whether players' dropped on death items are protected in non-pvp worlds
 
-    private EconomyHandler economyHandler;
+    public EconomyHandler economyHandler;
     public int config_economy_claimBlocksMaxBonus;                  //max "bonus" blocks a player can buy.  set to zero for no limit.
     public double config_economy_claimBlocksPurchaseCost;            //cost to purchase a claim block.  set to zero to disable purchase.
     public double config_economy_claimBlocksSellValue;                //return on a sold claim block.  set to zero to disable sale.
@@ -400,7 +403,7 @@ public class GriefPrevention extends JavaPlugin
         catch (Throwable ignored) {}
     }
 
-    private void loadConfig()
+    public void loadConfig()
     {
         //load the config if it exists
         FileConfiguration config = YamlConfiguration.loadConfiguration(new File(DataStore.configFilePath));
@@ -2843,7 +2846,7 @@ public class GriefPrevention extends JavaPlugin
         return false;
     }
 
-    void setIgnoreStatus(OfflinePlayer ignorer, OfflinePlayer ignoree, IgnoreMode mode)
+    public void setIgnoreStatus(OfflinePlayer ignorer, OfflinePlayer ignoree, IgnoreMode mode)
     {
         PlayerData playerData = this.dataStore.getPlayerData(ignorer.getUniqueId());
         if (mode == IgnoreMode.None)
@@ -2866,7 +2869,7 @@ public class GriefPrevention extends JavaPlugin
     public enum IgnoreMode
     {None, StandardIgnore, AdminIgnore}
 
-    private String trustEntryToPlayerName(String entry)
+    public String trustEntryToPlayerName(String entry)
     {
         if (entry.startsWith("[") || entry.equals("public"))
         {
@@ -2883,7 +2886,7 @@ public class GriefPrevention extends JavaPlugin
         return location.getWorld().getName() + ": x" + location.getBlockX() + ", z" + location.getBlockZ();
     }
 
-    private boolean abandonClaimHandler(Player player, boolean deleteTopLevelClaim)
+    public boolean abandonClaimHandler(Player player, boolean deleteTopLevelClaim)
     {
         PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
 
@@ -2941,7 +2944,7 @@ public class GriefPrevention extends JavaPlugin
     }
 
     //helper method keeps the trust commands consistent and eliminates duplicate code
-    private void handleTrustCommand(Player player, ClaimPermission permissionLevel, String recipientName)
+    public void handleTrustCommand(Player player, ClaimPermission permissionLevel, String recipientName)
     {
         //determine which claim the player is standing in
         Claim claim = this.dataStore.getClaimAt(player.getLocation(), true /*ignore height*/, null);
@@ -3180,7 +3183,7 @@ public class GriefPrevention extends JavaPlugin
     }
 
     //helper method to resolve a player name from the player's UUID
-    static String lookupPlayerName(UUID playerID)
+    public static String lookupPlayerName(UUID playerID)
     {
         //parameter validation
         if (playerID == null) return "somebody";
@@ -3389,7 +3392,7 @@ public class GriefPrevention extends JavaPlugin
     }
 
     //determines whether creative anti-grief rules apply at a location
-    boolean creativeRulesApply(Location location)
+    public boolean creativeRulesApply(Location location)
     {
         if (!this.config_creativeWorldsExist) return false;
 
@@ -3636,7 +3639,7 @@ public class GriefPrevention extends JavaPlugin
         return false;
     }
 
-    void autoExtendClaim(Claim newClaim)
+    public void autoExtendClaim(Claim newClaim)
     {
         //auto-extend it downward to cover anything already built underground
         Location lesserCorner = newClaim.getLesserBoundaryCorner();

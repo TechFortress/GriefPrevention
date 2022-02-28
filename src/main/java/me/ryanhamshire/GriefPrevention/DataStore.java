@@ -108,9 +108,9 @@ public abstract class DataStore
     private int currentSchemaVersion = -1;  //-1 means not determined yet
 
     //video links
-    static final String SURVIVAL_VIDEO_URL = "" + ChatColor.DARK_AQUA + ChatColor.UNDERLINE + "bit.ly/mcgpuser" + ChatColor.RESET;
-    static final String CREATIVE_VIDEO_URL = "" + ChatColor.DARK_AQUA + ChatColor.UNDERLINE + "bit.ly/mcgpcrea" + ChatColor.RESET;
-    static final String SUBDIVISION_VIDEO_URL = "" + ChatColor.DARK_AQUA + ChatColor.UNDERLINE + "bit.ly/mcgpsub" + ChatColor.RESET;
+    public static final String SURVIVAL_VIDEO_URL = "" + ChatColor.DARK_AQUA + ChatColor.UNDERLINE + "bit.ly/mcgpuser" + ChatColor.RESET;
+    public static final String CREATIVE_VIDEO_URL = "" + ChatColor.DARK_AQUA + ChatColor.UNDERLINE + "bit.ly/mcgpcrea" + ChatColor.RESET;
+    public static final String SUBDIVISION_VIDEO_URL = "" + ChatColor.DARK_AQUA + ChatColor.UNDERLINE + "bit.ly/mcgpsub" + ChatColor.RESET;
 
     //list of UUIDs which are soft-muted
     ConcurrentHashMap<UUID, Boolean> softMuteMap = new ConcurrentHashMap<>();
@@ -283,7 +283,7 @@ public abstract class DataStore
     }
 
     //updates soft mute map and data file
-    boolean toggleSoftMute(UUID playerID)
+    public boolean toggleSoftMute(UUID playerID)
     {
         boolean newValue = !this.isSoftMuted(playerID);
 
@@ -342,7 +342,7 @@ public abstract class DataStore
     }
 
     //removes cached player data from memory
-    synchronized void clearCachedPlayerData(UUID playerID)
+    public synchronized void clearCachedPlayerData(UUID playerID)
     {
         this.playerNameToPlayerDataMap.remove(playerID);
     }
@@ -639,7 +639,7 @@ public abstract class DataStore
         this.deleteClaim(claim, true, releasePets);
     }
 
-    synchronized void deleteClaim(Claim claim, boolean fireEvent, boolean releasePets)
+    public synchronized void deleteClaim(Claim claim, boolean fireEvent, boolean releasePets)
     {
         //delete any children
         for (int j = 1; (j - 1) < claim.children.size(); j++)
@@ -1394,7 +1394,7 @@ public abstract class DataStore
         return result;
     }
 
-    void resizeClaimWithChecks(Player player, PlayerData playerData, int newx1, int newx2, int newy1, int newy2, int newz1, int newz2)
+    public void resizeClaimWithChecks(Player player, PlayerData playerData, int newx1, int newx2, int newy1, int newy2, int newz1, int newz2)
     {
         //for top level claims, apply size rules and claim blocks requirement
         if (playerData.claimResizing.parent == null)
@@ -1548,7 +1548,7 @@ public abstract class DataStore
     }
 
     //educates a player about /adminclaims and /acb, if he can use them 
-    void tryAdvertiseAdminAlternatives(Player player)
+    public void tryAdvertiseAdminAlternatives(Player player)
     {
         if (player.hasPermission("griefprevention.adminclaims") && player.hasPermission("griefprevention.adjustclaimblocks"))
         {
@@ -1970,7 +1970,7 @@ public abstract class DataStore
     }
 
     //deletes all the land claims in a specified world
-    void deleteClaimsInWorld(World world, boolean deleteAdminClaims)
+    public void deleteClaimsInWorld(World world, boolean deleteAdminClaims)
     {
         for (int i = 0; i < claims.size(); i++)
         {
