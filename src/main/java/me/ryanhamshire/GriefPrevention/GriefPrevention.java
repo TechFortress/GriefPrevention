@@ -18,6 +18,8 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.griefprevention.visualization.BoundaryVisualization;
+import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
 import me.ryanhamshire.GriefPrevention.events.PreventBlockBreakEvent;
 import me.ryanhamshire.GriefPrevention.events.SaveTrappedPlayerEvent;
@@ -196,6 +198,8 @@ public class GriefPrevention extends JavaPlugin
     public boolean config_whisperNotifications;                    //whether whispered messages will broadcast to administrators in game
     public boolean config_signNotifications;                        //whether sign content will broadcast to administrators in game
     public ArrayList<String> config_eavesdrop_whisperCommands;        //list of whisper commands to eavesdrop on
+
+    public boolean config_visualizationAntiCheatCompat;              // whether to engage compatibility mode for anti-cheat plugins
 
     public boolean config_smartBan;                                    //whether to ban accounts which very likely owned by a banned player
 
@@ -620,6 +624,7 @@ public class GriefPrevention extends JavaPlugin
         String whisperCommandsToMonitor = config.getString("GriefPrevention.WhisperCommands", "/tell;/pm;/r;/whisper;/msg");
         whisperCommandsToMonitor = config.getString("GriefPrevention.Spam.WhisperSlashCommands", whisperCommandsToMonitor);
 
+        this.config_visualizationAntiCheatCompat = config.getBoolean("GriefPrevention.VisualizationAntiCheatCompatMode", false);
         this.config_smartBan = config.getBoolean("GriefPrevention.SmartBan", true);
         this.config_trollFilterEnabled = config.getBoolean("GriefPrevention.Mute New Players Using Banned Words", true);
         this.config_ipLimit = config.getInt("GriefPrevention.MaxPlayersPerIpAddress", 3);
@@ -873,6 +878,7 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.AdminsGetWhispers", this.config_whisperNotifications);
         outConfig.set("GriefPrevention.AdminsGetSignNotifications", this.config_signNotifications);
 
+        outConfig.set("GriefPrevention.VisualizationAntiCheatCompatMode", this.config_visualizationAntiCheatCompat);
         outConfig.set("GriefPrevention.SmartBan", this.config_smartBan);
         outConfig.set("GriefPrevention.Mute New Players Using Banned Words", this.config_trollFilterEnabled);
         outConfig.set("GriefPrevention.MaxPlayersPerIpAddress", this.config_ipLimit);
@@ -1080,8 +1086,7 @@ public class GriefPrevention extends JavaPlugin
                 {
                     GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlapShort);
 
-                    Visualization visualization = Visualization.FromClaim(result.claim, player.getEyeLocation().getBlockY(), VisualizationType.ErrorClaim, player.getLocation());
-                    Visualization.Apply(player, visualization);
+                    BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE);
                 }
                 else
                 {
@@ -1097,12 +1102,11 @@ public class GriefPrevention extends JavaPlugin
                 {
                     GriefPrevention.sendMessage(player, TextMode.Instr, Messages.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
                 }
-                else if (GriefPrevention.instance.claimsEnabledForWorld(player.getLocation().getWorld()))
+                else if (GriefPrevention.instance.claimsEnabledForWorld(player.getWorld()))
                 {
                     GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
                 }
-                Visualization visualization = Visualization.FromClaim(result.claim, player.getEyeLocation().getBlockY(), VisualizationType.Claim, player.getLocation());
-                Visualization.Apply(player, visualization);
+                BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM);
                 playerData.claimResizing = null;
                 playerData.lastShovelLocation = null;
 
@@ -1323,7 +1327,7 @@ public class GriefPrevention extends JavaPlugin
             GriefPrevention.sendMessage(player, TextMode.Success, Messages.SuccessfulAbandon, String.valueOf(remainingBlocks));
 
             //revert any current visualization
-            Visualization.Revert(player);
+            playerData.setVisibleBoundaries(null);
 
             return true;
         }
@@ -2002,7 +2006,7 @@ public class GriefPrevention extends JavaPlugin
                         GriefPrevention.AddLogEntry(player.getName() + " deleted " + claim.getOwnerName() + "'s claim at " + GriefPrevention.getfriendlyLocationString(claim.getLesserBoundaryCorner()), CustomLogEntryTypes.AdminActivity);
 
                         //revert any current visualization
-                        Visualization.Revert(player);
+                        playerData.setVisibleBoundaries(null);
 
                         playerData.warnedAboutMajorDeletion = false;
                     }
@@ -2071,7 +2075,10 @@ public class GriefPrevention extends JavaPlugin
                 GriefPrevention.AddLogEntry(player.getName() + " deleted all claims belonging to " + otherPlayer.getName() + ".", CustomLogEntryTypes.AdminActivity);
 
                 //revert any current visualization
-                Visualization.Revert(player);
+                if (player.isOnline())
+                {
+                    this.dataStore.getPlayerData(player.getUniqueId()).setVisibleBoundaries(null);
+                }
             }
 
             return true;
@@ -2280,7 +2287,7 @@ public class GriefPrevention extends JavaPlugin
                 GriefPrevention.AddLogEntry(player.getName() + " deleted all administrative claims.", CustomLogEntryTypes.AdminActivity);
 
                 //revert any current visualization
-                Visualization.Revert(player);
+                this.dataStore.getPlayerData(player.getUniqueId()).setVisibleBoundaries(null);
             }
 
             return true;
@@ -2924,7 +2931,7 @@ public class GriefPrevention extends JavaPlugin
             GriefPrevention.sendMessage(player, TextMode.Success, Messages.AbandonSuccess, String.valueOf(remainingBlocks));
 
             //revert any current visualization
-            Visualization.Revert(player);
+            playerData.setVisibleBoundaries(null);
 
             playerData.warnedAboutMajorDeletion = false;
         }

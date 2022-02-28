@@ -18,12 +18,42 @@
 
 package me.ryanhamshire.GriefPrevention;
 
-//just an enumeration of the visualization types, which determine what materials will be for the fake blocks
+import org.bukkit.block.data.BlockData;
+
+/**
+ * @deprecated {@link com.griefprevention.visualization.VisualizationType}
+ */
+@Deprecated(forRemoval = true, since = "16.18")
 public enum VisualizationType
 {
     Claim,
     Subdivision,
     ErrorClaim,
     RestoreNature,
-    AdminClaim
+    AdminClaim;
+
+    @Deprecated(forRemoval = true, since = "16.18")
+    com.griefprevention.visualization.VisualizationType convert()
+    {
+        return switch (this)
+        {
+            case Claim -> com.griefprevention.visualization.VisualizationType.CLAIM;
+            case Subdivision -> com.griefprevention.visualization.VisualizationType.SUBDIVISION;
+            case ErrorClaim -> com.griefprevention.visualization.VisualizationType.CONFLICT_ZONE;
+            case RestoreNature -> com.griefprevention.visualization.VisualizationType.NATURE_RESTORATION_ZONE;
+            case AdminClaim -> com.griefprevention.visualization.VisualizationType.ADMIN_CLAIM;
+        };
+    }
+
+    @Deprecated(forRemoval = true, since = "16.18")
+    static com.griefprevention.visualization.VisualizationType ofBlockData(BlockData accent) {
+        return switch (accent.getMaterial()) {
+            case WHITE_WOOL -> com.griefprevention.visualization.VisualizationType.SUBDIVISION;
+            case NETHERRACK -> com.griefprevention.visualization.VisualizationType.CONFLICT_ZONE;
+            case DIAMOND_BLOCK -> com.griefprevention.visualization.VisualizationType.NATURE_RESTORATION_ZONE;
+            case PUMPKIN -> com.griefprevention.visualization.VisualizationType.ADMIN_CLAIM;
+            default -> com.griefprevention.visualization.VisualizationType.CLAIM;
+        };
+    }
+
 }

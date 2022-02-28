@@ -18,6 +18,8 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.griefprevention.visualization.BoundaryVisualization;
+import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -381,8 +383,7 @@ public class BlockEventHandler implements Listener
                             GriefPrevention.sendMessage(player, TextMode.Success, Messages.AutomaticClaimNotification);
 
                             //show the player the protected area
-                            Visualization visualization = Visualization.FromClaim(result.claim, block.getY(), VisualizationType.Claim, player.getLocation());
-                            Visualization.Apply(player, visualization);
+                            BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM, block);
                         }
                         else
                         {
@@ -390,8 +391,7 @@ public class BlockEventHandler implements Listener
                             GriefPrevention.sendMessage(player, TextMode.Err, Messages.AutomaticClaimOtherClaimTooClose);
 
                             //show the player the protected area
-                            Visualization visualization = Visualization.FromClaim(result.claim, block.getY(), VisualizationType.ErrorClaim, player.getLocation());
-                            Visualization.Apply(player, visualization);
+                            BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE, block);
                         }
                     }
                 }
@@ -444,8 +444,7 @@ public class BlockEventHandler implements Listener
 
                     if (playerData.lastClaim != null)
                     {
-                        Visualization visualization = Visualization.FromClaim(playerData.lastClaim, block.getY(), VisualizationType.Claim, player.getLocation());
-                        Visualization.Apply(player, visualization);
+                        BoundaryVisualization.visualizeClaim(player, playerData.lastClaim, VisualizationType.CLAIM, block);
                     }
                 }
             }

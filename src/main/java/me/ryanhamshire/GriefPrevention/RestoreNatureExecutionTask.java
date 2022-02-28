@@ -18,6 +18,9 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.griefprevention.visualization.BoundaryVisualization;
+import com.griefprevention.visualization.VisualizationType;
+import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -27,8 +30,6 @@ import org.bukkit.entity.Animals;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Hanging;
 import org.bukkit.entity.Player;
-
-import java.util.ArrayList;
 
 //this main thread task takes the output from the RestoreNatureProcessingTask\
 //and updates the world accordingly
@@ -121,9 +122,10 @@ class RestoreNatureExecutionTask implements Runnable
         //show visualization to player who started the restoration
         if (player != null)
         {
-            Claim claim = new Claim(lesserCorner, greaterCorner, null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null);
-            Visualization visualization = Visualization.FromClaim(claim, player.getLocation().getBlockY(), VisualizationType.RestoreNature, player.getLocation());
-            Visualization.Apply(player, visualization);
+            BoundaryVisualization.visualizeArea(
+                    player,
+                    new BoundingBox(lesserCorner, greaterCorner),
+                    VisualizationType.NATURE_RESTORATION_ZONE);
         }
     }
 }

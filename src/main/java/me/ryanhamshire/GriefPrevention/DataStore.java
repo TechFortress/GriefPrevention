@@ -19,6 +19,8 @@
 package me.ryanhamshire.GriefPrevention;
 
 import com.google.common.io.Files;
+import com.griefprevention.visualization.BoundaryVisualization;
+import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.events.ClaimResizeEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimCreatedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimDeletedEvent;
@@ -1501,8 +1503,7 @@ public abstract class DataStore
 
             //inform about success, visualize, communicate remaining blocks available
             GriefPrevention.sendMessage(player, TextMode.Success, Messages.ClaimResizeSuccess, String.valueOf(claimBlocksRemaining));
-            Visualization visualization = Visualization.FromClaim(result.claim, player.getEyeLocation().getBlockY(), VisualizationType.Claim, player.getLocation());
-            Visualization.Apply(player, visualization);
+            BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM);
 
             //if resizing someone else's claim, make a log entry
             if (!player.getUniqueId().equals(playerData.claimResizing.ownerID) && playerData.claimResizing.parent == null)
@@ -1537,8 +1538,7 @@ public abstract class DataStore
                 GriefPrevention.sendMessage(player, TextMode.Err, Messages.ResizeFailOverlap);
 
                 //show the player the conflicting claim
-                Visualization visualization = Visualization.FromClaim(result.claim, player.getEyeLocation().getBlockY(), VisualizationType.ErrorClaim, player.getLocation());
-                Visualization.Apply(player, visualization);
+                BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE);
             }
             else
             {

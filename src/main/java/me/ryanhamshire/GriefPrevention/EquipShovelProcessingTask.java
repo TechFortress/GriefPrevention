@@ -18,6 +18,8 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.griefprevention.visualization.BoundaryVisualization;
+import com.griefprevention.visualization.VisualizationType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 
@@ -63,7 +65,7 @@ class EquipShovelProcessingTask implements Runnable
         {
             GriefPrevention.sendMessage(player, TextMode.Instr, Messages.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
         }
-        else if (GriefPrevention.instance.claimsEnabledForWorld(player.getLocation().getWorld()))
+        else if (GriefPrevention.instance.claimsEnabledForWorld(player.getWorld()))
         {
             GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
         }
@@ -73,7 +75,7 @@ class EquipShovelProcessingTask implements Runnable
         if (claim != null && claim.checkPermission(player, ClaimPermission.Edit, null) == null)
         {
             playerData.lastClaim = claim;
-            Visualization.Apply(player, Visualization.FromClaim(claim, player.getEyeLocation().getBlockY(), VisualizationType.Claim, player.getLocation()));
+            BoundaryVisualization.visualizeClaim(player, claim, VisualizationType.CLAIM);
         }
     }
 }

@@ -18,8 +18,11 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.griefprevention.visualization.BoundaryVisualization;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
+import org.jetbrains.annotations.Nullable;
 
 import java.net.InetAddress;
 import java.util.Calendar;
@@ -77,6 +80,10 @@ public class PlayerData
     boolean wasKicked = false;
 
     //visualization
+    private transient @Nullable BoundaryVisualization visibleBoundaries = null;
+
+    /** @deprecated Use {@link #getVisibleBoundaries} and {@link #setVisibleBoundaries(BoundaryVisualization)} */
+    @Deprecated(forRemoval = true, since = "16.18")
     public Visualization currentVisualization = null;
 
     //anti-camping pvp protection
@@ -341,4 +348,19 @@ public class PlayerData
     {
         this.newlyAccruedClaimBlocks += howMany;
     }
+
+    public @Nullable BoundaryVisualization getVisibleBoundaries()
+    {
+        return visibleBoundaries;
+    }
+
+    public void setVisibleBoundaries(@Nullable BoundaryVisualization visibleBoundaries)
+    {
+        if (this.visibleBoundaries != null) {
+            this.visibleBoundaries.revert(Bukkit.getPlayer(playerID));
+        }
+
+        this.visibleBoundaries = visibleBoundaries;
+    }
+
 }

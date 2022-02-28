@@ -1,10 +1,13 @@
 package me.ryanhamshire.GriefPrevention.events;
 
+import com.griefprevention.events.BoundaryVisualizationEvent;
 import me.ryanhamshire.GriefPrevention.Claim;
 import me.ryanhamshire.GriefPrevention.Visualization;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.RegisteredListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
@@ -12,10 +15,14 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * An {@link org.bukkit.event.Event Event} called when a {@link Player} receives {@link Claim} visuals.
+ *
+ * @deprecated Replaced with {@link BoundaryVisualizationEvent}
  */
+@Deprecated(forRemoval = true, since = "16.18")
 public class VisualizationEvent extends PlayerEvent
 {
 
@@ -113,7 +120,22 @@ public class VisualizationEvent extends PlayerEvent
     }
 
     // Listenable event requirements
-    private static final HandlerList HANDLERS = new HandlerList();
+    private static final HandlerList HANDLERS = new HandlerList() {
+        private final Set<String> nags = new HashSet<>();
+
+        @Override
+        public synchronized void register(@NotNull RegisteredListener listener)
+        {
+            Plugin plugin = listener.getPlugin();
+
+            if (nags.add(plugin.getName()))
+                plugin.getLogger().severe(() ->
+                        plugin.getName()
+                                + " registered a listener for the now-defunct VisualizationEvent. Please ask "
+                                + plugin.getDescription().getAuthors()
+                                + " to update to the BoundaryVisualizationEvent.");
+        }
+    };
 
     public static HandlerList getHandlerList()
     {
