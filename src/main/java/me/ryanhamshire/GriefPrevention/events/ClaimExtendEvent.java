@@ -1,6 +1,7 @@
 package me.ryanhamshire.GriefPrevention.events;
 
 import me.ryanhamshire.GriefPrevention.Claim;
+import org.bukkit.Location;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -14,6 +15,8 @@ import org.jetbrains.annotations.NotNull;
 public class ClaimExtendEvent extends ClaimChangeEvent
 {
 
+    private int newDepth;
+
     /**
      * Construct a new {@code ClaimExtendEvent}.
      *
@@ -22,8 +25,16 @@ public class ClaimExtendEvent extends ClaimChangeEvent
      */
     public ClaimExtendEvent(@NotNull Claim claim, int newDepth)
     {
-        super(claim, new Claim(claim));
-        this.getTo().getLesserBoundaryCorner().setY(newDepth);
+        super(claim, new Claim(claim) {
+            @Override
+            public Location getLesserBoundaryCorner()
+            {
+                Location lesserBoundaryCorner = super.getLesserBoundaryCorner();
+                lesserBoundaryCorner.setY(newDepth);
+                return lesserBoundaryCorner;
+            }
+        });
+        this.newDepth = newDepth;
     }
 
     /**
@@ -45,7 +56,7 @@ public class ClaimExtendEvent extends ClaimChangeEvent
      */
     public int getNewDepth()
     {
-        return getTo().getLesserBoundaryCorner().getBlockY();
+        return newDepth;
     }
 
     /**
@@ -56,7 +67,7 @@ public class ClaimExtendEvent extends ClaimChangeEvent
      * @param newDepth the new depth
      */
     public void setNewDepth(int newDepth) {
-        getTo().getLesserBoundaryCorner().setY(newDepth);
+        this.newDepth = newDepth;
     }
 
 }
