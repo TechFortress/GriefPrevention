@@ -1752,8 +1752,7 @@ class PlayerEventHandler implements Listener
                                 clickedBlockType == Material.ROOTED_DIRT ||
                                 clickedBlockType == Material.STONECUTTER ||
                                 clickedBlockType == Material.SWEET_BERRY_BUSH ||
-                                Tag.CANDLES.isTagged(clickedBlockType) ||
-                                Tag.CANDLE_CAKES.isTagged(clickedBlockType)
+                                Tag.CANDLES.isTagged(clickedBlockType)
                         )))
         {
             if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
