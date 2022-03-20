@@ -2599,7 +2599,7 @@ class PlayerEventHandler implements Listener
                         GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SubdivisionVideo2, 201L, DataStore.SUBDIVISION_VIDEO_URL);
                     }
 
-                    instance.autoExtendClaim(result.claim);
+                    AutoExtendClaimTask.scheduleAsync(result.claim);
                 }
             }
         }

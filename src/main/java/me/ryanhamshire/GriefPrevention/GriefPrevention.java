@@ -31,7 +31,6 @@ import org.bukkit.BanList.Type;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
-import org.bukkit.ChunkSnapshot;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -41,7 +40,6 @@ import org.bukkit.Statistic;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -52,7 +50,6 @@ import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
-import org.bukkit.loot.Lootable;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -60,7 +57,6 @@ import org.bukkit.scheduler.BukkitTask;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -1113,7 +1109,7 @@ public class GriefPrevention extends JavaPlugin
                 playerData.claimResizing = null;
                 playerData.lastShovelLocation = null;
 
-                this.autoExtendClaim(result.claim);
+                AutoExtendClaimTask.scheduleAsync(result.claim);
             }
 
             return true;
@@ -3637,45 +3633,6 @@ public class GriefPrevention extends JavaPlugin
         }
 
         return false;
-    }
-
-    void autoExtendClaim(Claim newClaim)
-    {
-        //auto-extend it downward to cover anything already built underground
-        Location lesserCorner = newClaim.getLesserBoundaryCorner();
-        Location greaterCorner = newClaim.getGreaterBoundaryCorner();
-        World world = lesserCorner.getWorld();
-
-        if (world == null) return;
-
-        int lowestLootableTile = lesserCorner.getBlockY();
-        ArrayList<ChunkSnapshot> snapshots = new ArrayList<>();
-        for (int chunkx = lesserCorner.getBlockX() / 16; chunkx <= greaterCorner.getBlockX() / 16; chunkx++)
-        {
-            for (int chunkz = lesserCorner.getBlockZ() / 16; chunkz <= greaterCorner.getBlockZ() / 16; chunkz++)
-            {
-                if (world.isChunkLoaded(chunkx, chunkz))
-                {
-                    Chunk chunk = world.getChunkAt(chunkx, chunkz);
-
-                    // Find the lowest non-natural storage block in the chunk.
-                    // This way chests, barrels, etc. are always protected even if player block definitions are lacking.
-                    lowestLootableTile = Arrays.stream(chunk.getTileEntities())
-                            // Accept only Lootable tiles that do not have loot tables.
-                            // Naturally generated Lootables only have a loot table reference until the container is
-                            // accessed. On access the loot table is used to calculate the contents and removed. This
-                            // prevents claims from always extending down over unexplored structures, spawners, etc.
-                            .filter(tile -> tile instanceof Lootable lootable && lootable.getLootTable() == null)
-                            // Return smallest value or default to existing min Y if no eligible tiles are present.
-                            .mapToInt(BlockState::getY).min().orElse(lowestLootableTile);
-
-                    // Save a snapshot of the chunk for more detailed async block searching.
-                    snapshots.add(chunk.getChunkSnapshot(false, true, false));
-                }
-            }
-        }
-
-        Bukkit.getScheduler().runTaskAsynchronously(GriefPrevention.instance, new AutoExtendClaimTask(newClaim, snapshots, world.getEnvironment(), lowestLootableTile));
     }
 
     public boolean pvpRulesApply(World world)

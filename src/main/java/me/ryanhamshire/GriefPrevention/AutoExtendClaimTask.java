@@ -1,13 +1,19 @@
 package me.ryanhamshire.GriefPrevention;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Biome;
+import org.bukkit.block.BlockState;
+import org.bukkit.loot.Lootable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -16,6 +22,56 @@ import java.util.Set;
 //automatically extends a claim downward based on block types detected
 class AutoExtendClaimTask implements Runnable
 {
+
+    /**
+     * Assemble information and schedule a task to update claim depth to include existing structures.
+     *
+     * @param claim the claim to extend the depth of
+     */
+    static void scheduleAsync(Claim claim)
+    {
+        Location lesserCorner = claim.getLesserBoundaryCorner();
+        Location greaterCorner = claim.getGreaterBoundaryCorner();
+        World world = lesserCorner.getWorld();
+
+        if (world == null) return;
+
+        int lowestLootableTile = lesserCorner.getBlockY();
+        ArrayList<ChunkSnapshot> snapshots = new ArrayList<>();
+        for (int chunkx = lesserCorner.getBlockX() / 16; chunkx <= greaterCorner.getBlockX() / 16; chunkx++)
+        {
+            for (int chunkz = lesserCorner.getBlockZ() / 16; chunkz <= greaterCorner.getBlockZ() / 16; chunkz++)
+            {
+                if (world.isChunkLoaded(chunkx, chunkz))
+                {
+                    Chunk chunk = world.getChunkAt(chunkx, chunkz);
+
+                    // If we're on the main thread, access to tile entities will speed up the process.
+                    if (Bukkit.isPrimaryThread())
+                    {
+                        // Find the lowest non-natural storage block in the chunk.
+                        // This way chests, barrels, etc. are always protected even if player block definitions are lacking.
+                        lowestLootableTile = Arrays.stream(chunk.getTileEntities())
+                                // Accept only Lootable tiles that do not have loot tables.
+                                // Naturally generated Lootables only have a loot table reference until the container is
+                                // accessed. On access the loot table is used to calculate the contents and removed.
+                                // This prevents claims from always extending over unexplored structures, spawners, etc.
+                                .filter(tile -> tile instanceof Lootable lootable && lootable.getLootTable() == null)
+                                // Return smallest value or default to existing min Y if no eligible tiles are present.
+                                .mapToInt(BlockState::getY).min().orElse(lowestLootableTile);
+                    }
+
+                    // Save a snapshot of the chunk for more detailed async block searching.
+                    snapshots.add(chunk.getChunkSnapshot(false, true, false));
+                }
+            }
+        }
+
+        Bukkit.getScheduler().runTaskAsynchronously(
+                GriefPrevention.instance,
+                new AutoExtendClaimTask(claim, snapshots, world.getEnvironment(), lowestLootableTile));
+    }
+
     private final Claim claim;
     private final ArrayList<ChunkSnapshot> chunks;
     private final Environment worldType;
@@ -23,7 +79,7 @@ class AutoExtendClaimTask implements Runnable
     private final int minY;
     private final int lowestExistingY;
 
-    public AutoExtendClaimTask(
+    private AutoExtendClaimTask(
             @NotNull Claim claim,
             @NotNull ArrayList<@NotNull ChunkSnapshot> chunks,
             @NotNull Environment worldType,
