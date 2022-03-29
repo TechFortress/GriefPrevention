@@ -51,14 +51,14 @@ class AutoExtendClaimTask implements Runnable
                     {
                         // Find the lowest non-natural storage block in the chunk.
                         // This way chests, barrels, etc. are always protected even if player block definitions are lacking.
-                        lowestLootableTile = Arrays.stream(chunk.getTileEntities())
+                        lowestLootableTile = Math.min(lowestLootableTile, Arrays.stream(chunk.getTileEntities())
                                 // Accept only Lootable tiles that do not have loot tables.
                                 // Naturally generated Lootables only have a loot table reference until the container is
                                 // accessed. On access the loot table is used to calculate the contents and removed.
                                 // This prevents claims from always extending over unexplored structures, spawners, etc.
                                 .filter(tile -> tile instanceof Lootable lootable && lootable.getLootTable() == null)
                                 // Return smallest value or default to existing min Y if no eligible tiles are present.
-                                .mapToInt(BlockState::getY).min().orElse(lowestLootableTile);
+                                .mapToInt(BlockState::getY).min().orElse(lowestLootableTile));
                     }
 
                     // Save a snapshot of the chunk for more detailed async block searching.
