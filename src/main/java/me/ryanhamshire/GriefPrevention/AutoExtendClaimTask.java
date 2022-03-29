@@ -38,13 +38,13 @@ class AutoExtendClaimTask implements Runnable
 
         int lowestLootableTile = lesserCorner.getBlockY();
         ArrayList<ChunkSnapshot> snapshots = new ArrayList<>();
-        for (int chunkx = lesserCorner.getBlockX() / 16; chunkx <= greaterCorner.getBlockX() / 16; chunkx++)
+        for (int chunkX = lesserCorner.getBlockX() / 16; chunkX <= greaterCorner.getBlockX() / 16; chunkX++)
         {
-            for (int chunkz = lesserCorner.getBlockZ() / 16; chunkz <= greaterCorner.getBlockZ() / 16; chunkz++)
+            for (int chunkZ = lesserCorner.getBlockZ() / 16; chunkZ <= greaterCorner.getBlockZ() / 16; chunkZ++)
             {
-                if (world.isChunkLoaded(chunkx, chunkz))
+                if (world.isChunkLoaded(chunkX, chunkZ))
                 {
-                    Chunk chunk = world.getChunkAt(chunkx, chunkz);
+                    Chunk chunk = world.getChunkAt(chunkX, chunkZ);
 
                     // If we're on the main thread, access to tile entities will speed up the process.
                     if (Bukkit.isPrimaryThread())
