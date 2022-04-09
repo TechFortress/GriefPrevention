@@ -2428,10 +2428,17 @@ class PlayerEventHandler implements Listener
                                     null, player);
 
                             //if it didn't succeed, tell the player why
-                            if (!result.succeeded)
+                            if (!result.succeeded || result.claim == null)
                             {
-                                GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateSubdivisionOverlap);
-                                BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE, clickedBlock);
+                                if (result.claim != null)
+                                {
+                                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateSubdivisionOverlap);
+                                    BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE, clickedBlock);
+                                }
+                                else
+                                {
+                                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlapRegion);
+                                }
 
                                 return;
                             }
@@ -2570,7 +2577,7 @@ class PlayerEventHandler implements Listener
                         player);
 
                 //if it didn't succeed, tell the player why
-                if (!result.succeeded)
+                if (!result.succeeded || result.claim == null)
                 {
                     if (result.claim != null)
                     {

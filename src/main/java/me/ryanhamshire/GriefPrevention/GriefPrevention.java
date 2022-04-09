@@ -1079,7 +1079,7 @@ public class GriefPrevention extends JavaPlugin
                     gc.getWorld().getHighestBlockYAt(gc) - GriefPrevention.instance.config_claims_claimsExtendIntoGroundDistance - 1,
                     lc.getBlockZ(), gc.getBlockZ(),
                     player.getUniqueId(), null, null, player);
-            if (!result.succeeded)
+            if (!result.succeeded || result.claim == null)
             {
                 if (result.claim != null)
                 {

@@ -206,6 +206,8 @@ public abstract class BoundaryVisualization
      */
     private static Collection<Boundary> defineBoundaries(Claim claim, VisualizationType type)
     {
+        if (claim == null) return Set.of();
+
         // For single claims, always visualize parent and children.
         if (claim.parent != null) claim = claim.parent;
 

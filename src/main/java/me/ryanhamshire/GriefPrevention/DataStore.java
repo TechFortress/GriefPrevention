@@ -1474,7 +1474,7 @@ public abstract class DataStore
                 newClaim.getGreaterBoundaryCorner().getBlockZ(),
                 player);
 
-        if (result.succeeded)
+        if (result.succeeded && result.claim != null)
         {
             //decide how many claim blocks are available for more resizing
             int claimBlocksRemaining = 0;
