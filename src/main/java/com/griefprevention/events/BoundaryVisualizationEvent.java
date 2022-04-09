@@ -21,7 +21,7 @@ import java.util.Collection;
 public class BoundaryVisualizationEvent extends PlayerEvent
 {
 
-    private static final VisualizationProvider DEFAULT_PROVIDER = (world, visualizeFrom, height) ->
+    public static final VisualizationProvider DEFAULT_PROVIDER = (world, visualizeFrom, height) ->
     {
         if (GriefPrevention.instance.config_visualizationAntiCheatCompat)
         {
