@@ -46,7 +46,7 @@ public record IntVector(int x, int y, int z)
     }
 
     /**
-     * Get ae {@link Block} representing the {@code IntVector} in the specified {@link World}.
+     * Get a {@link Block} representing the {@code IntVector} in the specified {@link World}.
      *
      * @param world the {@code World}
      * @return the corresponding {@code Block}
