@@ -240,6 +240,7 @@ public class GriefPrevention extends JavaPlugin
     private String databaseUserName;
     private String databasePassword;
 
+    public String config_bedrockPrefix;
 
     //how far away to search from a tree trunk for its branch blocks
     public static final int TREE_RADIUS = 5;
@@ -637,6 +638,8 @@ public class GriefPrevention extends JavaPlugin
         this.config_ban_useCommand = config.getBoolean("GriefPrevention.UseBanCommand", false);
         this.config_ban_commandFormat = config.getString("GriefPrevention.BanCommandPattern", "ban %name% %reason%");
 
+        this.config_bedrockPrefix = config.getString("GriefPrevention.BedrockNamePrefix", ".");
+
         //default for claim investigation tool
         String investigationToolMaterialName = Material.STICK.name();
 
@@ -888,6 +891,7 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.Siege.DoorsOpenDelayInSeconds", this.config_siege_doorsOpenSeconds);
         outConfig.set("GriefPrevention.Siege.CooldownEndInMinutes", this.config_siege_cooldownEndInMinutes);
         outConfig.set("GriefPrevention.EndermenMoveBlocks", this.config_endermenMoveBlocks);
+        outConfig.set("GriefPrevention.BedrockNamePrefix", this.config_bedrockPrefix);
         outConfig.set("GriefPrevention.SilverfishBreakBlocks", this.config_silverfishBreakBlocks);
         outConfig.set("GriefPrevention.CreaturesTrampleCrops", this.config_creaturesTrampleCrops);
         outConfig.set("GriefPrevention.RabbitsEatCrops", this.config_rabbitsEatCrops);
@@ -1556,7 +1560,7 @@ public class GriefPrevention extends JavaPlugin
                     if (!clearPermissions && otherPlayer == null && !args[0].equals("public"))
                     {
                         //bracket any permissions - at this point it must be a permission without brackets
-                        if (args[0].contains("."))
+                        if (!args[0].startsWith(GriefPrevention.instance.config_bedrockPrefix) && args[0].contains("."))
                         {
                             args[0] = "[" + args[0] + "]";
                         }
@@ -2961,7 +2965,7 @@ public class GriefPrevention extends JavaPlugin
         else
         {
             otherPlayer = this.resolvePlayerByName(recipientName);
-            boolean isPermissionFormat = recipientName.contains(".");
+            boolean isPermissionFormat = !recipientName.startsWith(GriefPrevention.instance.config_bedrockPrefix) && recipientName.contains(".");
             if (otherPlayer == null && !recipientName.equals("public") && !recipientName.equals("all") && !isPermissionFormat)
             {
                 GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerNotFound2);
