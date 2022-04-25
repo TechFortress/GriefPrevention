@@ -18,6 +18,7 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.conaxgames.ClaimEntryProvider;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
@@ -82,6 +83,9 @@ public class GriefPrevention extends JavaPlugin
 
     //this handles data storage, like player and region data
     public DataStore dataStore;
+
+    //this handles the denial of entry for players moving between claims.
+    public ClaimEntryProvider entryProvider;
 
     // Event handlers with common functionality
     EntityEventHandler entityEventHandler;
@@ -382,6 +386,8 @@ public class GriefPrevention extends JavaPlugin
         CacheOfflinePlayerNamesThread namesThread = new CacheOfflinePlayerNamesThread(offlinePlayers, this.playerNameToIDMap);
         namesThread.setPriority(Thread.MIN_PRIORITY);
         namesThread.start();
+
+        this.entryProvider = new ClaimEntryProvider();
 
         //load ignore lists for any already-online players
         @SuppressWarnings("unchecked")

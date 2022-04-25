@@ -253,11 +253,14 @@ public class BlockEventHandler implements Listener
                 }
 
                 Location location = otherPlayer.getLocation();
-                if (!otherPlayer.equals(player) && location.distanceSquared(block.getLocation()) < 9 && player.canSee(otherPlayer))
+                if (location.getWorld() != null && location.getWorld().equals(block.getWorld())) // new ConaxGames
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerTooCloseForFire2);
-                    placeEvent.setCancelled(true);
-                    return;
+                    if (!otherPlayer.equals(player) && location.distanceSquared(block.getLocation()) < 9 && player.canSee(otherPlayer))
+                    {
+                        GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerTooCloseForFire2);
+                        placeEvent.setCancelled(true);
+                        return;
+                    }
                 }
             }
         }

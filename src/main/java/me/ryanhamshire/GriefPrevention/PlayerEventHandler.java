@@ -21,6 +21,7 @@ package me.ryanhamshire.GriefPrevention;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.events.ClaimInspectionEvent;
+import me.ryanhamshire.GriefPrevention.events.PlayerSwapClaimEvent;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
@@ -78,6 +79,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerLoginEvent.Result;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -1569,11 +1571,16 @@ class PlayerEventHandler implements Listener
                 for (Player otherPlayer : players)
                 {
                     Location location = otherPlayer.getLocation();
-                    if (!otherPlayer.equals(player) && otherPlayer.getGameMode() == GameMode.SURVIVAL && player.canSee(otherPlayer) && block.getY() >= location.getBlockY() - 1 && location.distanceSquared(block.getLocation()) < minLavaDistance * minLavaDistance)
+                    // new ConaxGames - Cannot measure distance between world_nether and world, checking location & block#getLocation to be the same world.
+                    if (location.getWorld() != null && location.getWorld().equals(block.getLocation().getWorld()))
                     {
-                        GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoLavaNearOtherPlayer, "another player");
-                        bucketEvent.setCancelled(true);
-                        return;
+                        if (!otherPlayer.equals(player) && otherPlayer.getGameMode() == GameMode.SURVIVAL && player.canSee(otherPlayer) &&
+                                block.getY() >= location.getBlockY() - 1 && location.distanceSquared(block.getLocation()) < minLavaDistance * minLavaDistance)
+                        {
+                            GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoLavaNearOtherPlayer, "another player");
+                            bucketEvent.setCancelled(true);
+                            return;
+                        }
                     }
                 }
             }
@@ -2621,6 +2628,64 @@ class PlayerEventHandler implements Listener
                 event.setCancelled(true);
                 player.closeInventory();
                 GriefPrevention.sendMessage(player, TextMode.Err, noContainerReason.get());
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerMoveEvent(PlayerMoveEvent event) {
+        Location from = event.getFrom();
+        Location to = event.getTo();
+
+        if (to != null)
+        {
+            // ensuring the player has actually moved a block.
+            if (from.getBlockX() != to.getBlockX() || from.getBlockY() != to.getBlockY() || from.getBlockZ() != to.getBlockZ())
+            {
+
+                Claim fromClaim = this.dataStore.getClaimAt(from, false, null);
+                Claim toClaim = this.dataStore.getClaimAt(to, false, null);
+
+                PlayerSwapClaimEvent playerSwapClaimEvent = new PlayerSwapClaimEvent(event.getPlayer(), fromClaim, toClaim);
+                Bukkit.getPluginManager().callEvent(playerSwapClaimEvent);
+
+                if (playerSwapClaimEvent.isCancelled())
+                {
+                    event.setTo(event.getFrom());
+                    event.setCancelled(true);
+                }
+
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerSwapClaimEvent(PlayerSwapClaimEvent event)
+    {
+        Claim to = event.getTo();
+        Player player = event.getPlayer();
+
+        if (to != null) {
+            if (GriefPrevention.instance.entryProvider.isBlocked(to.getOwnerID(), player.getName()))
+            {
+                player.sendMessage(ChatColor.RED + "You are not permitted to enter this claim.");
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerTeleportEvent(PlayerTeleportEvent event)
+    {
+        Location to = event.getTo();
+        Claim toClaim = this.dataStore.getClaimAt(to, false, null);
+        Player player = event.getPlayer();
+
+        if (toClaim != null) {
+            if (GriefPrevention.instance.entryProvider.isBlocked(toClaim.getOwnerID(), player.getName()))
+            {
+                player.sendMessage(ChatColor.RED + "You are not permitted to enter this claim.");
+                event.setCancelled(true);
             }
         }
     }
