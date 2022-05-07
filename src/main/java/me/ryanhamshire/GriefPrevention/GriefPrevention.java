@@ -407,6 +407,7 @@ public class GriefPrevention extends JavaPlugin
         outConfig.options().header("Default values are perfect for most servers.  If you want to customize and have a question, look for the answer here first: http://dev.bukkit.org/bukkit-plugins/grief-prevention/pages/setup-and-configuration/");
 
         //read configuration settings (note defaults)
+        int configVersion = config.getInt("GriefPrevention.ConfigVersion", 0);
 
         //get (deprecated node) claims world names from the config file
         List<World> worlds = this.getServer().getWorlds();
@@ -558,6 +559,12 @@ public class GriefPrevention extends JavaPlugin
         this.config_claims_minWidth = config.getInt("GriefPrevention.Claims.MinimumWidth", 5);
         this.config_claims_minArea = config.getInt("GriefPrevention.Claims.MinimumArea", 100);
         this.config_claims_maxDepth = config.getInt("GriefPrevention.Claims.MaximumDepth", Integer.MIN_VALUE);
+        if (configVersion < 1 && this.config_claims_maxDepth == 0)
+        {
+            // If MaximumDepth is untouched in an older configuration, correct it.
+            this.config_claims_maxDepth = Integer.MIN_VALUE;
+            AddLogEntry("Updated default value for GriefPrevention.Claims.MaximumDepth to " + Integer.MIN_VALUE);
+        }
         this.config_claims_chestClaimExpirationDays = config.getInt("GriefPrevention.Claims.Expiration.ChestClaimDays", 7);
         this.config_claims_unusedClaimExpirationDays = config.getInt("GriefPrevention.Claims.Expiration.UnusedClaimDays", 14);
         this.config_claims_expirationDays = config.getInt("GriefPrevention.Claims.Expiration.AllClaims.DaysInactive", 60);
@@ -911,6 +918,7 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.Abridged Logs.Included Entry Types.Administrative Activity", this.config_logs_adminEnabled);
         outConfig.set("GriefPrevention.Abridged Logs.Included Entry Types.Debug", this.config_logs_debugEnabled);
         outConfig.set("GriefPrevention.Abridged Logs.Included Entry Types.Muted Chat Messages", this.config_logs_mutedChatEnabled);
+        outConfig.set("GriefPrevention.ConfigVersion", 1);
 
         try
         {
