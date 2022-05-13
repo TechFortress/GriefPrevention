@@ -1,11 +1,20 @@
 name: GriefPrevention
 main: me.ryanhamshire.GriefPrevention.GriefPrevention
-softdepend: [Vault, Multiverse-Core, My_Worlds, MystCraft, Transporter, TheUnderground, WorldGuard, WorldEdit, RoyalCommands, MultiWorld, Denizen]
+softdepend: [Vault, Multiverse-Core, My_Worlds, MystCraft, Transporter, TheUnderground, WorldGuard, WorldEdit, RoyalCommands, MultiWorld, Denizen, cLibraries]
 dev-url: https://dev.bukkit.org/projects/grief-prevention
 loadbefore: [TheUnderground]
 version: '${git.commit.id.describe}'
 api-version: '1.17'
 commands:
+    claimban:
+      description: Ban a player from your claim
+      usage: /claimban <target>
+    claimunban:
+      description: Unban a player from your claim
+      usage: /claimunban <target>
+    claimbanlist:
+      description: View a list of player's you've banned from your claim
+      usage: /claimbanlist
     abandonclaim:
       description: Deletes a claim.
       usage: /AbandonClaim

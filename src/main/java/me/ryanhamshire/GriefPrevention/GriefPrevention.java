@@ -19,6 +19,8 @@
 package me.ryanhamshire.GriefPrevention;
 
 import com.conaxgames.ClaimEntryProvider;
+import com.conaxgames.libraries.util.CC;
+import com.google.common.base.Preconditions;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
@@ -1604,7 +1606,8 @@ public class GriefPrevention extends JavaPlugin
                 }
 
                 //dropping permissions
-                for (Claim targetClaim : event.getClaims()) {
+                for (Claim targetClaim : event.getClaims())
+                {
                     claim = targetClaim;
 
                     //if untrusting "all" drop all permissions
@@ -2437,7 +2440,7 @@ public class GriefPrevention extends JavaPlugin
         }
 
         //trapped
-        else if (cmd.getName().equalsIgnoreCase("trapped") && player != null)
+        else if (cmd.getName().equalsIgnoreCase("trapped") && player != null || (cmd.getName().equalsIgnoreCase("stuck")) && player != null)
         {
             //FEATURE: empower players who get "stuck" in an area where they don't have permission to build to save themselves
 
@@ -2849,6 +2852,98 @@ public class GriefPrevention extends JavaPlugin
 
             return true;
         }
+
+        // claimban
+        else if (cmd.getName().equals("claimban"))
+        {
+            if (sender instanceof Player)
+            {
+                // requires a player name
+                if (args.length < 1) return false;
+
+                //validate target players
+                OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
+                if (targetPlayer == null)
+                {
+                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerNotFound2);
+                    return true;
+                }
+
+                if (targetPlayer.getUniqueId().equals(player.getUniqueId())) {
+                    sender.sendMessage(CC.RED + "You can't claim ban yourself!");
+                    return true;
+                }
+
+                List<String> bans = this.entryProvider.list(player.getUniqueId());
+                if (bans.contains(targetPlayer.getUniqueId().toString())) {
+                    sender.sendMessage(CC.RED + "You've already claim banned " + targetPlayer.getName());
+                    return true;
+                }
+
+                sender.sendMessage(CC.GREEN + "You've claim banned " + targetPlayer.getName());
+                this.entryProvider.block(player.getUniqueId(), targetPlayer.getUniqueId());
+                return true;
+            } else {
+                sender.sendMessage("Player only command!");
+            }
+        }
+
+        // claimunban
+        else if (cmd.getName().equals("claimunban"))
+        {
+            if (sender instanceof Player)
+            {
+                // requires a player name
+                if (args.length < 1) return false;
+
+                //validate target players
+                OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
+                if (targetPlayer == null)
+                {
+                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerNotFound2);
+                    return true;
+                }
+
+                if (targetPlayer.getUniqueId().equals(player.getUniqueId())) {
+                    sender.sendMessage(CC.RED + "You can't claim unban yourself!");
+                    return true;
+                }
+
+                List<String> bans = this.entryProvider.list(player.getUniqueId());
+                if (!bans.contains(targetPlayer.getUniqueId().toString())) {
+                    sender.sendMessage(CC.RED + targetPlayer.getName() + " isn't currently claim banned!");
+                    return true;
+                }
+
+                sender.sendMessage(CC.GREEN + "You've claim un-banned " + targetPlayer.getName());
+                this.entryProvider.unblock(player.getUniqueId(), targetPlayer.getUniqueId());
+                return true;
+            } else {
+                sender.sendMessage("Player only command!");
+            }
+        }
+
+        // claimunban
+        else if (cmd.getName().equals("claimbanlist"))
+        {
+            if (sender instanceof Player)
+            {
+                List<String> bans = this.entryProvider.list(player.getUniqueId());
+                if (bans != null) {
+                    sender.sendMessage(ChatColor.RED + "Claim Bans:");
+                    bans.forEach(ban -> {
+                        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(UUID.fromString(ban));
+                        sender.sendMessage(CC.YELLOW + "- " + CC.RED + offlinePlayer.getName());
+                    });
+                } else {
+                    sender.sendMessage(CC.RED + "You don't have anybody claim banned!");
+                }
+                return true;
+            } else {
+                sender.sendMessage("Player only command!");
+            }
+        }
+
         return false;
     }
 
