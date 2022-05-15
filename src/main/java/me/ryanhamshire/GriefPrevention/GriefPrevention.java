@@ -184,6 +184,7 @@ public class GriefPrevention extends JavaPlugin
     private EconomyHandler economyHandler;
     public int config_economy_claimBlocksMaxBonus;                  //max "bonus" blocks a player can buy.  set to zero for no limit.
     public double config_economy_claimBlocksPurchaseCost;            //cost to purchase a claim block.  set to zero to disable purchase.
+    public double config_economy_claimBlocksPurchaseMultiplier;      //the cost multiplier applied recursively when buying bonus claim blocks
     public double config_economy_claimBlocksSellValue;                //return on a sold claim block.  set to zero to disable sale.
 
     public boolean config_blockClaimExplosions;                     //whether explosions may destroy claimed blocks
@@ -598,6 +599,7 @@ public class GriefPrevention extends JavaPlugin
 
         this.config_economy_claimBlocksMaxBonus = config.getInt("GriefPrevention.Economy.ClaimBlocksMaxBonus", 0);
         this.config_economy_claimBlocksPurchaseCost = config.getDouble("GriefPrevention.Economy.ClaimBlocksPurchaseCost", 0);
+        this.config_economy_claimBlocksPurchaseMultiplier = config.getDouble("GriefPrevention.Economy.ClaimBlocksPurchaseMultiplier", 1.0);
         this.config_economy_claimBlocksSellValue = config.getDouble("GriefPrevention.Economy.ClaimBlocksSellValue", 0);
 
         this.config_lockDeathDropsInPvpWorlds = config.getBoolean("GriefPrevention.ProtectItemsDroppedOnDeath.PvPWorlds", false);
@@ -856,6 +858,7 @@ public class GriefPrevention extends JavaPlugin
 
         outConfig.set("GriefPrevention.Economy.ClaimBlocksMaxBonus", this.config_economy_claimBlocksMaxBonus);
         outConfig.set("GriefPrevention.Economy.ClaimBlocksPurchaseCost", this.config_economy_claimBlocksPurchaseCost);
+        outConfig.set("GriefPrevention.Economy.ClaimBlocksPurchaseMultiplier", this.config_economy_claimBlocksPurchaseMultiplier);
         outConfig.set("GriefPrevention.Economy.ClaimBlocksSellValue", this.config_economy_claimBlocksSellValue);
 
         outConfig.set("GriefPrevention.ProtectItemsDroppedOnDeath.PvPWorlds", this.config_lockDeathDropsInPvpWorlds);
@@ -1826,8 +1829,15 @@ public class GriefPrevention extends JavaPlugin
                 }
 
                 //if the player can't afford his purchase, send error message
+                int bonusClaimBlocks = playerData.getBonusClaimBlocks();
+                int newBonusClaimBlocks = bonusClaimBlocks + blockCount;
+                double multiplier = GriefPrevention.instance.config_economy_claimBlocksPurchaseMultiplier;
+                double baseCostPerBlock = GriefPrevention.instance.config_economy_claimBlocksPurchaseCost;
+                double totalCost = 0;
+                for (int i = bonusClaimBlocks; i < newBonusClaimBlocks; i++) {
+                    totalCost += Math.pow(multiplier, i) * baseCostPerBlock;
+                }
                 double balance = economy.getBalance(player);
-                double totalCost = blockCount * GriefPrevention.instance.config_economy_claimBlocksPurchaseCost;
                 if (totalCost > balance)
                 {
                     GriefPrevention.sendMessage(player, TextMode.Err, Messages.InsufficientFunds, String.valueOf(totalCost), String.valueOf(balance));
@@ -1836,8 +1846,6 @@ public class GriefPrevention extends JavaPlugin
                 //otherwise carry out transaction
                 else
                 {
-                    int newBonusClaimBlocks = playerData.getBonusClaimBlocks() + blockCount;
-
                     //if the player is going to reach max bonus limit, send error message
                     int bonusBlocksLimit = GriefPrevention.instance.config_economy_claimBlocksMaxBonus;
                     if (bonusBlocksLimit != 0 && newBonusClaimBlocks > bonusBlocksLimit)
