@@ -2687,12 +2687,7 @@ class PlayerEventHandler implements Listener
             if (GriefPrevention.instance.entryProvider.isBlocked(toClaim.getOwnerID(), player.getUniqueId()))
             {
                 player.sendMessage(ChatColor.RED + "You are not permitted to teleport into this claim.");
-
-                Location safe = this.getSafeNearbyTeleportLocation(player);
-                if (safe != null) {
-                    player.teleport(safe, TeleportCause.PLUGIN);
-                }
-
+                event.setTo(event.getFrom());
                 event.setCancelled(true);
             }
         }
