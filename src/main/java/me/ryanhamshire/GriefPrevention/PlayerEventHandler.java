@@ -889,10 +889,10 @@ class PlayerEventHandler implements Listener
         Player player = event.getEntity();
         Long lastDeathTime = this.deathTimestamps.get(player.getUniqueId());
         long now = Calendar.getInstance().getTimeInMillis();
-        if (lastDeathTime != null && now - lastDeathTime < instance.config_spam_deathMessageCooldownSeconds * 1000)
+        if (lastDeathTime != null && now - lastDeathTime < instance.config_spam_deathMessageCooldownSeconds * 1000 && event.getDeathMessage() != null)
         {
             player.sendMessage(event.getDeathMessage());  //let the player assume his death message was broadcasted to everyone
-            event.setDeathMessage("");
+            event.setDeathMessage(null);
         }
 
         this.deathTimestamps.put(player.getUniqueId(), now);
