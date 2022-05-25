@@ -1,6 +1,7 @@
 package com.griefprevention.visualization;
 
 import me.ryanhamshire.GriefPrevention.Claim;
+import me.ryanhamshire.GriefPrevention.CustomLogEntryTypes;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.PlayerData;
 import com.griefprevention.events.BoundaryVisualizationEvent;
@@ -18,6 +19,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -206,6 +208,8 @@ public abstract class BoundaryVisualization
      */
     private static Collection<Boundary> defineBoundaries(Claim claim, VisualizationType type)
     {
+        if (claim == null) return Set.of();
+
         // For single claims, always visualize parent and children.
         if (claim.parent != null) claim = claim.parent;
 
@@ -264,9 +268,55 @@ public abstract class BoundaryVisualization
         {
             GriefPrevention.instance.getServer().getScheduler().scheduleSyncDelayedTask(
                     GriefPrevention.instance,
-                    () -> visualization.apply(player, playerData),
+                    new DelayedVisualizationTask(visualization, playerData, event),
                     1L);
         }
+    }
+
+    private record DelayedVisualizationTask(
+            @NotNull BoundaryVisualization visualization,
+            @NotNull PlayerData playerData,
+            @NotNull BoundaryVisualizationEvent event)
+            implements Runnable
+    {
+
+        @Override
+        public void run()
+        {
+            try
+            {
+                visualization.apply(event.getPlayer(), playerData);
+            }
+            catch (Exception exception)
+            {
+                if (event.getProvider() == BoundaryVisualizationEvent.DEFAULT_PROVIDER)
+                {
+                    // If the provider is our own, log normally.
+                    GriefPrevention.instance.getLogger().log(Level.WARNING, "Exception visualizing claim", exception);
+                    return;
+                }
+
+                // Otherwise, add an extra hint that the problem is not with GP.
+                GriefPrevention.AddLogEntry(
+                        String.format(
+                                "External visualization provider %s caused %s: %s",
+                                event.getProvider().getClass().getName(),
+                                exception.getClass().getName(),
+                                exception.getCause()),
+                        CustomLogEntryTypes.Exception);
+                GriefPrevention.instance.getLogger().log(
+                        Level.WARNING,
+                        "Exception visualizing claim using external provider",
+                        exception);
+
+                // Fall through to default provider.
+                BoundaryVisualization fallback = BoundaryVisualizationEvent.DEFAULT_PROVIDER
+                        .create(event.getPlayer().getWorld(), event.getCenter(), event.getHeight());
+                event.getBoundaries().stream().filter(Objects::nonNull).forEach(fallback.elements::add);
+                fallback.apply(event.getPlayer(), playerData);
+            }
+        }
+
     }
 
 }

@@ -889,10 +889,10 @@ class PlayerEventHandler implements Listener
         Player player = event.getEntity();
         Long lastDeathTime = this.deathTimestamps.get(player.getUniqueId());
         long now = Calendar.getInstance().getTimeInMillis();
-        if (lastDeathTime != null && now - lastDeathTime < instance.config_spam_deathMessageCooldownSeconds * 1000)
+        if (lastDeathTime != null && now - lastDeathTime < instance.config_spam_deathMessageCooldownSeconds * 1000 && event.getDeathMessage() != null)
         {
             player.sendMessage(event.getDeathMessage());  //let the player assume his death message was broadcasted to everyone
-            event.setDeathMessage("");
+            event.setDeathMessage(null);
         }
 
         this.deathTimestamps.put(player.getUniqueId(), now);
@@ -2428,10 +2428,17 @@ class PlayerEventHandler implements Listener
                                     null, player);
 
                             //if it didn't succeed, tell the player why
-                            if (!result.succeeded)
+                            if (!result.succeeded || result.claim == null)
                             {
-                                GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateSubdivisionOverlap);
-                                BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE, clickedBlock);
+                                if (result.claim != null)
+                                {
+                                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateSubdivisionOverlap);
+                                    BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE, clickedBlock);
+                                }
+                                else
+                                {
+                                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlapRegion);
+                                }
 
                                 return;
                             }
@@ -2570,7 +2577,7 @@ class PlayerEventHandler implements Listener
                         player);
 
                 //if it didn't succeed, tell the player why
-                if (!result.succeeded)
+                if (!result.succeeded || result.claim == null)
                 {
                     if (result.claim != null)
                     {
@@ -2599,7 +2606,7 @@ class PlayerEventHandler implements Listener
                         GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SubdivisionVideo2, 201L, DataStore.SUBDIVISION_VIDEO_URL);
                     }
 
-                    instance.autoExtendClaim(result.claim);
+                    AutoExtendClaimTask.scheduleAsync(result.claim);
                 }
             }
         }
