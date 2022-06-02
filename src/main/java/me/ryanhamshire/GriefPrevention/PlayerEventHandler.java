@@ -18,6 +18,7 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.conaxgames.util.StuckUtil;
 import com.google.common.base.Preconditions;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
@@ -2703,7 +2704,7 @@ class PlayerEventHandler implements Listener
             if (GriefPrevention.instance.entryProvider.isBlocked(toClaim.getOwnerID(), player.getUniqueId()))
             {
                 player.sendMessage(ChatColor.RED + "You logged in while standing in a claim you're banned from! Teleporting you out...");
-                Location safe = this.getSafeNearbyTeleportLocation(player);
+                Location safe = StuckUtil.getSafeNearbyTeleportLocation(player);
                 if (safe != null) {
                     player.teleport(safe, TeleportCause.PLUGIN);
                 }
@@ -2771,45 +2772,5 @@ class PlayerEventHandler implements Listener
         }
 
         return result;
-    }
-
-    private Location getSafeNearbyTeleportLocation(Player player) {
-        Claim claimAt = dataStore.getClaimAt(player.getLocation(), true, null);
-        if (claimAt != null) {
-            Location greaterBoundaryCorner = claimAt.getGreaterBoundaryCorner();
-
-            for (int i = 1; i < 5; i++)
-            {
-                Location toCheck = greaterBoundaryCorner.add(i, 0, 0);
-                Claim possibleLoc = dataStore.getClaimAt(toCheck, true, null);
-
-                if (possibleLoc == null) {
-                    return this.getHighestLocation(toCheck, null).add(0, 1.5, 0);
-                }
-            }
-        }
-        return player.getLocation();
-    }
-
-    public Location getHighestLocation(Location origin, Location def) {
-        Preconditions.checkNotNull((Object)origin, "The location cannot be null");
-        Location cloned = origin.clone();
-        World world = cloned.getWorld();
-        if (world != null)
-        {
-            int x = cloned.getBlockX();
-            int y = world.getMaxHeight();
-            int z = cloned.getBlockZ();
-            while (y > origin.getBlockY())
-            {
-                Block block;
-                if ((block = world.getBlockAt(x, --y, z)).isEmpty()) continue;
-                Location next = block.getLocation();
-                next.setPitch(origin.getPitch());
-                next.setYaw(origin.getYaw());
-                return next;
-            }
-        }
-        return def;
     }
 }

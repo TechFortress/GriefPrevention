@@ -19,7 +19,9 @@
 package me.ryanhamshire.GriefPrevention;
 
 import com.conaxgames.ClaimEntryProvider;
+import com.conaxgames.libraries.message.FormatUtil;
 import com.conaxgames.libraries.util.CC;
+import com.conaxgames.util.StuckUtil;
 import com.google.common.base.Preconditions;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
@@ -50,6 +52,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -2880,7 +2883,24 @@ public class GriefPrevention extends JavaPlugin
                     return true;
                 }
 
-                sender.sendMessage(CC.GREEN + "You've claim banned " + targetPlayer.getName());
+                Player onlineTarget = Bukkit.getPlayer(targetPlayer.getUniqueId());
+                if (onlineTarget != null) {
+                    Location targetLocation = onlineTarget.getLocation();
+
+                    Claim claim = this.dataStore.getClaimAt(targetLocation, false, null);
+                    if (claim != null) {
+                        if (claim.getOwnerID().equals(player.getUniqueId())) {
+                            Location outOfClaim = StuckUtil.getSafeNearbyTeleportLocation(player);
+                            if (outOfClaim != null) {
+                                onlineTarget.teleport(outOfClaim, PlayerTeleportEvent.TeleportCause.PLUGIN);
+                                onlineTarget.sendMessage(CC.RED + "You have been banned from " +
+                                        FormatUtil.possessiveString(player.getName()) + " claims!");
+                            }
+                        }
+                    }
+                }
+
+                sender.sendMessage(CC.GREEN + "You've claim banned " + targetPlayer.getName() + "!");
                 this.entryProvider.block(player.getUniqueId(), targetPlayer.getUniqueId());
                 return true;
             } else {
