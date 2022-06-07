@@ -2671,8 +2671,11 @@ class PlayerEventHandler implements Listener
         if (to != null) {
             if (GriefPrevention.instance.entryProvider.isBlocked(to.getOwnerID(), player.getUniqueId()))
             {
-                player.sendMessage(ChatColor.RED + "You are not permitted to enter this claim.");
-                event.setCancelled(true);
+                if (!player.hasPermission("griefprevention.bypass"))
+                {
+                    player.sendMessage(ChatColor.RED + "You are not permitted to enter this claim.");
+                    event.setCancelled(true);
+                }
             }
         }
     }
@@ -2687,9 +2690,12 @@ class PlayerEventHandler implements Listener
         if (toClaim != null) {
             if (GriefPrevention.instance.entryProvider.isBlocked(toClaim.getOwnerID(), player.getUniqueId()))
             {
-                player.sendMessage(ChatColor.RED + "You are not permitted to teleport into this claim.");
-                event.setTo(event.getFrom());
-                event.setCancelled(true);
+                if (!player.hasPermission("griefprevention.bypass"))
+                {
+                    player.sendMessage(ChatColor.RED + "You are not permitted to teleport into this claim.");
+                    event.setTo(event.getFrom());
+                    event.setCancelled(true);
+                }
             }
         }
     }
@@ -2703,10 +2709,14 @@ class PlayerEventHandler implements Listener
         if (toClaim != null) {
             if (GriefPrevention.instance.entryProvider.isBlocked(toClaim.getOwnerID(), player.getUniqueId()))
             {
-                player.sendMessage(ChatColor.RED + "You logged in while standing in a claim you're banned from! Teleporting you out...");
-                Location safe = StuckUtil.getSafeNearbyTeleportLocation(player);
-                if (safe != null) {
-                    player.teleport(safe, TeleportCause.PLUGIN);
+                if (!player.hasPermission("griefprevention.bypass"))
+                {
+                    player.sendMessage(ChatColor.RED + "You logged in while standing in a claim you're banned from! Teleporting you out...");
+                    Location safe = StuckUtil.getSafeNearbyTeleportLocation(player);
+                    if (safe != null)
+                    {
+                        player.teleport(safe, TeleportCause.PLUGIN);
+                    }
                 }
             }
         }
