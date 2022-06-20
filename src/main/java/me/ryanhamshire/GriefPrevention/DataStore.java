@@ -26,6 +26,7 @@ import me.ryanhamshire.GriefPrevention.events.ClaimCreatedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimDeletedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimExtendEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimTransferEvent;
+import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
@@ -41,6 +42,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Tameable;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -818,6 +820,32 @@ public abstract class DataStore
         {
             return Collections.unmodifiableCollection(new ArrayList<>());
         }
+    }
+
+    public @NotNull Set<Claim> getChunkClaims(@NotNull World world, @NotNull BoundingBox boundingBox)
+    {
+        Set<Claim> claims = new HashSet<>();
+        int chunkXMax = boundingBox.getMaxX() >> 4;
+        int chunkZMax = boundingBox.getMaxZ() >> 4;
+
+        for (int chunkX = boundingBox.getMinX() >> 4; chunkX <= chunkXMax; ++chunkX)
+        {
+            for (int chunkZ = boundingBox.getMinZ() >> 4; chunkZ <= chunkZMax; ++chunkZ)
+            {
+                ArrayList<Claim> chunkClaims = this.chunksToClaimsMap.get(getChunkHash(chunkX, chunkZ));
+                if (chunkClaims == null) continue;
+
+                for (Claim claim : chunkClaims)
+                {
+                    if (claim.inDataStore && world.equals(claim.getLesserBoundaryCorner().getWorld()))
+                    {
+                        claims.add(claim);
+                    }
+                }
+            }
+        }
+
+        return claims;
     }
 
     //gets an almost-unique, persistent identifier for a chunk
@@ -1941,32 +1969,9 @@ public abstract class DataStore
     //gets all the claims "near" a location
     Set<Claim> getNearbyClaims(Location location)
     {
-        Set<Claim> claims = new HashSet<>();
-
-        Chunk lesserChunk = location.getWorld().getChunkAt(location.subtract(150, 0, 150));
-        Chunk greaterChunk = location.getWorld().getChunkAt(location.add(300, 0, 300));
-
-        for (int chunk_x = lesserChunk.getX(); chunk_x <= greaterChunk.getX(); chunk_x++)
-        {
-            for (int chunk_z = lesserChunk.getZ(); chunk_z <= greaterChunk.getZ(); chunk_z++)
-            {
-                Chunk chunk = location.getWorld().getChunkAt(chunk_x, chunk_z);
-                Long chunkID = getChunkHash(chunk.getBlock(0, 0, 0).getLocation());
-                ArrayList<Claim> claimsInChunk = this.chunksToClaimsMap.get(chunkID);
-                if (claimsInChunk != null)
-                {
-                    for (Claim claim : claimsInChunk)
-                    {
-                        if (claim.inDataStore && claim.getLesserBoundaryCorner().getWorld().equals(location.getWorld()))
-                        {
-                            claims.add(claim);
-                        }
-                    }
-                }
-            }
-        }
-
-        return claims;
+        return getChunkClaims(
+                location.getWorld(),
+                new BoundingBox(location.subtract(150, 0, 150), location.clone().add(300, 0, 300)));
     }
 
     //deletes all the land claims in a specified world
