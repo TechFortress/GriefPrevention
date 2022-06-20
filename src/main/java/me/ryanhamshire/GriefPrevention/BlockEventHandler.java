@@ -821,40 +821,64 @@ public class BlockEventHandler implements Listener
         }
     }
 
-    //fire doesn't spread unless configured to, but other blocks still do (mushrooms and vines, for example)
+    private Claim lastBlockSpreadClaim = null;
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onBlockSpread(BlockSpreadEvent spreadEvent)
+    public void onBlockSpread(@NotNull BlockSpreadEvent spreadEvent)
     {
-        if (spreadEvent.getSource().getType() != Material.FIRE) return;
 
-        //don't track in worlds where claims are not enabled
+        // Don't track in worlds where claims are not enabled.
         if (!GriefPrevention.instance.claimsEnabledForWorld(spreadEvent.getBlock().getWorld())) return;
 
-        if (!GriefPrevention.instance.config_fireSpreads)
+        boolean isFire = Tag.FIRE.isTagged(spreadEvent.getSource().getType());
+
+        // Obey global fire rules.
+        if (isFire && !GriefPrevention.instance.config_fireSpreads)
         {
+            extinguishFiniteFire(spreadEvent.getSource());
             spreadEvent.setCancelled(true);
-
-            Block underBlock = spreadEvent.getSource().getRelative(BlockFace.DOWN);
-            if (underBlock.getType() != Material.NETHERRACK)
-            {
-                spreadEvent.getSource().setType(Material.AIR);
-            }
-
             return;
         }
 
-        //never spread into a claimed area, regardless of settings
-        if (this.dataStore.getClaimAt(spreadEvent.getBlock().getLocation(), false, null) != null)
-        {
-            if (GriefPrevention.instance.config_claims_firespreads) return;
-            spreadEvent.setCancelled(true);
+        Claim spreadTo = this.dataStore.getClaimAt(spreadEvent.getBlock().getLocation(), false, true, lastBlockSpreadClaim);
 
-            //if the source of the spread is not fire on netherrack, put out that source fire to save cpu cycles
-            Block source = spreadEvent.getSource();
-            if (source.getRelative(BlockFace.DOWN).getType() != Material.NETHERRACK)
-            {
-                source.setType(Material.AIR);
-            }
+        // Spreading in unclaimed area is allowed.
+        if (spreadTo == null) {
+            return;
+        }
+
+        // Cache claim to reduce the strain of repeated bonemeal usage.
+        lastBlockSpreadClaim = spreadTo;
+
+        Claim spreadFrom = this.dataStore.getClaimAt(spreadEvent.getSource().getLocation(), false, true, spreadTo);
+
+        // Disallow spreading from other users' claims.
+        if (spreadFrom == null || !Objects.equals(spreadTo.getOwnerID(), spreadFrom.getOwnerID()))
+        {
+            if (isFire) extinguishFiniteFire(spreadEvent.getSource());
+            spreadEvent.setCancelled(true);
+            return;
+        }
+
+        // If owners match, also obey claim fire spread rules.
+        if (isFire && !GriefPrevention.instance.config_claims_firespreads)
+        {
+            extinguishFiniteFire(spreadEvent.getSource());
+            spreadEvent.setCancelled(true);
+        }
+    }
+
+    private void extinguishFiniteFire(@NotNull Block fire) {
+        Block underBlock = fire.getRelative(BlockFace.DOWN);
+        Tag<Material> infiniburn = switch (fire.getWorld().getEnvironment())
+                {
+                    case NORMAL, CUSTOM -> Tag.INFINIBURN_OVERWORLD;
+                    case NETHER -> Tag.INFINIBURN_NETHER;
+                    case THE_END -> Tag.INFINIBURN_END;
+                };
+
+        if (!infiniburn.isTagged(underBlock.getType()))
+        {
+            fire.setType(Material.AIR);
         }
     }
 
