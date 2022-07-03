@@ -1740,6 +1740,8 @@ class PlayerEventHandler implements Listener
                                 clickedBlockType == Material.CAKE ||
                                 clickedBlockType == Material.CARTOGRAPHY_TABLE ||
                                 clickedBlockType == Material.CAULDRON ||
+                                clickedBlockType == Material.WATER_CAULDRON ||
+                                clickedBlockType == Material.LAVA_CAULDRON ||
                                 clickedBlockType == Material.CAVE_VINES ||
                                 clickedBlockType == Material.CAVE_VINES_PLANT ||
                                 clickedBlockType == Material.CHIPPED_ANVIL ||
