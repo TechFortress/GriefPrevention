@@ -254,5 +254,13 @@ public enum Messages
     StandInSubclaim,
     SubclaimRestricted,
     SubclaimUnrestricted,
-    NetherPortalTrapDetectionMessage
+    NetherPortalTrapDetectionMessage,
+    BannedFromClaim,
+    CannotBanManager,
+    PlayerBannedFromClaim,
+    PlayerBannedFromClaims,
+    PlayerUnBannedFromClaims,
+    PlayerUnBannedFromClaim,
+    BanListNoClaim,
+    BanListHeader;
 }

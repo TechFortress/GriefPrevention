@@ -78,6 +78,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerLoginEvent.Result;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -858,6 +859,12 @@ class PlayerEventHandler implements Listener
                 }
             }
         }
+
+        Claim atClaim = dataStore.getClaimAt(player.getLocation(), false, playerData.lastClaim);
+        if (checkBannedFromClaim(atClaim, playerData)) {
+            instance.ejectPlayer(player);
+            GriefPrevention.sendMessage(player, TextMode.Err, Messages.BannedFromClaim);
+        }
     }
 
     //when a player spawns, conditionally apply temporary pvp protection
@@ -877,6 +884,12 @@ class PlayerEventHandler implements Listener
         }
 
         instance.checkPvpProtectionNeeded(player);
+
+        Claim toClaim = dataStore.getClaimAt(event.getRespawnLocation(), false, playerData.lastClaim);
+        if (checkBannedFromClaim(toClaim, playerData)) {
+            instance.ejectPlayer(player, event.getRespawnLocation());
+            GriefPrevention.sendMessage(player, TextMode.Err, Messages.BannedFromClaim);
+        }
     }
 
     //when a player dies...
@@ -1068,6 +1081,15 @@ class PlayerEventHandler implements Listener
         if (event.getTo() == null || event.getTo().getWorld() == null) return;
 
         Player player = event.getPlayer();
+        PlayerData playerData = dataStore.getPlayerData(event.getPlayer().getUniqueId());
+        Claim toClaim = dataStore.getClaimAt(event.getTo(), true, playerData.lastClaim);
+
+        if (checkBannedFromClaim(toClaim, playerData)) {
+            instance.ejectPlayer(player, event.getTo());
+            GriefPrevention.sendMessage(player, TextMode.Err, Messages.BannedFromClaim);
+            return;
+        }
+
         if (event.getCause() == TeleportCause.NETHER_PORTAL)
         {
             //FEATURE: when players get trapped in a nether portal, send them back through to the other side
@@ -1076,6 +1098,7 @@ class PlayerEventHandler implements Listener
             //don't track in worlds where claims are not enabled
             if (!instance.claimsEnabledForWorld(event.getTo().getWorld())) return;
         }
+
     }
 
     //when a player teleports
@@ -1084,12 +1107,12 @@ class PlayerEventHandler implements Listener
     {
         Player player = event.getPlayer();
         PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+        Claim toClaim = this.dataStore.getClaimAt(event.getTo(), false, playerData.lastClaim);
 
         //FEATURE: prevent players from using ender pearls to gain access to secured claims
         TeleportCause cause = event.getCause();
         if (cause == TeleportCause.CHORUS_FRUIT || (cause == TeleportCause.ENDER_PEARL && instance.config_claims_enderPearlsRequireAccessTrust))
         {
-            Claim toClaim = this.dataStore.getClaimAt(event.getTo(), false, playerData.lastClaim);
             if (toClaim != null)
             {
                 playerData.lastClaim = toClaim;
@@ -1102,6 +1125,12 @@ class PlayerEventHandler implements Listener
                         player.getInventory().addItem(new ItemStack(Material.ENDER_PEARL));
                 }
             }
+        }
+
+        if (checkBannedFromClaim(toClaim, playerData)) {
+            instance.ejectPlayer(player, event.getTo());
+            GriefPrevention.sendMessage(player, TextMode.Err, Messages.BannedFromClaim);
+            return;
         }
 
         //FEATURE: prevent teleport abuse to win sieges
@@ -1132,6 +1161,25 @@ class PlayerEventHandler implements Listener
             event.setCancelled(true);
             return;
         }
+    }
+
+    //when a player moves any distance each tick
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onPlayerMove(PlayerMoveEvent event)
+    {
+        // as this event gets called frequently we should only handle if the player moves by one or more blocks
+        if (event.getFrom().getBlockX() != event.getTo().getBlockX() || event.getFrom().getBlockY() != event.getTo().getBlockY() || event.getFrom().getBlockZ() != event.getTo().getBlockZ()) {
+            PlayerData playerData = dataStore.getPlayerData(event.getPlayer().getUniqueId());
+            Claim toClaim = dataStore.getClaimAt(event.getTo(), true, playerData.lastClaim);
+            if (checkBannedFromClaim(toClaim, playerData)) {
+                event.setCancelled(true);
+                GriefPrevention.sendMessage(event.getPlayer(), TextMode.Err, Messages.BannedFromClaim);
+            }
+        }
+    }
+
+    private boolean checkBannedFromClaim(Claim claim, PlayerData whoData) {
+        return claim != null && !whoData.ignoreClaims && claim.checkBanned(whoData.playerID);
     }
 
     //when a player triggers a raid (in a claim)

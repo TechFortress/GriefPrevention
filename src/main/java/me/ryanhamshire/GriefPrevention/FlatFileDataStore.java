@@ -526,6 +526,8 @@ public class FlatFileDataStore extends DataStore
         claim.modifiedDate = new Date(lastModifiedDate);
         claim.id = claimID;
 
+        claim.bannedPlayerIds.addAll(yaml.getStringList("bannedPlayerIDs"));
+
         return claim;
     }
 
@@ -562,6 +564,8 @@ public class FlatFileDataStore extends DataStore
         yaml.set("Parent Claim ID", parentID);
 
         yaml.set("inheritNothing", claim.getSubclaimRestrictions());
+
+        yaml.set("bannedPlayerIDs", claim.bannedPlayerIds);
 
         return yaml.saveToString();
     }

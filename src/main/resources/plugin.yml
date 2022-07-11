@@ -6,6 +6,21 @@ loadbefore: [TheUnderground]
 version: '${git.commit.id.describe}'
 api-version: '1.17'
 commands:
+    claimban:
+      description: Bans a player from a claim(s)
+      usage: /ClaimBan <player>
+      aliases: banish # Be gone!
+      permission: griefprevention.claims
+    claimunban:
+      description: Unbans a player from a claim(s)
+      usage: /ClaimUnBan <player>
+      aliases: [claimdeban, unbanish]
+      permission: griefprevention.claims
+    claimbanlist:
+      description: Lists claimbans for the claim your standing in
+      usage: /ClaimBanList
+      aliases: claimbans
+      permission: griefprevention.claims
     abandonclaim:
       description: Deletes a claim.
       usage: /AbandonClaim

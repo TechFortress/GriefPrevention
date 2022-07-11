@@ -1716,6 +1716,149 @@ public class GriefPrevention extends JavaPlugin
             return true;
         }
 
+        if (cmd.getName().equalsIgnoreCase("claimban") && player != null) {
+            //requires exactly one parameter, the other player's name
+            if (args.length != 1) return false;
+
+            PlayerData data = dataStore.getPlayerData(player.getUniqueId());
+            Claim claim = dataStore.getClaimAt(player.getLocation(), true, null);
+
+            OfflinePlayer target = this.resolvePlayerByName(args[0]);
+            if (target == null) {
+                GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerNotFound2);
+                return true;
+            }
+            String targetIdString = target.getUniqueId().toString();
+            Player targetPlayer = Bukkit.getPlayer(target.getUniqueId());
+
+            if (claim == null) {
+                for (Claim c : data.getClaims()) {
+                    if (c != null && c.parent == null) {
+                        if (c.checkPermission(UUID.fromString(targetIdString), ClaimPermission.Manage, null) == null) {
+                            GriefPrevention.sendMessage(player, TextMode.Err, Messages.CannotBanManager, targetPlayer == null ? lookupPlayerName(targetIdString) : targetPlayer.getName(), getfriendlyLocationString(c.lesserBoundaryCorner));
+                        } else if (!c.bannedPlayerIds.contains(targetIdString)) {
+                            if (c.bannedPlayerIds.size() >= 128) {
+                                GriefPrevention.sendMessage(player, ChatColor.RED, "Too many players banned from claim: " + getfriendlyLocationString(c.lesserBoundaryCorner));
+                            } else {
+                                c.bannedPlayerIds.add(targetIdString);
+                                c.dropPermission(targetIdString);
+                                dataStore.saveClaim(c);
+                                if (targetPlayer != null && c.contains(targetPlayer.getLocation(), false, false)) {
+                                    ejectPlayer(targetPlayer);
+                                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.BannedFromClaim);
+                                }
+                            }
+                        }
+                    }
+                }
+                GriefPrevention.sendMessage(player, TextMode.Success, Messages.PlayerBannedFromClaims, args[0]);
+            } else {
+                if (claim.checkPermission(player, ClaimPermission.Manage, null) != null) {
+                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoPermissionTrust, claim.getOwnerName());
+                    return true;
+                } else {
+                    if (claim.checkPermission(UUID.fromString(targetIdString), ClaimPermission.Manage, null) == null) {
+                        GriefPrevention.sendMessage(player, TextMode.Err, Messages.CannotBanManager, targetPlayer == null ? lookupPlayerName(targetIdString) : targetPlayer.getName(), getfriendlyLocationString(claim.lesserBoundaryCorner));
+                        return true;
+                    } else if (!claim.bannedPlayerIds.contains(targetIdString)) {
+                        if (claim.bannedPlayerIds.size() >= 128) {
+                            GriefPrevention.sendMessage(player, ChatColor.RED, "Too many players banned from claim");
+                        } else {
+                            claim.bannedPlayerIds.add(targetIdString);
+                            claim.dropPermission(targetIdString);
+                            dataStore.saveClaim(claim);
+                            if (targetPlayer != null && claim.contains(targetPlayer.getLocation(), false, false)) {
+                                ejectPlayer(targetPlayer);
+                                GriefPrevention.sendMessage(player, TextMode.Err, Messages.BannedFromClaim);
+                            }
+                        }
+                    }
+                }
+                GriefPrevention.sendMessage(player, TextMode.Success, Messages.PlayerBannedFromClaim, args[0]);
+            }
+            return true;
+        }
+
+        if (cmd.getName().equalsIgnoreCase("claimunban") && player != null) {
+            //requires exactly one parameter, the other player's name
+            if (args.length != 1) return false;
+
+            PlayerData data = dataStore.getPlayerData(player.getUniqueId());
+            Claim claim = dataStore.getClaimAt(player.getLocation(), true, null);
+
+            OfflinePlayer target = this.resolvePlayerByName(args[0]);
+            if (target == null) {
+                GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerNotFound2);
+                return true;
+            }
+            String targetIdString = target.getUniqueId().toString();
+
+            if (claim == null) {
+                for (Claim c : data.getClaims()) {
+                    if (c != null) {
+                        c.bannedPlayerIds.remove(targetIdString);
+                        dataStore.saveClaim(c);
+                        for (Claim child : c.children) {
+                            child.bannedPlayerIds.remove(targetIdString);
+                        }
+                    }
+                }
+                GriefPrevention.sendMessage(player, TextMode.Success, Messages.PlayerUnBannedFromClaims, args[0]);
+            } else {
+                if (claim.checkPermission(player, ClaimPermission.Manage, null) != null) {
+                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoPermissionTrust, claim.getOwnerName());
+                    return true;
+                } else {
+                    claim.bannedPlayerIds.remove(targetIdString);
+                    dataStore.saveClaim(claim);
+                    for (Claim child : claim.children) {
+                        child.bannedPlayerIds.remove(targetIdString);
+                    }
+                }
+                GriefPrevention.sendMessage(player, TextMode.Success, Messages.PlayerUnBannedFromClaim, args[0]);
+            }
+            return true;
+        }
+
+        if (cmd.getName().equalsIgnoreCase("claimbanlist") && player != null) {
+            PlayerData data = dataStore.getPlayerData(player.getUniqueId());
+            Claim claim = dataStore.getClaimAt(player.getLocation(), true, null);
+
+            if (claim == null) {
+                GriefPrevention.sendMessage(player, TextMode.Err, Messages.BanListNoClaim);
+            } else {
+                if (claim.checkPermission(player, ClaimPermission.Manage, null) != null) {
+                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoPermissionTrust, claim.getOwnerName());
+                    return true;
+                }
+
+                GriefPrevention.sendMessage(player, TextMode.Success, Messages.BanListHeader);
+                StringBuilder sb = new StringBuilder();
+                sb.append(ChatColor.RED).append('>').append(' ');
+                int i = -1;
+                for (String playerId : claim.bannedPlayerIds) {
+                    String name = lookupPlayerName(playerId);
+                    if (name == null) {
+                        name = playerId;
+                    }
+                    if (i == -1) {
+                        i = 0;
+                    } else {
+                        sb.append(", ");
+                        i += 2;
+                    }
+                    i += name.length();
+                    if (i > 48) {
+                        sb.append('\n').append(ChatColor.RED).append('>').append(' ');
+                        i = 0;
+                    }
+                    sb.append(ChatColor.YELLOW).append(name);
+                }
+                player.sendMessage(sb.toString());
+            }
+            return true;
+        }
+
         //accesstrust <player>
         else if (cmd.getName().equalsIgnoreCase("accesstrust") && player != null)
         {
@@ -3310,10 +3453,14 @@ public class GriefPrevention extends JavaPlugin
     }
 
     //moves a player from the claim he's in to a nearby wilderness location
-    public Location ejectPlayer(Player player)
+    public Location ejectPlayer(Player player) {
+        return ejectPlayer(player, player.getLocation());
+    }
+
+    //moves a player from the claim he's in to a nearby wilderness location
+    public Location ejectPlayer(Player player, Location candidateLocation)
     {
         //look for a suitable location
-        Location candidateLocation = player.getLocation();
         while (true)
         {
             Claim claim = null;

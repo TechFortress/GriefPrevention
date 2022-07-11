@@ -101,7 +101,7 @@ public class DatabaseDataStore extends DataStore
         {
             //ensure the data tables exist
             statement.execute("CREATE TABLE IF NOT EXISTS griefprevention_nextclaimid (nextid INTEGER)");
-            statement.execute("CREATE TABLE IF NOT EXISTS griefprevention_claimdata (id INTEGER, owner VARCHAR(50), lessercorner VARCHAR(100), greatercorner VARCHAR(100), builders TEXT, containers TEXT, accessors TEXT, managers TEXT, inheritnothing BOOLEAN, parentid INTEGER)");
+            statement.execute("CREATE TABLE IF NOT EXISTS griefprevention_claimdata (id INTEGER, owner VARCHAR(50), lessercorner VARCHAR(100), greatercorner VARCHAR(100), builders TEXT, containers TEXT, accessors TEXT, managers TEXT, inheritnothing BOOLEAN, parentid INTEGER, bannedplayerids TEXT)");
             statement.execute("CREATE TABLE IF NOT EXISTS griefprevention_playerdata (name VARCHAR(50), lastlogin DATETIME, accruedblocks INTEGER, bonusblocks INTEGER)");
             statement.execute("CREATE TABLE IF NOT EXISTS griefprevention_schemaversion (version INTEGER)");
 
@@ -346,7 +346,11 @@ public class DatabaseDataStore extends DataStore
                 String managersString = results.getString("managers");
                 List<String> managerNames = Arrays.asList(managersString.split(";"));
                 managerNames = this.convertNameListToUUIDList(managerNames);
+
                 Claim claim = new Claim(lesserBoundaryCorner, greaterBoundaryCorner, ownerID, builderNames, containerNames, accessorNames, managerNames, inheritNothing, claimID);
+
+                String bannedPlayerIDsString = results.getString("bannedplayerids");
+                claim.bannedPlayerIds.addAll(Arrays.asList(bannedPlayerIDsString.split(";")));
 
                 if (removeClaim)
                 {
@@ -446,6 +450,8 @@ public class DatabaseDataStore extends DataStore
         boolean inheritNothing = claim.getSubclaimRestrictions();
         long parentId = claim.parent == null ? -1 : claim.parent.id;
 
+        String bannedPlayers = this.storageStringBuilder(claim.bannedPlayerIds);
+
         try (PreparedStatement insertStmt = this.databaseConnection.prepareStatement(SQL_INSERT_CLAIM))
         {
 
@@ -459,6 +465,7 @@ public class DatabaseDataStore extends DataStore
             insertStmt.setString(8, managersString);
             insertStmt.setBoolean(9, inheritNothing);
             insertStmt.setLong(10, parentId);
+            insertStmt.setString(11, bannedPlayers);
             insertStmt.executeUpdate();
         }
         catch (SQLException e)

@@ -1811,6 +1811,15 @@ public abstract class DataStore
 
         this.addDefault(defaults, Messages.NetherPortalTrapDetectionMessage, "It seems you might be stuck inside a nether portal. We will rescue you in a few seconds if that is the case!", "Sent to player on join, if they left while inside a nether portal.");
 
+        this.addDefault(defaults, Messages.BannedFromClaim, "You are banned from this claim.", null);
+        this.addDefault(defaults, Messages.CannotBanManager, "Could not ban {0} from claim at {1} as they are a manager of it.", "{0} is the manager name {1} is the claim location");
+        this.addDefault(defaults, Messages.PlayerBannedFromClaim, "Player has been banned from this claim.", null);
+        this.addDefault(defaults, Messages.PlayerBannedFromClaims, "Player has been banned from all of your claims.", null);
+        this.addDefault(defaults, Messages.PlayerUnBannedFromClaim, "Player has been unbanned from your claim.", null);
+        this.addDefault(defaults, Messages.PlayerUnBannedFromClaims, "Player has been unbanned from all of your claims.", null);
+        this.addDefault(defaults, Messages.BanListNoClaim, "Stand inside the claim you're curious about.", null);
+        this.addDefault(defaults, Messages.BanListHeader, "Banned Players:", null);
+
         //load the config file
         FileConfiguration config = YamlConfiguration.loadConfiguration(new File(messagesFilePath));
 

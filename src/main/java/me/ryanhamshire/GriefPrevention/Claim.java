@@ -18,8 +18,8 @@
 
 package me.ryanhamshire.GriefPrevention;
 
-import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import me.ryanhamshire.GriefPrevention.events.ClaimPermissionCheckEvent;
+import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -95,6 +95,9 @@ public class Claim
     //children (subdivisions)
     //note subdivisions themselves never have children
     public ArrayList<Claim> children = new ArrayList<>();
+
+    //playerIds who have been banned from this claim
+    public ArrayList<String> bannedPlayerIds = new ArrayList<>();
 
     //information about a siege involving this claim.  null means no siege is impacting this claim
     public SiegeData siegeData = null;
@@ -277,6 +280,7 @@ public class Claim
         this.children = new ArrayList<>(claim.children);
         this.siegeData = claim.siegeData;
         this.doorsOpen = claim.doorsOpen;
+        this.bannedPlayerIds = claim.bannedPlayerIds;
     }
 
     //measurements.  all measurements are in blocks
@@ -448,6 +452,29 @@ public class Claim
             @Nullable Event event)
     {
         return checkPermission(player, permission, event, null);
+    }
+
+    /**
+     * Checks if a player is banned from this claim
+     * @param who the player to check
+     * @return true if banned, false otherwise
+     */
+    public boolean checkBanned(Player who) {
+        return checkBanned(who.getUniqueId());
+    }
+
+    /**
+     * Checks if a player UUID is banned from this claim
+     * @param uid the player UUID to check
+     * @return true if banned, false otherwise
+     */
+    public boolean checkBanned(UUID uid) {
+        if (bannedPlayerIds.contains(uid.toString())) {
+            return true;
+        } else if (!inheritNothing && parent != null) {
+            return parent.checkBanned(uid);
+        }
+        return false;
     }
 
     /**
