@@ -50,6 +50,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockBurnEvent;
 import org.bukkit.event.block.BlockDispenseEvent;
+import org.bukkit.event.block.BlockFertilizeEvent;
 import org.bukkit.event.block.BlockFormEvent;
 import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockIgniteEvent;
@@ -818,6 +819,38 @@ public class BlockEventHandler implements Listener
         if (!GriefPrevention.instance.config_fireSpreads && igniteEvent.getCause() != IgniteCause.FLINT_AND_STEEL && igniteEvent.getCause() != IgniteCause.LIGHTNING)
         {
             igniteEvent.setCancelled(true);
+        }
+    }
+
+    private Claim lastBlockFertilizeClaim = null;
+    @EventHandler(priority = EventPriority.LOWEST)
+    private void onBlockFertilize(@NotNull BlockFertilizeEvent event)
+    {
+
+        // Don't track in worlds where claims are not enabled.
+        if (!GriefPrevention.instance.claimsEnabledForWorld(event.getBlock().getWorld())) return;
+
+        // Trees are handled by the StructureGrowEvent handler.
+        if (Tag.SAPLINGS.isTagged(event.getBlock().getType())) return;
+
+        Player player = event.getPlayer();
+        Claim sourceClaim = null;
+        if (player == null) {
+            sourceClaim = this.dataStore.getClaimAt(event.getBlock().getLocation(), false, false, lastBlockFertilizeClaim);
+            if (sourceClaim != null) lastBlockFertilizeClaim = sourceClaim;
+        }
+
+        BoundingBox box = BoundingBox.ofStates(event.getBlocks());
+        BiPredicate<@NotNull Claim, @NotNull BoundingBox> conflictCheck;
+        if (player != null) {
+            conflictCheck = (claim, boundingBox) -> claim.checkPermission(player, ClaimPermission.Build, event) != null;
+        } else {
+            conflictCheck = denyOtherOwnerIntersection(sourceClaim);
+        }
+
+        if (boxConflictsWithClaims(event.getBlock().getWorld(), box, sourceClaim, conflictCheck))
+        {
+            event.setCancelled(true);
         }
     }
 
