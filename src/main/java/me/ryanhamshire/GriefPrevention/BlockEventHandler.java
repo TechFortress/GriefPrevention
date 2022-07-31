@@ -44,6 +44,8 @@ import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.minecart.HopperMinecart;
+import org.bukkit.event.Cancellable;
+import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -84,6 +86,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 //event handlers related to blocks
@@ -826,32 +829,68 @@ public class BlockEventHandler implements Listener
     @EventHandler(priority = EventPriority.LOWEST)
     private void onBlockFertilize(@NotNull BlockFertilizeEvent event)
     {
-
         // Don't track in worlds where claims are not enabled.
         if (!GriefPrevention.instance.claimsEnabledForWorld(event.getBlock().getWorld())) return;
 
         // Trees are handled by the StructureGrowEvent handler.
         if (Tag.SAPLINGS.isTagged(event.getBlock().getType())) return;
 
-        Player player = event.getPlayer();
-        Claim sourceClaim = null;
-        if (player == null) {
-            sourceClaim = this.dataStore.getClaimAt(event.getBlock().getLocation(), false, false, lastBlockFertilizeClaim);
-            if (sourceClaim != null) lastBlockFertilizeClaim = sourceClaim;
-        }
+        onMultiBlockGrow(
+                event.getPlayer(),
+                event.getBlock(),
+                event.getBlocks(),
+                event,
+                sourceClaim -> {
+                    if (sourceClaim != null) {
+                        lastBlockFertilizeClaim = sourceClaim;
+                    }
+                });
+    }
 
-        BoundingBox box = BoundingBox.ofStates(event.getBlocks());
+    private <T extends Event & Cancellable> void onMultiBlockGrow(
+            @Nullable Player player,
+            @NotNull Block source,
+            @NotNull Collection<BlockState> states,
+            @NotNull T event,
+            @NotNull Consumer<Claim> cancelSourceConsumer)
+    {
+        Claim sourceClaim = null;
+        BoundingBox box = BoundingBox.ofStates(states);
         BiPredicate<@NotNull Claim, @NotNull BoundingBox> conflictCheck;
         if (player != null) {
+            // If a player is present, check their permission in affected claims.
             conflictCheck = (claim, boundingBox) -> claim.checkPermission(player, ClaimPermission.Build, event) != null;
         } else {
+            // If no player is present (dispenser, natural growth, etc.), use owner comparison.
+            sourceClaim = this.dataStore.getClaimAt(source.getLocation(), false, false, lastBlockFertilizeClaim);
             conflictCheck = denyOtherOwnerIntersection(sourceClaim);
         }
 
-        if (boxConflictsWithClaims(event.getBlock().getWorld(), box, sourceClaim, conflictCheck))
+        if (boxConflictsWithClaims(source.getWorld(), box, sourceClaim, conflictCheck))
         {
             event.setCancelled(true);
+            cancelSourceConsumer.accept(sourceClaim);
         }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onTreeGrow(@NotNull StructureGrowEvent event)
+    {
+        // Only take these potentially expensive steps if configured to do so.
+        if (!GriefPrevention.instance.config_limitTreeGrowth) return;
+
+        // Don't track in worlds where claims are not enabled.
+        if (!GriefPrevention.instance.claimsEnabledForWorld(event.getWorld())) return;
+
+        Block source = event.getLocation().getBlock();
+        onMultiBlockGrow(
+                event.getPlayer(),
+                source,
+                event.getBlocks(),
+                event,
+                // Break the initiator to prevent repeat checks. As these are saplings, chorus flowers, etc. no special
+                // tool should be required to return the sapling in the event that this is unintentional grief.
+                sourceClaim -> source.breakNaturally());
     }
 
     private Claim lastBlockSpreadClaim = null;
@@ -1093,31 +1132,6 @@ public class BlockEventHandler implements Listener
 
         //everything else is NOT OK
         dispenseEvent.setCancelled(true);
-    }
-
-    @EventHandler(ignoreCancelled = true)
-    public void onTreeGrow(@NotNull StructureGrowEvent growEvent)
-    {
-        //only take these potentially expensive steps if configured to do so
-        if (!GriefPrevention.instance.config_limitTreeGrowth) return;
-
-        //don't track in worlds where claims are not enabled
-        if (!GriefPrevention.instance.claimsEnabledForWorld(growEvent.getWorld())) return;
-
-        Location rootLocation = growEvent.getLocation();
-        Claim rootClaim = this.dataStore.getClaimAt(rootLocation, false, true, null);
-
-        // If the tree is in an admin claim, it has permission to grow wherever it wants to.
-        if (rootClaim != null && rootClaim.isAdminClaim()) return;
-
-        BoundingBox box = BoundingBox.ofStates(growEvent.getBlocks());
-        if (boxConflictsWithClaims(growEvent.getWorld(), box, rootClaim, denyOtherOwnerIntersection(rootClaim)))
-        {
-            growEvent.setCancelled(true);
-            // Break the initiator to prevent repeat checks. As these are saplings, chorus flowers, etc. no special tool
-            // should be required to return the sapling in the event that this is unintentional grief.
-            rootLocation.getBlock().breakNaturally();
-        }
     }
 
     @EventHandler(ignoreCancelled = true)
