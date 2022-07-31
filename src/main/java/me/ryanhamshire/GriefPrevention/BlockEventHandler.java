@@ -971,11 +971,12 @@ public class BlockEventHandler implements Listener
 
     //blocks are not destroyed by fire, unless configured to do so
     @EventHandler(priority = EventPriority.LOWEST)
-    public void onBlockBurn(BlockBurnEvent burnEvent)
+    public void onBlockBurn(@NotNull BlockBurnEvent burnEvent)
     {
-        //don't track in worlds where claims are not enabled
+        // Don't track in worlds where claims are not enabled.
         if (!GriefPrevention.instance.claimsEnabledForWorld(burnEvent.getBlock().getWorld())) return;
 
+        // Obey global fire rules.
         if (!GriefPrevention.instance.config_fireDestroys)
         {
             burnEvent.setCancelled(true);
@@ -990,27 +991,18 @@ public class BlockEventHandler implements Listener
                             block.getRelative(BlockFace.WEST)
                     };
 
-            //pro-actively put out any fires adjacent the burning block, to reduce future processing here
+            // Proactively put out any fires adjacent to the burning block now to reduce future processing.
             for (Block adjacentBlock : adjacentBlocks)
             {
-                if (adjacentBlock.getType() == Material.FIRE && adjacentBlock.getRelative(BlockFace.DOWN).getType() != Material.NETHERRACK)
-                {
-                    adjacentBlock.setType(Material.AIR);
-                }
-            }
-
-            Block aboveBlock = block.getRelative(BlockFace.UP);
-            if (aboveBlock.getType() == Material.FIRE)
-            {
-                aboveBlock.setType(Material.AIR);
+                extinguishFiniteFire(adjacentBlock);
             }
             return;
         }
 
-        //never burn claimed blocks, regardless of settings
-        if (this.dataStore.getClaimAt(burnEvent.getBlock().getLocation(), false, null) != null)
+        // Only burn claimed blocks if configured to do so.
+        if (!GriefPrevention.instance.config_claims_firedamages
+                && this.dataStore.getClaimAt(burnEvent.getBlock().getLocation(), false, null) != null)
         {
-            if (GriefPrevention.instance.config_claims_firedamages) return;
             burnEvent.setCancelled(true);
         }
     }
