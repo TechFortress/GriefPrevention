@@ -840,8 +840,10 @@ public class BlockEventHandler implements Listener
                 event.getBlock(),
                 event.getBlocks(),
                 event,
-                sourceClaim -> {
-                    if (sourceClaim != null) {
+                sourceClaim ->
+                {
+                    if (sourceClaim != null)
+                    {
                         lastBlockFertilizeClaim = sourceClaim;
                     }
                 });
@@ -857,18 +859,23 @@ public class BlockEventHandler implements Listener
         Claim sourceClaim = null;
         BoundingBox box = BoundingBox.ofStates(states);
         BiPredicate<@NotNull Claim, @NotNull BoundingBox> conflictCheck;
-        if (player != null) {
+        if (player != null)
+        {
             // If a player is present, check their permission in affected claims.
-            conflictCheck = (claim, boundingBox) -> {
+            conflictCheck = (claim, boundingBox) ->
+            {
                 Supplier<String> supplier = claim.checkPermission(player, ClaimPermission.Build, event);
-                if (supplier != null) {
+                if (supplier != null)
+                {
                     // Warn when denied access to a claim.
                     GriefPrevention.sendMessage(player, TextMode.Err, supplier.get());
                     return true;
                 }
                 return false;
             };
-        } else {
+        }
+        else
+        {
             // If no player is present (dispenser, natural growth, etc.), use owner comparison.
             sourceClaim = this.dataStore.getClaimAt(source.getLocation(), false, false, lastBlockFertilizeClaim);
             conflictCheck = denyOtherOwnerIntersection(sourceClaim);
@@ -905,7 +912,6 @@ public class BlockEventHandler implements Listener
     @EventHandler(priority = EventPriority.LOWEST)
     public void onBlockSpread(@NotNull BlockSpreadEvent spreadEvent)
     {
-
         // Don't track in worlds where claims are not enabled.
         if (!GriefPrevention.instance.claimsEnabledForWorld(spreadEvent.getBlock().getWorld())) return;
 
@@ -926,7 +932,7 @@ public class BlockEventHandler implements Listener
             return;
         }
 
-        // Cache claim to reduce the strain of repeated bonemeal usage.
+        // Cache claim to reduce the strain of repeated attempts.
         lastBlockSpreadClaim = spreadTo;
 
         Claim spreadFrom = this.dataStore.getClaimAt(spreadEvent.getSource().getLocation(), false, true, spreadTo);
@@ -947,7 +953,8 @@ public class BlockEventHandler implements Listener
         }
     }
 
-    private void extinguishFiniteFire(@NotNull Block fire) {
+    private void extinguishFiniteFire(@NotNull Block fire)
+    {
         Block underBlock = fire.getRelative(BlockFace.DOWN);
         Tag<Material> infiniburn = switch (fire.getWorld().getEnvironment())
                 {
