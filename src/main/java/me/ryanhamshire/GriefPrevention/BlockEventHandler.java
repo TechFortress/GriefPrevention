@@ -859,7 +859,15 @@ public class BlockEventHandler implements Listener
         BiPredicate<@NotNull Claim, @NotNull BoundingBox> conflictCheck;
         if (player != null) {
             // If a player is present, check their permission in affected claims.
-            conflictCheck = (claim, boundingBox) -> claim.checkPermission(player, ClaimPermission.Build, event) != null;
+            conflictCheck = (claim, boundingBox) -> {
+                Supplier<String> supplier = claim.checkPermission(player, ClaimPermission.Build, event);
+                if (supplier != null) {
+                    // Warn when denied access to a claim.
+                    GriefPrevention.sendMessage(player, TextMode.Err, supplier.get());
+                    return true;
+                }
+                return false;
+            };
         } else {
             // If no player is present (dispenser, natural growth, etc.), use owner comparison.
             sourceClaim = this.dataStore.getClaimAt(source.getLocation(), false, false, lastBlockFertilizeClaim);
