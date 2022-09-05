@@ -354,6 +354,10 @@ public class GriefPrevention extends JavaPlugin
         FindUnusedClaimsTask task2 = new FindUnusedClaimsTask();
         this.getServer().getScheduler().scheduleSyncRepeatingTask(this, task2, 20L * 60, 20L * config_advanced_claim_expiration_check_rate);
 
+        //start recurring check for players in claims they are banned from
+        CheckClaimbannedTask task3 = new CheckClaimbannedTask();
+        this.getServer().getScheduler().scheduleSyncRepeatingTask(this, task3, 10, 10);
+
         //register for events
         PluginManager pluginManager = this.getServer().getPluginManager();
 
@@ -1734,7 +1738,7 @@ public class GriefPrevention extends JavaPlugin
             if (claim == null) {
                 for (Claim c : data.getClaims()) {
                     if (c != null && c.parent == null) {
-                        if (c.checkPermission(UUID.fromString(targetIdString), ClaimPermission.Manage, null) == null) {
+                        if (c.checkPermission(UUID.fromString(targetIdString), ClaimPermission.Manage, null) == null && !data.ignoreClaims) {
                             GriefPrevention.sendMessage(player, TextMode.Err, Messages.CannotBanManager, targetPlayer == null ? lookupPlayerName(targetIdString) : targetPlayer.getName(), getfriendlyLocationString(c.lesserBoundaryCorner));
                         } else if (!c.bannedPlayerIds.contains(targetIdString)) {
                             if (c.bannedPlayerIds.size() >= 128) {
@@ -1757,7 +1761,7 @@ public class GriefPrevention extends JavaPlugin
                     GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoPermissionTrust, claim.getOwnerName());
                     return true;
                 } else {
-                    if (claim.checkPermission(UUID.fromString(targetIdString), ClaimPermission.Manage, null) == null) {
+                    if (claim.checkPermission(UUID.fromString(targetIdString), ClaimPermission.Manage, null) == null && !data.ignoreClaims) {
                         GriefPrevention.sendMessage(player, TextMode.Err, Messages.CannotBanManager, targetPlayer == null ? lookupPlayerName(targetIdString) : targetPlayer.getName(), getfriendlyLocationString(claim.lesserBoundaryCorner));
                         return true;
                     } else if (!claim.bannedPlayerIds.contains(targetIdString)) {
@@ -1848,7 +1852,7 @@ public class GriefPrevention extends JavaPlugin
                         i += 2;
                     }
                     i += name.length();
-                    if (i > 48) {
+                    if (i > 45) {
                         sb.append('\n').append(ChatColor.RED).append('>').append(' ');
                         i = 0;
                     }

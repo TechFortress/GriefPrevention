@@ -1170,9 +1170,13 @@ class PlayerEventHandler implements Listener
         // as this event gets called frequently we should only handle if the player moves by one or more blocks
         if (event.getFrom().getBlockX() != event.getTo().getBlockX() || event.getFrom().getBlockY() != event.getTo().getBlockY() || event.getFrom().getBlockZ() != event.getTo().getBlockZ()) {
             PlayerData playerData = dataStore.getPlayerData(event.getPlayer().getUniqueId());
-            Claim toClaim = dataStore.getClaimAt(event.getTo(), true, playerData.lastClaim);
+            Claim toClaim = dataStore.getClaimAt(event.getTo(), false, playerData.lastClaim);
             if (checkBannedFromClaim(toClaim, playerData)) {
-                event.setCancelled(true);
+                if (claimContainsAABB(toClaim, event.getPlayer().getBoundingBox())) {
+                    instance.ejectPlayer(event.getPlayer());
+                } else {
+                    event.setCancelled(true);
+                }
                 GriefPrevention.sendMessage(event.getPlayer(), TextMode.Err, Messages.BannedFromClaim);
             }
         }
@@ -1180,6 +1184,12 @@ class PlayerEventHandler implements Listener
 
     private boolean checkBannedFromClaim(Claim claim, PlayerData whoData) {
         return claim != null && !whoData.ignoreClaims && claim.checkBanned(whoData.playerID);
+    }
+
+    private boolean claimContainsAABB(Claim c, org.bukkit.util.BoundingBox bbox) {
+        Location loc = bbox.getMax().toLocation(c.getGreaterBoundaryCorner().getWorld());
+        return c.contains(loc, false, false) ||
+                c.contains(loc.zero().add(bbox.getMin()), false, false);
     }
 
     //when a player triggers a raid (in a claim)
