@@ -1801,10 +1801,10 @@ public class GriefPrevention extends JavaPlugin
                 for (Claim c : data.getClaims()) {
                     if (c != null) {
                         c.bannedPlayerIds.remove(targetIdString);
-                        dataStore.saveClaim(c);
                         for (Claim child : c.children) {
                             child.bannedPlayerIds.remove(targetIdString);
                         }
+                        dataStore.saveClaim(c);
                     }
                 }
                 GriefPrevention.sendMessage(player, TextMode.Success, Messages.PlayerUnBannedFromClaims, args[0]);
@@ -1814,10 +1814,10 @@ public class GriefPrevention extends JavaPlugin
                     return true;
                 } else {
                     claim.bannedPlayerIds.remove(targetIdString);
-                    dataStore.saveClaim(claim);
                     for (Claim child : claim.children) {
                         child.bannedPlayerIds.remove(targetIdString);
                     }
+                    dataStore.saveClaim(claim);
                 }
                 GriefPrevention.sendMessage(player, TextMode.Success, Messages.PlayerUnBannedFromClaim, args[0]);
             }
