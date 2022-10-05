@@ -1829,14 +1829,16 @@ public class GriefPrevention extends JavaPlugin
                 }
 
                 //if the player can't afford his purchase, send error message
-                int bonusClaimBlocks = playerData.getBonusClaimBlocks();
-                int newBonusClaimBlocks = bonusClaimBlocks + blockCount;
+                int currentClaimBlocks = playerData.getBonusClaimBlocks();
+                int newBonusClaimBlocks = currentClaimBlocks + blockCount;
                 double multiplier = GriefPrevention.instance.config_economy_claimBlocksPurchaseMultiplier;
                 double baseCostPerBlock = GriefPrevention.instance.config_economy_claimBlocksPurchaseCost;
-                double totalCost = 0;
-                for (int i = bonusClaimBlocks; i < newBonusClaimBlocks; i++) {
-                    totalCost += Math.pow(multiplier, i) * baseCostPerBlock;
-                }
+
+                double costLower = baseCostPerBlock * (1-Math.pow(multiplier, currentClaimBlocks))/(1-multiplier);
+                double costHigher = baseCostPerBlock * (1-Math.pow(multiplier, currentClaimBlocks + blockCount))/(1-multiplier);
+
+                double totalCost = costHigher - costLower;
+
                 double balance = economy.getBalance(player);
                 if (totalCost > balance)
                 {
