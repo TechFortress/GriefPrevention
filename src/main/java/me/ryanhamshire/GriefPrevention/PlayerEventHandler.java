@@ -1247,7 +1247,7 @@ class PlayerEventHandler implements Listener
                 {
                     Supplier<String> override = () ->
                     {
-                        String message = instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, claim.getOwnerName());
+                        String message = instance.dataStore.getMessage(Messages.NoContainersPermission, claim.getOwnerName());
                         if (player.hasPermission("griefprevention.ignoreclaims"))
                             message += "  " + instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
 
