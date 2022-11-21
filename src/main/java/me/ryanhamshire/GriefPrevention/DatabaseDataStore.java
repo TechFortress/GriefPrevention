@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.logging.Level;
 
 //manages data stored in the file system
 public class DatabaseDataStore extends DataStore
@@ -350,7 +351,13 @@ public class DatabaseDataStore extends DataStore
                 Claim claim = new Claim(lesserBoundaryCorner, greaterBoundaryCorner, ownerID, builderNames, containerNames, accessorNames, managerNames, inheritNothing, claimID);
 
                 String bannedPlayerIDsString = results.getString("bannedplayerids");
-                claim.bannedPlayerIds.addAll(Arrays.asList(bannedPlayerIDsString.split(";")));
+                for (String s : bannedPlayerIDsString.split(";")) {
+                    try {
+                        claim.bannedPlayerIds.add(UUID.fromString(s));
+                    } catch (IllegalArgumentException ex) {
+                        GriefPrevention.instance.getLogger().log(Level.WARNING, "Failed to deserialize banned player id \"" + s + "\" as it was not a valid UUID for claimID " + claimID, ex);
+                    }
+                }
 
                 if (removeClaim)
                 {
@@ -450,7 +457,7 @@ public class DatabaseDataStore extends DataStore
         boolean inheritNothing = claim.getSubclaimRestrictions();
         long parentId = claim.parent == null ? -1 : claim.parent.id;
 
-        String bannedPlayers = this.storageStringBuilder(claim.bannedPlayerIds);
+        String bannedPlayers = this.storageStringBuilder(claim.bannedPlayerIds.stream().map(UUID::toString).toList());
 
         try (PreparedStatement insertStmt = this.databaseConnection.prepareStatement(SQL_INSERT_CLAIM))
         {
@@ -696,17 +703,16 @@ public class DatabaseDataStore extends DataStore
     /**
      * Concats an array to a string divided with the ; sign
      *
-     * @param input Arraylist with strings to concat
+     * @param input List with strings to concat
      * @return String with all values from input array
      */
-    private String storageStringBuilder(ArrayList<String> input)
+    private String storageStringBuilder(List<String> input)
     {
-        String output = "";
-        for (String string : input)
-        {
-            output += string + ";";
+        StringBuilder sb = new StringBuilder();
+        for (String string : input) {
+            sb.append(string).append(";");
         }
-        return output;
+        return sb.toString();
     }
 
 }

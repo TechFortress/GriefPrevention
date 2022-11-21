@@ -1732,20 +1732,20 @@ public class GriefPrevention extends JavaPlugin
                 GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerNotFound2);
                 return true;
             }
-            String targetIdString = target.getUniqueId().toString();
+            UUID targetId = target.getUniqueId();
             Player targetPlayer = Bukkit.getPlayer(target.getUniqueId());
 
             if (claim == null) {
                 for (Claim c : data.getClaims()) {
                     if (c != null && c.parent == null) {
-                        if (c.checkPermission(UUID.fromString(targetIdString), ClaimPermission.Manage, null) == null && !data.ignoreClaims) {
-                            GriefPrevention.sendMessage(player, TextMode.Err, Messages.CannotBanManager, targetPlayer == null ? lookupPlayerName(targetIdString) : targetPlayer.getName(), getfriendlyLocationString(c.lesserBoundaryCorner));
-                        } else if (!c.bannedPlayerIds.contains(targetIdString)) {
-                            if (c.bannedPlayerIds.size() >= 128) {
+                        if (c.checkPermission(targetId, ClaimPermission.Manage, null) == null && !data.ignoreClaims) {
+                            GriefPrevention.sendMessage(player, TextMode.Err, Messages.CannotBanManager, targetPlayer == null ? lookupPlayerName(targetId) : targetPlayer.getName(), getfriendlyLocationString(c.lesserBoundaryCorner));
+                        } else if (!c.bannedPlayerIds.contains(targetId)) {
+                            if (c.bannedPlayerIds.size() >= 512) {
                                 GriefPrevention.sendMessage(player, ChatColor.RED, "Too many players banned from claim: " + getfriendlyLocationString(c.lesserBoundaryCorner));
                             } else {
-                                c.bannedPlayerIds.add(targetIdString);
-                                c.dropPermission(targetIdString);
+                                c.bannedPlayerIds.add(targetId);
+                                c.dropPermission(targetId.toString());
                                 dataStore.saveClaim(c);
                                 if (targetPlayer != null && c.contains(targetPlayer.getLocation(), false, false)) {
                                     ejectPlayer(targetPlayer);
@@ -1761,15 +1761,15 @@ public class GriefPrevention extends JavaPlugin
                     GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoPermissionTrust, claim.getOwnerName());
                     return true;
                 } else {
-                    if (claim.checkPermission(UUID.fromString(targetIdString), ClaimPermission.Manage, null) == null && !data.ignoreClaims) {
-                        GriefPrevention.sendMessage(player, TextMode.Err, Messages.CannotBanManager, targetPlayer == null ? lookupPlayerName(targetIdString) : targetPlayer.getName(), getfriendlyLocationString(claim.lesserBoundaryCorner));
+                    if (claim.checkPermission(targetId, ClaimPermission.Manage, null) == null && !data.ignoreClaims) {
+                        GriefPrevention.sendMessage(player, TextMode.Err, Messages.CannotBanManager, targetPlayer == null ? lookupPlayerName(targetId) : targetPlayer.getName(), getfriendlyLocationString(claim.lesserBoundaryCorner));
                         return true;
-                    } else if (!claim.bannedPlayerIds.contains(targetIdString)) {
-                        if (claim.bannedPlayerIds.size() >= 128) {
+                    } else if (!claim.bannedPlayerIds.contains(targetId)) {
+                        if (claim.bannedPlayerIds.size() >= 512) {
                             GriefPrevention.sendMessage(player, ChatColor.RED, "Too many players banned from claim");
                         } else {
-                            claim.bannedPlayerIds.add(targetIdString);
-                            claim.dropPermission(targetIdString);
+                            claim.bannedPlayerIds.add(targetId);
+                            claim.dropPermission(targetId.toString());
                             dataStore.saveClaim(claim);
                             if (targetPlayer != null && claim.contains(targetPlayer.getLocation(), false, false)) {
                                 ejectPlayer(targetPlayer);
@@ -1795,14 +1795,14 @@ public class GriefPrevention extends JavaPlugin
                 GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerNotFound2);
                 return true;
             }
-            String targetIdString = target.getUniqueId().toString();
+            UUID targetId = target.getUniqueId();
 
             if (claim == null) {
                 for (Claim c : data.getClaims()) {
                     if (c != null) {
-                        c.bannedPlayerIds.remove(targetIdString);
+                        c.bannedPlayerIds.remove(targetId);
                         for (Claim child : c.children) {
-                            child.bannedPlayerIds.remove(targetIdString);
+                            child.bannedPlayerIds.remove(targetId);
                         }
                         dataStore.saveClaim(c);
                     }
@@ -1813,9 +1813,9 @@ public class GriefPrevention extends JavaPlugin
                     GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoPermissionTrust, claim.getOwnerName());
                     return true;
                 } else {
-                    claim.bannedPlayerIds.remove(targetIdString);
+                    claim.bannedPlayerIds.remove(targetId);
                     for (Claim child : claim.children) {
-                        child.bannedPlayerIds.remove(targetIdString);
+                        child.bannedPlayerIds.remove(targetId);
                     }
                     dataStore.saveClaim(claim);
                 }
@@ -1840,10 +1840,10 @@ public class GriefPrevention extends JavaPlugin
                 StringBuilder sb = new StringBuilder();
                 sb.append(ChatColor.RED).append('>').append(' ');
                 int i = -1;
-                for (String playerId : claim.bannedPlayerIds) {
+                for (UUID playerId : claim.bannedPlayerIds) {
                     String name = lookupPlayerName(playerId);
                     if (name == null) {
-                        name = playerId;
+                        name = playerId.toString();
                     }
                     if (i == -1) {
                         i = 0;

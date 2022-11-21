@@ -44,6 +44,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -97,7 +98,7 @@ public class Claim
     public ArrayList<Claim> children = new ArrayList<>();
 
     //playerIds who have been banned from this claim
-    public ArrayList<String> bannedPlayerIds = new ArrayList<>();
+    public HashSet<UUID> bannedPlayerIds = new HashSet<>();
 
     //information about a siege involving this claim.  null means no siege is impacting this claim
     public SiegeData siegeData = null;
@@ -469,7 +470,7 @@ public class Claim
      * @return true if banned, false otherwise
      */
     public boolean checkBanned(UUID uid) {
-        if (bannedPlayerIds.contains(uid.toString())) {
+        if (bannedPlayerIds.contains(uid)) {
             return true;
         } else if (!inheritNothing && parent != null) {
             return parent.checkBanned(uid);
