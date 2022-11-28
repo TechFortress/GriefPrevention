@@ -19,6 +19,7 @@
 package me.ryanhamshire.GriefPrevention;
 
 import com.conaxgames.ClaimEntryProvider;
+import com.conaxgames.libraries.menu.menus.ConfirmMenu;
 import com.conaxgames.libraries.message.FormatUtil;
 import com.conaxgames.libraries.util.CC;
 import com.conaxgames.util.StuckUtil;
@@ -1395,6 +1396,14 @@ public class GriefPrevention extends JavaPlugin
         {
             //requires exactly one parameter, the other player's name
             if (args.length != 1) return false;
+
+            Player finalPlayer = player;
+            new ConfirmMenu("Are you sure?", response ->  {
+                if (response) {
+                    this.handleTrustCommand(finalPlayer, ClaimPermission.Build, args[0]);
+                }
+            }, "Do you want to give " + args[0] + " access to build, break and take items from your claim?" +
+                    "\nWe can't refund items if they are taken!").openMenu(player);
 
             //most trust commands use this helper method, it keeps them consistent
             this.handleTrustCommand(player, ClaimPermission.Build, args[0]);
