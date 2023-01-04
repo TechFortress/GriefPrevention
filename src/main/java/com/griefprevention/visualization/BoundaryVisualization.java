@@ -258,7 +258,8 @@ public abstract class BoundaryVisualization
         PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
         BoundaryVisualization currentVisualization = playerData.getVisibleBoundaries();
         
-        if (currentVisualization != null && currentVisualization.elements.equals(event.getBoundaries())) {
+        if (currentVisualization != null && currentVisualization.elements.equals(event.getBoundaries()))
+        {
             // Ignore visualization with duplicate boundaries.
             return;
         }
