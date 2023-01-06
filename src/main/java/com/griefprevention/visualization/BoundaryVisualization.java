@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
@@ -195,32 +196,48 @@ public abstract class BoundaryVisualization
             @NotNull VisualizationType type,
             int height)
     {
-        BoundaryVisualizationEvent event = new BoundaryVisualizationEvent(player, defineBoundaries(claim, type), height);
+        BoundaryVisualizationEvent event = new BoundaryVisualizationEvent(player, defineBoundaries(player, claim, type), height);
         callAndVisualize(event);
     }
 
     /**
      * Define {@link Boundary Boundaries} for a claim and its children.
      *
+     * @param player the {@link Player} visualizing the area
      * @param claim the {@link Claim}
      * @param type the {@link VisualizationType}
      * @return the resulting {@code Boundary} values
      */
-    private static Collection<Boundary> defineBoundaries(Claim claim, VisualizationType type)
+    private static Collection<Boundary> defineBoundaries(Player player, Claim claim, VisualizationType type)
     {
         if (claim == null) return Set.of();
 
-        // For single claims, always visualize parent and children.
-        if (claim.parent != null) claim = claim.parent;
+        // Feature: Restrict visualization of subdivisions to avoid performance problems
+        // with a large number of them. If the player is not an owner, admin, etc, only
+        // the single claim will be visualized.
+
+        ArrayList<Claim> children = new ArrayList<>();
+
+        if ((GriefPrevention.instance.config_visualizeAllSubdivisions) ||
+            (player.getUniqueId().equals(claim.getOwnerID())) ||
+            (claim.isAdminClaim() && player.hasPermission("griefprevention.adminclaims")) ||
+            (player.hasPermission("griefprevention.deleteclaims")) ||
+            (GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId()).ignoreClaims && player.hasPermission("griefprevention.ignoreclaims")))
+        {
+            // Visualize parent and all subdivisions
+            if (claim.parent != null) claim = claim.parent;
+            children = claim.children;
+        }
 
         // Correct visualization type for claim type for simplicity.
         if (type == VisualizationType.CLAIM && claim.isAdminClaim()) type = VisualizationType.ADMIN_CLAIM;
+        if (claim.parent != null) type = VisualizationType.SUBDIVISION;
 
         // Gather all boundaries. It's important that children override parent so
         // that users can always find children, no matter how oddly sized or positioned.
         return Stream.concat(
                 Stream.of(new Boundary(claim, type)),
-                claim.children.stream().map(child -> new Boundary(child, VisualizationType.SUBDIVISION)))
+                children.stream().map(child -> new Boundary(child, VisualizationType.SUBDIVISION)))
                 .collect(Collectors.toSet());
     }
 
