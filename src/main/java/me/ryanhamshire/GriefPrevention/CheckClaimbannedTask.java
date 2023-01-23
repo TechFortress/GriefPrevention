@@ -13,7 +13,7 @@ public class CheckClaimbannedTask implements Runnable {
                 PlayerData whoData = GriefPrevention.instance.dataStore.getPlayerData(p.getUniqueId());
                 if (!whoData.ignoreClaims && claim.checkBanned(whoData.playerID)) {
                     p.eject();
-                    GriefPrevention.instance.ejectPlayer(p);
+                    GriefPrevention.ejectPlayerFromBannedClaim(p);
                 }
             }
         }

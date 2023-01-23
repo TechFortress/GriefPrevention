@@ -862,7 +862,7 @@ class PlayerEventHandler implements Listener
 
         Claim atClaim = dataStore.getClaimAt(player.getLocation(), false, playerData.lastClaim);
         if (checkBannedFromClaim(atClaim, playerData)) {
-            instance.ejectPlayer(player);
+            GriefPrevention.ejectPlayerFromBannedClaim(event.getPlayer());
             GriefPrevention.sendMessage(player, TextMode.Err, Messages.BannedFromClaim);
         }
     }
@@ -887,7 +887,7 @@ class PlayerEventHandler implements Listener
 
         Claim toClaim = dataStore.getClaimAt(event.getRespawnLocation(), false, playerData.lastClaim);
         if (checkBannedFromClaim(toClaim, playerData)) {
-            instance.ejectPlayer(player, event.getRespawnLocation());
+            GriefPrevention.ejectPlayerFromBannedClaim(event.getPlayer(), event.getRespawnLocation());
             GriefPrevention.sendMessage(player, TextMode.Err, Messages.BannedFromClaim);
         }
     }
@@ -1085,7 +1085,7 @@ class PlayerEventHandler implements Listener
         Claim toClaim = dataStore.getClaimAt(event.getTo(), true, playerData.lastClaim);
 
         if (checkBannedFromClaim(toClaim, playerData)) {
-            instance.ejectPlayer(player, event.getTo());
+            GriefPrevention.ejectPlayerFromBannedClaim(event.getPlayer(), event.getTo());
             GriefPrevention.sendMessage(player, TextMode.Err, Messages.BannedFromClaim);
             return;
         }
@@ -1128,7 +1128,7 @@ class PlayerEventHandler implements Listener
         }
 
         if (checkBannedFromClaim(toClaim, playerData)) {
-            instance.ejectPlayer(player, event.getTo());
+            GriefPrevention.ejectPlayerFromBannedClaim(event.getPlayer(), event.getTo());
             GriefPrevention.sendMessage(player, TextMode.Err, Messages.BannedFromClaim);
             return;
         }
@@ -1172,8 +1172,8 @@ class PlayerEventHandler implements Listener
             PlayerData playerData = dataStore.getPlayerData(event.getPlayer().getUniqueId());
             Claim toClaim = dataStore.getClaimAt(event.getTo(), false, playerData.lastClaim);
             if (checkBannedFromClaim(toClaim, playerData)) {
-                if (claimContainsAABB(toClaim, event.getPlayer().getBoundingBox())) {
-                    instance.ejectPlayer(event.getPlayer());
+                if (toClaim.contains(event.getFrom(), false, false)) {
+                    GriefPrevention.ejectPlayerFromBannedClaim(event.getPlayer(), event.getFrom());
                 } else {
                     event.setCancelled(true);
                 }
@@ -1184,12 +1184,6 @@ class PlayerEventHandler implements Listener
 
     private boolean checkBannedFromClaim(Claim claim, PlayerData whoData) {
         return claim != null && !whoData.ignoreClaims && claim.checkBanned(whoData.playerID);
-    }
-
-    private boolean claimContainsAABB(Claim c, org.bukkit.util.BoundingBox bbox) {
-        Location loc = bbox.getMax().toLocation(c.getGreaterBoundaryCorner().getWorld());
-        return c.contains(loc, false, false) ||
-                c.contains(loc.zero().add(bbox.getMin()), false, false);
     }
 
     //when a player triggers a raid (in a claim)

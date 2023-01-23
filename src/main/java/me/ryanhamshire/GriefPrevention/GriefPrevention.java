@@ -3490,6 +3490,29 @@ public class GriefPrevention extends JavaPlugin
         }
     }
 
+    // similar to ejectPlayer but will eject players into other claims if they are not banned from them
+    public static Location ejectPlayerFromBannedClaim(Player who) {
+        return ejectPlayerFromBannedClaim(who, who.getLocation());
+    }
+
+    // similar to ejectPlayer but will eject players into other claims if they are not banned from them
+    public static Location ejectPlayerFromBannedClaim(Player who, Location candidateLocation) {
+        candidateLocation = ejectionLocationForClaimban(who, candidateLocation);
+        GuaranteeChunkLoaded(candidateLocation);
+        who.teleport(candidateLocation);
+        return candidateLocation;
+    }
+
+    public static Location ejectionLocationForClaimban(Player who, Location candidateLocation) {
+        candidateLocation = candidateLocation.getWorld().getHighestBlockAt(candidateLocation.getBlock().getLocation()).getLocation().add(-1, 1, -1);
+        Claim claim = GriefPrevention.instance.dataStore.getClaimAt(candidateLocation, false, false, null);
+        while (claim != null && claim.checkBanned(who)) {
+            candidateLocation = candidateLocation.getWorld().getHighestBlockAt(claim.lesserBoundaryCorner).getLocation().add(-1, 1, -1);
+            claim = GriefPrevention.instance.dataStore.getClaimAt(candidateLocation, false, false, null);
+        }
+        return candidateLocation.clone().add(0.5, 0, 0.5);
+    }
+
     //ensures a piece of the managed world is loaded into server memory
     //(generates the chunk if necessary)
     private static void GuaranteeChunkLoaded(Location location)
