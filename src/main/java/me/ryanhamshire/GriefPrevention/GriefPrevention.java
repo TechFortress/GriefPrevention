@@ -26,18 +26,8 @@ import me.ryanhamshire.GriefPrevention.events.SaveTrappedPlayerEvent;
 import me.ryanhamshire.GriefPrevention.events.TrustChangedEvent;
 import me.ryanhamshire.GriefPrevention.metrics.MetricsHandler;
 import net.milkbowl.vault.economy.Economy;
-import org.bukkit.BanList;
+import org.bukkit.*;
 import org.bukkit.BanList.Type;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Chunk;
-import org.bukkit.FluidCollisionMode;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.Statistic;
-import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
@@ -56,15 +46,8 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.UUID;
-import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -3482,10 +3465,16 @@ public class GriefPrevention extends JavaPlugin
             {
                 //find a safe height, a couple of blocks above the surface
                 GuaranteeChunkLoaded(candidateLocation);
-                Block highestBlock = candidateLocation.getWorld().getHighestBlockAt(candidateLocation.getBlockX(), candidateLocation.getBlockZ());
-                Location destination = new Location(highestBlock.getWorld(), highestBlock.getX(), highestBlock.getY() + 2, highestBlock.getZ());
-                player.teleport(destination);
-                return destination;
+                candidateLocation = candidateLocation.getWorld().getHighestBlockAt(candidateLocation.getBlockX(), candidateLocation.getBlockZ()).getLocation();
+                if (!candidateLocation.getBlock().getType().isOccluding() || !candidateLocation.getWorld().getWorldBorder().isInside(candidateLocation)) {
+                    candidateLocation = player.getBedSpawnLocation();
+                    if (candidateLocation == null) candidateLocation = Bukkit.getWorlds().get(0).getSpawnLocation();
+                } else {
+                    candidateLocation.add(0, 2, 0);
+                }
+                candidateLocation.add(0.5, 0, 0.5);
+                player.teleport(candidateLocation);
+                return candidateLocation;
             }
         }
     }
@@ -3504,12 +3493,24 @@ public class GriefPrevention extends JavaPlugin
     }
 
     public static Location ejectionLocationForClaimban(Player who, Location candidateLocation) {
-        candidateLocation = candidateLocation.getWorld().getHighestBlockAt(candidateLocation.getBlock().getLocation()).getLocation().add(-1, 1, -1);
+        candidateLocation = candidateLocation.getWorld().getHighestBlockAt(candidateLocation.getBlock().getLocation()).getLocation().add(-1, 2, -1);
         Claim claim = GriefPrevention.instance.dataStore.getClaimAt(candidateLocation, false, false, null);
-        while (claim != null && claim.checkBanned(who)) {
-            candidateLocation = candidateLocation.getWorld().getHighestBlockAt(claim.lesserBoundaryCorner).getLocation().add(-1, 1, -1);
+        int attempts = 0;
+        while (claim != null && claim.checkBanned(who) || !candidateLocation.getBlock().getRelative(0, -2, 0).getType().isOccluding()) {
+            Block highest = candidateLocation.getWorld().getHighestBlockAt((claim == null ? candidateLocation : claim.lesserBoundaryCorner).clone().add(-1, 0, -1));
+            while (!highest.getType().isOccluding()) {
+                if (attempts > 64) {
+                    candidateLocation = who.getBedSpawnLocation();
+                    if (candidateLocation == null) candidateLocation = Bukkit.getWorlds().get(0).getSpawnLocation();
+                    return candidateLocation.add(0.5, 0, 0.5);
+                }
+                highest = highest.getWorld().getHighestBlockAt(highest.getX() - 1, highest.getZ() - 1);
+                attempts++;
+            }
+            candidateLocation = highest.getLocation().add(0, 2, 0);
             claim = GriefPrevention.instance.dataStore.getClaimAt(candidateLocation, false, false, null);
         }
+        if (!candidateLocation.getWorld().getWorldBorder().isInside(candidateLocation)) candidateLocation = Bukkit.getWorlds().get(0).getSpawnLocation();
         return candidateLocation.clone().add(0.5, 0, 0.5);
     }
 
