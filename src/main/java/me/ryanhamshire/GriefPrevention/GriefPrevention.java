@@ -3468,7 +3468,10 @@ public class GriefPrevention extends JavaPlugin
                 candidateLocation = candidateLocation.getWorld().getHighestBlockAt(candidateLocation.getBlockX(), candidateLocation.getBlockZ()).getLocation();
                 if (!candidateLocation.getBlock().getType().isOccluding() || !candidateLocation.getWorld().getWorldBorder().isInside(candidateLocation)) {
                     candidateLocation = player.getBedSpawnLocation();
-                    if (candidateLocation == null) candidateLocation = Bukkit.getWorlds().get(0).getSpawnLocation();
+                    if (candidateLocation == null ||
+                            (claim = GriefPrevention.instance.dataStore.getClaimAt(candidateLocation, false, false, null)) != null && claim.checkBanned(player)) {
+                        candidateLocation = Bukkit.getWorlds().get(0).getSpawnLocation();
+                    }
                 } else {
                     candidateLocation.add(0, 2, 0);
                 }
@@ -3501,7 +3504,10 @@ public class GriefPrevention extends JavaPlugin
             while (!highest.getType().isOccluding()) {
                 if (attempts > 64) {
                     candidateLocation = who.getBedSpawnLocation();
-                    if (candidateLocation == null) candidateLocation = Bukkit.getWorlds().get(0).getSpawnLocation();
+                    if (candidateLocation == null ||
+                            (claim = GriefPrevention.instance.dataStore.getClaimAt(candidateLocation, false, false, null)) != null && claim.checkBanned(who)) {
+                        candidateLocation = Bukkit.getWorlds().get(0).getSpawnLocation();
+                    }
                     return candidateLocation.add(0.5, 0, 0.5);
                 }
                 highest = highest.getWorld().getHighestBlockAt(highest.getX() - 1, highest.getZ() - 1);
