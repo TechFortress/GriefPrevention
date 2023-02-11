@@ -1749,12 +1749,12 @@ public class GriefPrevention extends JavaPlugin
                         return true;
                     } else if (!claim.bannedPlayerIds.contains(targetId)) {
                         if (claim.bannedPlayerIds.size() >= 512) {
-                            GriefPrevention.sendMessage(player, ChatColor.RED, "Too many players banned from claim");
+                            GriefPrevention.sendMessage(player, ChatColor.RED, "Too many players banned from this claim");
                         } else {
                             claim.bannedPlayerIds.add(targetId);
                             claim.dropPermission(targetId.toString());
                             dataStore.saveClaim(claim);
-                            if (targetPlayer != null && claim.contains(targetPlayer.getLocation(), false, false)) {
+                            if (targetPlayer != null && !dataStore.getPlayerData(targetId).ignoreClaims && claim.contains(targetPlayer.getLocation(), false, false)) {
                                 ejectPlayer(targetPlayer);
                                 GriefPrevention.sendMessage(player, TextMode.Err, Messages.BannedFromClaim);
                             }
