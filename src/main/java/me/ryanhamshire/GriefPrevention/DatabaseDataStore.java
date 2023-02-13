@@ -25,12 +25,7 @@ import org.bukkit.World;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -105,6 +100,9 @@ public class DatabaseDataStore extends DataStore
             statement.execute("CREATE TABLE IF NOT EXISTS griefprevention_claimdata (id INTEGER, owner VARCHAR(50), lessercorner VARCHAR(100), greatercorner VARCHAR(100), builders TEXT, containers TEXT, accessors TEXT, managers TEXT, inheritnothing BOOLEAN, parentid INTEGER, bannedplayerids TEXT)");
             statement.execute("CREATE TABLE IF NOT EXISTS griefprevention_playerdata (name VARCHAR(50), lastlogin DATETIME, accruedblocks INTEGER, bonusblocks INTEGER)");
             statement.execute("CREATE TABLE IF NOT EXISTS griefprevention_schemaversion (version INTEGER)");
+
+            //ensure old tables contain columns added in later versions
+            statement.execute("ALTER TABLE griefprevention_claimdata ADD IF NOT EXISTS bannedplayerids TEXT");
 
             // By making this run only for MySQL, we technically support SQLite too, as this is the only invalid
             // SQL we use that SQLite does not support. Seeing as its only use is to update VERY old, existing, MySQL
