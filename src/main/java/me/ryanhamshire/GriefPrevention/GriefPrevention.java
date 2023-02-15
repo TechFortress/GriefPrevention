@@ -22,6 +22,7 @@ import com.conaxgames.ClaimEntryProvider;
 import com.conaxgames.libraries.menu.menus.ConfirmMenu;
 import com.conaxgames.libraries.message.FormatUtil;
 import com.conaxgames.libraries.util.CC;
+import com.conaxgames.menu.GPConfirmMenu;
 import com.conaxgames.util.StuckUtil;
 import com.google.common.base.Preconditions;
 import com.griefprevention.visualization.BoundaryVisualization;
@@ -1397,17 +1398,33 @@ public class GriefPrevention extends JavaPlugin
             //requires exactly one parameter, the other player's name
             if (args.length != 1) return false;
 
+            // start conaxgames
+            Player target = Bukkit.getPlayer(args[0]);
+            if (target == null) {
+                player.sendMessage(ChatColor.RED + "Unable to find a player called " + ChatColor.YELLOW + args[0] + ChatColor.RED + ".");
+                return false;
+            }
+
+            if (player.getUniqueId() == target.getUniqueId()) {
+                player.sendMessage(ChatColor.RED + "Unable to find a player called " + ChatColor.YELLOW + args[0] + ChatColor.RED + ".");
+                return false;
+            }
+
+            List<String> description = new ArrayList<>();
+            description.add(CC.GRAY + "Do you want to give " + CC.YELLOW + target.getName() + CC.GRAY + " access to build, break and take items from your claim?");
+            description.add(" ");
+            description.add(CC.RED + "We can't refund anything if is taken taken!");
+            description.add(" ");
+            description.add(CC.B_YELLOW + "ARE YOU SURE?");
+
             Player finalPlayer = player;
-            new ConfirmMenu("Are you sure?", response ->  {
+            new GPConfirmMenu("Are you sure?", response ->  {
                 if (response) {
+                    //most trust commands use this helper method, it keeps them consistent
                     this.handleTrustCommand(finalPlayer, ClaimPermission.Build, args[0]);
                 }
-            }, "Do you want to give " + args[0] + " access to build, break and take items from your claim?" +
-                    "\nWe can't refund items if they are taken!").openMenu(player);
-
-            //most trust commands use this helper method, it keeps them consistent
-            this.handleTrustCommand(player, ClaimPermission.Build, args[0]);
-
+            }, description).openMenu(player);
+            // end conaxgames
             return true;
         }
 
