@@ -67,7 +67,7 @@ public abstract class BoundaryVisualization
      * @param player the visualization target
      * @param playerData the {@link PlayerData} of the visualization target
      */
-    private void apply(@NotNull Player player, @NotNull PlayerData playerData)
+    protected void apply(@NotNull Player player, @NotNull PlayerData playerData)
     {
         // Remember the visualization so it can be reverted.
         playerData.setVisibleBoundaries(this);
