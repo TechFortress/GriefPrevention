@@ -106,7 +106,9 @@ public class DatabaseDataStore extends DataStore
             statement.execute("CREATE TABLE IF NOT EXISTS griefprevention_schemaversion (version INTEGER)");
 
             //ensure old tables contain columns added in later versions
-            statement.execute("ALTER TABLE griefprevention_claimdata ADD IF NOT EXISTS claimExplosions BOOLEAN");
+            try {
+                statement.execute("ALTER TABLE griefprevention_claimdata ADD claimExplosions BOOLEAN");
+            } catch (SQLException ignored) {}
 
             // By making this run only for MySQL, we technically support SQLite too, as this is the only invalid
             // SQL we use that SQLite does not support. Seeing as its only use is to update VERY old, existing, MySQL
