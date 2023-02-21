@@ -791,13 +791,21 @@ public abstract class DataStore
     //finds a claim by ID
     public synchronized Claim getClaim(long id)
     {
-        for (Claim claim : this.claims)
-        {
-            if (claim.inDataStore && claim.getID() == id) return claim;
-        }
-
-        return null;
-    }
+	    for(Claim claim : this.claims)
+	    {
+	        if(claim.inDataStore)
+        	{
+	        	if(claim.getID() == id)
+	        		return claim;
+	        	for(Claim subClaim : claim.children)
+	        	{
+	        		if(subClaim.getID() == id)
+	        			return subClaim;
+	        	}
+        	}
+	    }
+	    return null;
+	}
 
     //returns a read-only access point for the list of all land claims
     //if you need to make changes, use provided methods like .deleteClaim() and .createClaim().
