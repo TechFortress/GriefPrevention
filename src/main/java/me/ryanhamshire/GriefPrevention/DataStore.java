@@ -793,13 +793,13 @@ public abstract class DataStore
     {
 	    for(Claim claim : this.claims)
 	    {
-	        if(claim.inDataStore)
+	        if (claim.inDataStore)
         	{
-	        	if(claim.getID() == id)
+	        	if (claim.getID() == id)
 	        		return claim;
-	        	for(Claim subClaim : claim.children)
+	        	for (Claim subClaim : claim.children)
 	        	{
-	        		if(subClaim.getID() == id)
+	        		if (subClaim.getID() == id)
 	        			return subClaim;
 	        	}
         	}
