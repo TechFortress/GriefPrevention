@@ -804,7 +804,7 @@ public abstract class DataStore
                 }
             }
         }
-        
+
         return null;
     }
 
@@ -1042,7 +1042,6 @@ public abstract class DataStore
         if (playerData.ignoreListChanged)
         {
             StringBuilder fileContent = new StringBuilder();
-
             try
             {
                 for (UUID uuidKey : playerData.ignoredPlayers.keySet())
