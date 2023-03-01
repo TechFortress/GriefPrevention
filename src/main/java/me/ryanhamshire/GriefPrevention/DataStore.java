@@ -804,6 +804,7 @@ public abstract class DataStore
                 }
             }
         }
+        
         return null;
     }
 
@@ -1042,7 +1043,7 @@ public abstract class DataStore
         {
             StringBuilder fileContent = new StringBuilder();
 
-try
+            try
             {
                 for (UUID uuidKey : playerData.ignoredPlayers.keySet())
                 {
