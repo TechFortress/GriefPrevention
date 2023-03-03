@@ -369,3 +369,6 @@ permissions:
     griefprevention.siegeteleport:
         description: Players with this permission can teleport into and out of besieged areas.
         default: op
+    griefprevention.premovementchat:
+        description: Players with this permission can chat before moving.
+        default: false
