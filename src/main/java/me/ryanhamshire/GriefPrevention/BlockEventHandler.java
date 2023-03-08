@@ -915,7 +915,9 @@ public class BlockEventHandler implements Listener
         // Don't track in worlds where claims are not enabled.
         if (!GriefPrevention.instance.claimsEnabledForWorld(spreadEvent.getBlock().getWorld())) return;
 
-        boolean isFire = Tag.FIRE.isTagged(spreadEvent.getSource().getType());
+        // Check for fire against new state so that we catch more edge cases with unexpected world modifications.
+        // Note that soul fire does not spread.
+        boolean isFire = spreadEvent.getNewState().getType() == Material.FIRE;
 
         // Obey global fire rules.
         if (isFire && !GriefPrevention.instance.config_fireSpreads)
@@ -955,12 +957,14 @@ public class BlockEventHandler implements Listener
 
     private void extinguishFiniteFire(@NotNull Block fire)
     {
+        if (fire.getType() != Material.FIRE) return;
+
         Block underBlock = fire.getRelative(BlockFace.DOWN);
         Tag<Material> infiniburn = switch (fire.getWorld().getEnvironment())
                 {
-                    case NORMAL, CUSTOM -> Tag.INFINIBURN_OVERWORLD;
                     case NETHER -> Tag.INFINIBURN_NETHER;
                     case THE_END -> Tag.INFINIBURN_END;
+                    default -> Tag.INFINIBURN_OVERWORLD;
                 };
 
         if (!infiniburn.isTagged(underBlock.getType()))
@@ -1006,7 +1010,6 @@ public class BlockEventHandler implements Listener
             burnEvent.setCancelled(true);
         }
     }
-
 
     //ensures fluids don't flow into land claims from outside
     private Claim lastSpreadClaim = null;
