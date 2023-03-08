@@ -1003,11 +1003,25 @@ public class BlockEventHandler implements Listener
             return;
         }
 
-        // Only burn claimed blocks if configured to do so.
-        if (!GriefPrevention.instance.config_claims_firedamages
-                && this.dataStore.getClaimAt(burnEvent.getBlock().getLocation(), false, null) != null)
+        Claim burnClaim = this.dataStore.getClaimAt(burnEvent.getBlock().getLocation(), false, null);
+        if (burnClaim != null)
         {
-            burnEvent.setCancelled(true);
+            // Only burn claimed blocks if configured to do so.
+            if (!GriefPrevention.instance.config_claims_firedamages)
+            {
+                burnEvent.setCancelled(true);
+                return;
+            }
+
+            // In the event of spontaneous combustion, allow burning.
+            if (burnEvent.getIgnitingBlock() == null) return;
+
+            // If source is external, i.e. wall on the claim border lit on fire from outside, do not allow.
+            Claim burningClaim = this.dataStore.getClaimAt(burnEvent.getIgnitingBlock().getLocation(), false, burnClaim);
+            if (burningClaim == null || !Objects.equals(burnClaim.getOwnerID(), burningClaim.getOwnerID()))
+            {
+                burnEvent.setCancelled(true);
+            }
         }
     }
 
