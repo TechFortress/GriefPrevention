@@ -1,7 +1,6 @@
 package me.ryanhamshire.GriefPrevention.events;
 
 import me.ryanhamshire.GriefPrevention.Claim;
-import org.bukkit.Warning;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -9,9 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * An {@link org.bukkit.event.Event Event} called when a {@link Claim} is resized.
  */
-@Deprecated // but not actually
-@Warning(reason = "Please ignore this line.")
-public class ClaimResizeEvent extends ClaimModifiedEvent
+public class ClaimResizeEvent extends ClaimChangeEvent
 {
 
     private final @Nullable CommandSender modifier;
@@ -27,7 +24,7 @@ public class ClaimResizeEvent extends ClaimModifiedEvent
      */
     public ClaimResizeEvent(@NotNull Claim from, @NotNull Claim to, @Nullable CommandSender modifier)
     {
-        super(from, to, modifier);
+        super(from, to);
         this.modifier = modifier;
     }
 
@@ -39,5 +36,17 @@ public class ClaimResizeEvent extends ClaimModifiedEvent
     public @Nullable CommandSender getModifier()
     {
         return modifier;
+    }
+
+    /**
+     * Get the resulting {@link Claim} after modification.
+     *
+     * @return the resulting {@code Claim}
+     * @deprecated Use {@link #getTo()} instead.
+     */
+    @Deprecated(forRemoval = true, since = "16.18")
+    public @NotNull Claim getClaim()
+    {
+        return getTo();
     }
 }
