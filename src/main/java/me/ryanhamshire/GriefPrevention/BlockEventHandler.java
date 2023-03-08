@@ -915,9 +915,13 @@ public class BlockEventHandler implements Listener
         // Don't track in worlds where claims are not enabled.
         if (!GriefPrevention.instance.claimsEnabledForWorld(spreadEvent.getBlock().getWorld())) return;
 
+        Material newType = spreadEvent.getNewState().getType();
+        // Ignore grass growth. Grass is inoffensive and causes the majority of normal spread events.
+        if (newType == Material.GRASS_BLOCK) return;
+
         // Check for fire against new state so that we catch more edge cases with unexpected world modifications.
         // Note that soul fire does not spread.
-        boolean isFire = spreadEvent.getNewState().getType() == Material.FIRE;
+        boolean isFire = newType == Material.FIRE;
 
         // Obey global fire rules.
         if (isFire && !GriefPrevention.instance.config_fireSpreads)
