@@ -141,6 +141,11 @@ class PlayerEventHandler implements Listener
         bannedWordFinder = new WordFinder(instance.dataStore.loadBannedWords());
     }
 
+    protected void resetPattern()
+    {
+        this.howToClaimPattern = null;
+    }
+
     //when a player chats, monitor for spam
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     synchronized void onPlayerChat(AsyncPlayerChatEvent event)
@@ -688,7 +693,7 @@ class PlayerEventHandler implements Listener
         this.lastLoginThisServerSessionMap.put(playerID, nowDate);
 
         //if newish, prevent chat until he's moved a bit to prove he's not a bot
-        if (GriefPrevention.isNewToServer(player))
+        if (GriefPrevention.isNewToServer(player) && !player.hasPermission("griefprevention.premovementchat"))
         {
             playerData.noChatLocation = player.getLocation();
         }

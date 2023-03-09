@@ -793,7 +793,16 @@ public abstract class DataStore
     {
         for (Claim claim : this.claims)
         {
-            if (claim.inDataStore && claim.getID() == id) return claim;
+            if (claim.inDataStore)
+            {
+                if (claim.getID() == id)
+                    return claim;
+                for (Claim subClaim : claim.children)
+                {
+                    if (subClaim.getID() == id)
+                    return subClaim;
+                }
+            }
         }
 
         return null;
@@ -1564,7 +1573,7 @@ public abstract class DataStore
         }
     }
 
-    private void loadMessages()
+    protected void loadMessages()
     {
         Messages[] messageIDs = Messages.values();
         this.messages = new String[Messages.values().length];
