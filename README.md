@@ -6,23 +6,11 @@ and with very little (self service) effort from players.
 Because GriefPrevention teaches players for you, you won't have to publish a
 training manual or tutorial for players, or add explanatory signs to your world.
 
-> GriefPrevention is a Bukkit plugin, therefore it is compatible with any implemention of the Bukkit API. Implementations include CraftBukkit, Spigot, Paper, Tuinity, Purpur, etc.
+GriefPrevention is compatible with Purpur, Spigot, Paper, and any other implemention of the Bukkit API.
 
 - [Downloads](https://dev.bukkit.org/projects/grief-prevention/files)
 - [Release Notes](https://github.com/TechFortress/GriefPrevention/releases)
-
-## Help+Support
-
-- **[Documentation (The Manual)](https://docs.griefprevention.com)** - Check here first! This contains the list of commands, permissions, configurations, answers to common questions, etc.
-- [Issue Tracker](https://github.com/TechFortress/GriefPrevention/issues) - For reporting bugs
-- [Discussions](https://github.com/TechFortress/GriefPrevention/discussions) - For asking questions, suggesting new ideas/features, and general discussion
-
-Community support and general discussion on GriefPrevention can be found at these sites:
-
-- [GitHub Discussions](https://github.com/TechFortress/GriefPrevention/discussions)
-- [#GriefPrevention chat channel on IRC or discord](https://griefprevention.com/chat)
-- [Grief Prevention on dev.bukkit.org](https://dev.bukkit.org/projects/grief-prevention)
-- [GriefPrevention on spigotmc.org](https://www.spigotmc.org/resources/griefprevention.1884/)
+- [Documentation (Help and Support)](https://docs.griefprevention.com)
 
 ---
 
@@ -44,7 +32,7 @@ Replace `<version>` number with this number: [![](https://jitpack.io/v/TechFortr
 	<dependency>
 	    <groupId>com.github.TechFortress</groupId>
 	    <artifactId>GriefPrevention</artifactId>
-	    <version>16.17.1</version>
+	    <version>16.18</version>
         <scope>provided</scope>
 	</dependency>
 ```

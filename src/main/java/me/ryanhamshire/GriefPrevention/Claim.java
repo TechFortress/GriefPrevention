@@ -35,6 +35,9 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -322,7 +325,7 @@ public class Claim
      * @return the denial message, or null if the action is allowed
      */
     @Deprecated
-    public String allowEdit(Player player)
+    public @Nullable String allowEdit(@NotNull Player player)
     {
         Supplier<String> supplier = checkPermission(player, ClaimPermission.Edit, null);
         return supplier != null ? supplier.get() : null;
@@ -353,7 +356,7 @@ public class Claim
      */
     @Deprecated
     //build permission check
-    public String allowBuild(Player player, Material material)
+    public @Nullable String allowBuild(@NotNull Player player, @NotNull Material material)
     {
         Supplier<String> supplier = checkPermission(player, ClaimPermission.Build, new CompatBuildBreakEvent(material, false));
         return supplier != null ? supplier.get() : null;
@@ -381,14 +384,14 @@ public class Claim
         }
 
         @Override
-        public HandlerList getHandlers()
+        public @NotNull HandlerList getHandlers()
         {
             return new HandlerList();
         }
 
     }
 
-    public boolean hasExplicitPermission(UUID uuid, ClaimPermission level)
+    public boolean hasExplicitPermission(@NotNull UUID uuid, @NotNull ClaimPermission level)
     {
         if (uuid.equals(this.getOwnerID())) return true;
 
@@ -397,7 +400,7 @@ public class Claim
         return level.isGrantedBy(this.playerIDToClaimPermissionMap.get(uuid.toString()));
     }
 
-    public boolean hasExplicitPermission(Player player, ClaimPermission level)
+    public boolean hasExplicitPermission(@NotNull Player player, @NotNull ClaimPermission level)
     {
         // Check explicit ClaimPermission for UUID
         if (this.hasExplicitPermission(player.getUniqueId(), level)) return true;
@@ -432,20 +435,23 @@ public class Claim
     }
 
     /**
-     * Check whether or not a Player has a certain level of trust.
+     * Check whether a Player has a certain level of trust.
      *
      * @param player the Player being checked for permissions
      * @param permission the ClaimPermission level required
      * @param event the Event triggering the permission check
      * @return the denial message or null if permission is granted
      */
-    public Supplier<String> checkPermission(Player player, ClaimPermission permission, Event event)
+    public @Nullable Supplier<String> checkPermission(
+            @NotNull Player player,
+            @NotNull ClaimPermission permission,
+            @Nullable Event event)
     {
         return checkPermission(player, permission, event, null);
     }
 
     /**
-     * Check whether or not a Player has a certain level of trust. For internal use; allows changing default message.
+     * Check whether a Player has a certain level of trust. For internal use; allows changing default message.
      *
      * @param player the Player being checked for permissions
      * @param permission the ClaimPermission level required
@@ -453,20 +459,27 @@ public class Claim
      * @param denialOverride a message overriding the default denial for clarity
      * @return the denial message or null if permission is granted
      */
-    Supplier<String> checkPermission(Player player, ClaimPermission permission, Event event, Supplier<String> denialOverride)
+    @Nullable Supplier<String> checkPermission(
+            @NotNull Player player,
+            @NotNull ClaimPermission permission,
+            @Nullable Event event,
+            @Nullable Supplier<String> denialOverride)
     {
         return callPermissionCheck(new ClaimPermissionCheckEvent(player, this, permission, event), denialOverride);
     }
 
     /**
-     * Check whether or not a UUID has a certain level of trust.
+     * Check whether a UUID has a certain level of trust.
      *
      * @param uuid the UUID being checked for permissions
      * @param permission the ClaimPermission level required
      * @param event the Event triggering the permission check
      * @return the denial reason or null if permission is granted
      */
-    public Supplier<String> checkPermission(UUID uuid, ClaimPermission permission, Event event)
+    public @Nullable Supplier<String> checkPermission(
+            @NotNull UUID uuid,
+            @NotNull ClaimPermission permission,
+            @Nullable Event event)
     {
         return callPermissionCheck(new ClaimPermissionCheckEvent(uuid, this, permission, event), null);
     }
@@ -478,7 +491,9 @@ public class Claim
      * @param denialOverride a message overriding the default denial for clarity
      * @return the denial reason or null if permission is granted
      */
-    private Supplier<String> callPermissionCheck(ClaimPermissionCheckEvent event, Supplier<String> denialOverride)
+    private @Nullable Supplier<String> callPermissionCheck(
+            @NotNull ClaimPermissionCheckEvent event,
+            @Nullable Supplier<String> denialOverride)
     {
         // Set denial message (if any) using default behavior.
         Supplier<String> defaultDenial = getDefaultDenial(event.getCheckedPlayer(), event.getCheckedUUID(),
@@ -504,7 +519,11 @@ public class Claim
      * @param event the Event triggering the permission check
      * @return the denial reason or null if permission is granted
      */
-    private Supplier<String> getDefaultDenial(Player player, UUID uuid, ClaimPermission permission, Event event)
+    private @Nullable Supplier<String> getDefaultDenial(
+            @Nullable Player player,
+            @NotNull UUID uuid,
+            @NotNull ClaimPermission permission,
+            @Nullable Event event)
     {
         if (player != null)
         {
@@ -520,7 +539,9 @@ public class Claim
         }
 
         // Claim owner and admins in ignoreclaims mode have access.
-        if (uuid.equals(this.getOwnerID()) || GriefPrevention.instance.dataStore.getPlayerData(uuid).ignoreClaims)
+        if (uuid.equals(this.getOwnerID())
+                || GriefPrevention.instance.dataStore.getPlayerData(uuid).ignoreClaims
+                && hasBypassPermission(player, permission))
             return null;
 
         // Look for explicit individual permission.
@@ -567,10 +588,28 @@ public class Claim
         return () ->
         {
             String reason = GriefPrevention.instance.dataStore.getMessage(permission.getDenialMessage(), this.getOwnerName());
-            if (player != null && player.hasPermission("griefprevention.ignoreclaims"))
+            if (hasBypassPermission(player, permission))
                 reason += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
             return reason;
         };
+    }
+
+    /**
+     * Check if the {@link Player} has bypass permissions for a {@link ClaimPermission}. Owner-exclusive edit actions
+     * require {@code griefprevention.deleteclaims}. All other actions require {@code griefprevention.ignoreclaims}.
+     *
+     * @param player the {@code Player}
+     * @param permission the {@code ClaimPermission} whose bypass permission is being checked
+     * @return whether the player has the bypass node
+     */
+    @Contract("null, _ -> false")
+    private boolean hasBypassPermission(@Nullable Player player, @NotNull ClaimPermission permission)
+    {
+        if (player == null) return false;
+
+        if (permission == ClaimPermission.Edit) return player.hasPermission("griefprevention.deleteclaims");
+
+        return player.hasPermission("griefprevention.ignoreclaims");
     }
 
     /**
@@ -579,7 +618,7 @@ public class Claim
      * @return the denial message, or null if the action is allowed
      */
     @Deprecated
-    public String allowBreak(Player player, Material material)
+    public @Nullable String allowBreak(@NotNull Player player, @NotNull Material material)
     {
         Supplier<String> supplier = checkPermission(player, ClaimPermission.Build, new CompatBuildBreakEvent(material, true));
         return supplier != null ? supplier.get() : null;
@@ -591,7 +630,7 @@ public class Claim
      * @return the denial message, or null if the action is allowed
      */
     @Deprecated
-    public String allowAccess(Player player)
+    public @Nullable String allowAccess(@NotNull Player player)
     {
         Supplier<String> supplier = checkPermission(player, ClaimPermission.Access, null);
         return supplier != null ? supplier.get() : null;
@@ -603,7 +642,7 @@ public class Claim
      * @return the denial message, or null if the action is allowed
      */
     @Deprecated
-    public String allowContainers(Player player)
+    public @Nullable String allowContainers(@NotNull Player player)
     {
         Supplier<String> supplier = checkPermission(player, ClaimPermission.Inventory, null);
         return supplier != null ? supplier.get() : null;
@@ -615,13 +654,14 @@ public class Claim
      * @return the denial message, or null if the action is allowed
      */
     @Deprecated
-    public String allowGrantPermission(Player player)
+    public @Nullable String allowGrantPermission(@NotNull Player player)
     {
         Supplier<String> supplier = checkPermission(player, ClaimPermission.Manage, null);
         return supplier != null ? supplier.get() : null;
     }
 
-    public ClaimPermission getPermission(String playerID)
+    @Contract("null -> null")
+    public @Nullable ClaimPermission getPermission(@Nullable String playerID)
     {
         if (playerID == null || playerID.isEmpty()) return null;
 
@@ -629,20 +669,22 @@ public class Claim
     }
 
     //grants a permission for a player or the public
-    public void setPermission(String playerID, ClaimPermission permissionLevel)
+    public void setPermission(@Nullable String playerID, @Nullable ClaimPermission permissionLevel)
     {
         if (permissionLevel == ClaimPermission.Edit) throw new IllegalArgumentException("Cannot add editors!");
 
         if (playerID == null || playerID.isEmpty()) return;
 
-        if (permissionLevel == ClaimPermission.Manage)
+        if (permissionLevel == null)
+            dropPermission(playerID);
+        else if (permissionLevel == ClaimPermission.Manage)
             this.managers.add(playerID.toLowerCase());
         else
             this.playerIDToClaimPermissionMap.put(playerID.toLowerCase(), permissionLevel);
     }
 
     //revokes a permission for a player or the public
-    public void dropPermission(String playerID)
+    public void dropPermission(@NotNull String playerID)
     {
         playerID = playerID.toLowerCase();
         this.playerIDToClaimPermissionMap.remove(playerID);

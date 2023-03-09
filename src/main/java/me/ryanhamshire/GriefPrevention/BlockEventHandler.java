@@ -18,6 +18,8 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.griefprevention.visualization.BoundaryVisualization;
+import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -33,6 +35,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Hopper;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Lightable;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.Dispenser;
 import org.bukkit.entity.Fireball;
@@ -57,9 +60,11 @@ import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.block.SignChangeEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
+import org.bukkit.event.world.PortalCreateEvent;
 import org.bukkit.event.world.StructureGrowEvent;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -381,8 +386,7 @@ public class BlockEventHandler implements Listener
                             GriefPrevention.sendMessage(player, TextMode.Success, Messages.AutomaticClaimNotification);
 
                             //show the player the protected area
-                            Visualization visualization = Visualization.FromClaim(result.claim, block.getY(), VisualizationType.Claim, player.getLocation());
-                            Visualization.Apply(player, visualization);
+                            BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM, block);
                         }
                         else
                         {
@@ -390,8 +394,7 @@ public class BlockEventHandler implements Listener
                             GriefPrevention.sendMessage(player, TextMode.Err, Messages.AutomaticClaimOtherClaimTooClose);
 
                             //show the player the protected area
-                            Visualization visualization = Visualization.FromClaim(result.claim, block.getY(), VisualizationType.ErrorClaim, player.getLocation());
-                            Visualization.Apply(player, visualization);
+                            BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE, block);
                         }
                     }
                 }
@@ -444,8 +447,7 @@ public class BlockEventHandler implements Listener
 
                     if (playerData.lastClaim != null)
                     {
-                        Visualization visualization = Visualization.FromClaim(playerData.lastClaim, block.getY(), VisualizationType.Claim, player.getLocation());
-                        Visualization.Apply(player, visualization);
+                        BoundaryVisualization.visualizeClaim(player, playerData.lastClaim, VisualizationType.CLAIM, block);
                     }
                 }
             }
@@ -739,9 +741,26 @@ public class BlockEventHandler implements Listener
             }
         }
 
-        // Arrow ignition is handled by the EntityChangeBlockEvent.
-        if (igniteEvent.getCause() == IgniteCause.ARROW)
+        // Arrow ignition.
+        if (igniteEvent.getCause() == IgniteCause.ARROW && igniteEvent.getIgnitingEntity() != null)
         {
+            // Flammable lightable blocks do not fire EntityChangeBlockEvent when igniting.
+            BlockData blockData = igniteEvent.getBlock().getBlockData();
+            if (blockData instanceof Lightable lightable)
+            {
+                // Set lit for resulting data in event. Currently unused, but may be in the future.
+                lightable.setLit(true);
+
+                // Call event.
+                EntityChangeBlockEvent changeBlockEvent = new EntityChangeBlockEvent(igniteEvent.getIgnitingEntity(), igniteEvent.getBlock(), blockData);
+                GriefPrevention.instance.entityEventHandler.onEntityChangeBLock(changeBlockEvent);
+
+                // Respect event result.
+                if (changeBlockEvent.isCancelled())
+                {
+                    igniteEvent.setCancelled(true);
+                }
+            }
             return;
         }
 
@@ -1057,6 +1076,47 @@ public class BlockEventHandler implements Listener
         if (this.dataStore.getClaimAt(event.getEntity().getLocation(), false, null) != null)
         {
             event.setCancelled(true);
+        }
+    }
+
+
+    @EventHandler(ignoreCancelled = true)
+    public void onNetherPortalCreate(final PortalCreateEvent event)
+    {
+        if (event.getReason() != PortalCreateEvent.CreateReason.NETHER_PAIR)
+        {
+            return;
+        }
+
+        // Ignore this event if preventNonPlayerCreatedPortals config option is disabled, and we don't know the entity.
+        if (!(event.getEntity() instanceof Player) && !GriefPrevention.instance.config_claims_preventNonPlayerCreatedPortals)
+        {
+            return;
+        }
+
+        for (BlockState blockState : event.getBlocks())
+        {
+            Claim claim = this.dataStore.getClaimAt(blockState.getLocation(), false, null);
+            if (claim != null)
+            {
+                if (event.getEntity() instanceof Player player)
+                {
+                    Supplier<String> noPortalReason = claim.checkPermission(player, ClaimPermission.Build, event);
+
+                    if (noPortalReason != null)
+                    {
+                        event.setCancelled(true);
+                        GriefPrevention.sendMessage(player, TextMode.Err, noPortalReason.get());
+                        return;
+                    }
+                }
+                else
+                {
+                    // Cancels the event if in a claim, as we can not efficiently retrieve the person/entity who created the portal.
+                    event.setCancelled(true);
+                    return;
+                }
+            }
         }
     }
 }

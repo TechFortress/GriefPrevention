@@ -18,8 +18,10 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.griefprevention.visualization.BoundaryVisualization;
+import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.events.ClaimInspectionEvent;
-import me.ryanhamshire.GriefPrevention.events.VisualizationEvent;
+import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -97,7 +99,6 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -692,7 +693,7 @@ class PlayerEventHandler implements Listener
         this.lastLoginThisServerSessionMap.put(playerID, nowDate);
 
         //if newish, prevent chat until he's moved a bit to prove he's not a bot
-        if (GriefPrevention.isNewToServer(player))
+        if (GriefPrevention.isNewToServer(player) && !player.hasPermission("griefprevention.premovementchat"))
         {
             playerData.noChatLocation = player.getLocation();
         }
@@ -893,10 +894,10 @@ class PlayerEventHandler implements Listener
         Player player = event.getEntity();
         Long lastDeathTime = this.deathTimestamps.get(player.getUniqueId());
         long now = Calendar.getInstance().getTimeInMillis();
-        if (lastDeathTime != null && now - lastDeathTime < instance.config_spam_deathMessageCooldownSeconds * 1000)
+        if (lastDeathTime != null && now - lastDeathTime < instance.config_spam_deathMessageCooldownSeconds * 1000 && event.getDeathMessage() != null)
         {
             player.sendMessage(event.getDeathMessage());  //let the player assume his death message was broadcasted to everyone
-            event.setDeathMessage("");
+            event.setDeathMessage(null);
         }
 
         this.deathTimestamps.put(player.getUniqueId(), now);
@@ -1355,7 +1356,7 @@ class PlayerEventHandler implements Listener
         if (itemInHand.getType() == Material.NAME_TAG)
         {
             EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(player, entity, EntityDamageEvent.DamageCause.CUSTOM, 0);
-            instance.getServer().getPluginManager().callEvent(damageEvent);
+            instance.entityEventHandler.onEntityDamage(damageEvent);
             if (damageEvent.isCancelled())
             {
                 event.setCancelled(true);
@@ -1736,27 +1737,28 @@ class PlayerEventHandler implements Listener
         if (clickedBlock != null && instance.config_claims_preventTheft && (
                 event.getAction() == Action.RIGHT_CLICK_BLOCK && (
                         (this.isInventoryHolder(clickedBlock) && clickedBlock.getType() != Material.LECTERN) ||
-                                clickedBlockType == Material.CAULDRON ||
-                                clickedBlockType == Material.JUKEBOX ||
                                 clickedBlockType == Material.ANVIL ||
-                                clickedBlockType == Material.CHIPPED_ANVIL ||
-                                clickedBlockType == Material.DAMAGED_ANVIL ||
-                                clickedBlockType == Material.CAKE ||
-                                Tag.CANDLE_CAKES.isTagged(clickedBlockType) ||
-                                clickedBlockType == Material.SWEET_BERRY_BUSH ||
+                                clickedBlockType == Material.BEACON ||
                                 clickedBlockType == Material.BEE_NEST ||
                                 clickedBlockType == Material.BEEHIVE ||
-                                clickedBlockType == Material.BEACON ||
                                 clickedBlockType == Material.BELL ||
-                                clickedBlockType == Material.STONECUTTER ||
-                                clickedBlockType == Material.GRINDSTONE ||
+                                clickedBlockType == Material.CAKE ||
                                 clickedBlockType == Material.CARTOGRAPHY_TABLE ||
-                                clickedBlockType == Material.LOOM ||
-                                clickedBlockType == Material.RESPAWN_ANCHOR ||
+                                clickedBlockType == Material.CAULDRON ||
+                                clickedBlockType == Material.WATER_CAULDRON ||
+                                clickedBlockType == Material.LAVA_CAULDRON ||
                                 clickedBlockType == Material.CAVE_VINES ||
                                 clickedBlockType == Material.CAVE_VINES_PLANT ||
+                                clickedBlockType == Material.CHIPPED_ANVIL ||
+                                clickedBlockType == Material.DAMAGED_ANVIL ||
+                                clickedBlockType == Material.GRINDSTONE ||
+                                clickedBlockType == Material.JUKEBOX ||
+                                clickedBlockType == Material.LOOM ||
                                 clickedBlockType == Material.PUMPKIN ||
-                                Tag.CANDLES.isTagged(clickedBlockType)
+                                clickedBlockType == Material.RESPAWN_ANCHOR ||
+                                clickedBlockType == Material.ROOTED_DIRT ||
+                                clickedBlockType == Material.STONECUTTER ||
+                                clickedBlockType == Material.SWEET_BERRY_BUSH
                         )))
         {
             if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
@@ -1868,7 +1870,7 @@ class PlayerEventHandler implements Listener
             }
         }
 
-        //apply rule for note blocks and repeaters and daylight sensors //RoboMWM: Include flower pots
+        //apply rule for redstone and various decor blocks that require full trust
         else if (clickedBlock != null &&
                 (
                         clickedBlockType == Material.NOTE_BLOCK ||
@@ -1877,7 +1879,8 @@ class PlayerEventHandler implements Listener
                                 clickedBlockType == Material.DAYLIGHT_DETECTOR ||
                                 clickedBlockType == Material.COMPARATOR ||
                                 clickedBlockType == Material.REDSTONE_WIRE ||
-                                Tag.FLOWER_POTS.isTagged(clickedBlockType)
+                                Tag.FLOWER_POTS.isTagged(clickedBlockType) ||
+                                Tag.CANDLES.isTagged(clickedBlockType)
                 ))
         {
             if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
@@ -2042,13 +2045,7 @@ class PlayerEventHandler implements Listener
                     if (inspectionEvent.isCancelled()) return;
 
                     //visualize boundaries
-                    Visualization visualization = Visualization.fromClaims(claims, player.getEyeLocation().getBlockY(), VisualizationType.Claim, player.getLocation());
-
-                    // alert plugins of a visualization
-                    Bukkit.getPluginManager().callEvent(new VisualizationEvent(player, visualization, claims, true));
-
-                    Visualization.Apply(player, visualization);
-
+                    BoundaryVisualization.visualizeNearbyClaims(player, inspectionEvent.getClaims(), player.getEyeLocation().getBlockY());
                     GriefPrevention.sendMessage(player, TextMode.Info, Messages.ShowNearbyClaims, String.valueOf(claims.size()));
 
                     return;
@@ -2068,19 +2065,18 @@ class PlayerEventHandler implements Listener
                     return;
                 }
 
+                playerData = this.dataStore.getPlayerData(player.getUniqueId());
+
                 //air indicates too far away
                 if (clickedBlockType == Material.AIR)
                 {
                     GriefPrevention.sendMessage(player, TextMode.Err, Messages.TooFarAway);
 
-                    // alert plugins of a visualization
-                    Bukkit.getPluginManager().callEvent(new VisualizationEvent(player, null, Collections.<Claim>emptySet()));
-
-                    Visualization.Revert(player);
+                    // Remove visualizations
+                    playerData.setVisibleBoundaries(null);
                     return;
                 }
 
-                if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
                 Claim claim = this.dataStore.getClaimAt(clickedBlock.getLocation(), false /*ignore height*/, playerData.lastClaim);
 
                 //no claim case
@@ -2093,10 +2089,7 @@ class PlayerEventHandler implements Listener
 
                     GriefPrevention.sendMessage(player, TextMode.Info, Messages.BlockNotClaimed);
 
-                    // alert plugins of a visualization
-                    Bukkit.getPluginManager().callEvent(new VisualizationEvent(player, null, Collections.<Claim>emptySet()));
-
-                    Visualization.Revert(player);
+                    playerData.setVisibleBoundaries(null);
                 }
 
                 //claim case
@@ -2111,12 +2104,7 @@ class PlayerEventHandler implements Listener
                     GriefPrevention.sendMessage(player, TextMode.Info, Messages.BlockClaimed, claim.getOwnerName());
 
                     //visualize boundary
-                    Visualization visualization = Visualization.FromClaim(claim, player.getEyeLocation().getBlockY(), VisualizationType.Claim, player.getLocation());
-
-                    // alert plugins of a visualization
-                    Bukkit.getPluginManager().callEvent(new VisualizationEvent(player, visualization, claim));
-
-                    Visualization.Apply(player, visualization);
+                    BoundaryVisualization.visualizeClaim(player, claim, VisualizationType.CLAIM);
 
                     if (player.hasPermission("griefprevention.seeclaimsize"))
                     {
@@ -2190,13 +2178,7 @@ class PlayerEventHandler implements Listener
                 if (claim != null)
                 {
                     GriefPrevention.sendMessage(player, TextMode.Err, Messages.BlockClaimed, claim.getOwnerName());
-                    Visualization visualization = Visualization.FromClaim(claim, clickedBlock.getY(), VisualizationType.ErrorClaim, player.getLocation());
-
-                    // alert plugins of a visualization
-                    Bukkit.getPluginManager().callEvent(new VisualizationEvent(player, visualization, claim));
-
-                    Visualization.Apply(player, visualization);
-
+                    BoundaryVisualization.visualizeClaim(player, claim, VisualizationType.CONFLICT_ZONE, clickedBlock);
                     return;
                 }
 
@@ -2453,16 +2435,17 @@ class PlayerEventHandler implements Listener
                                     null, player);
 
                             //if it didn't succeed, tell the player why
-                            if (!result.succeeded)
+                            if (!result.succeeded || result.claim == null)
                             {
-                                GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateSubdivisionOverlap);
-
-                                Visualization visualization = Visualization.FromClaim(result.claim, clickedBlock.getY(), VisualizationType.ErrorClaim, player.getLocation());
-
-                                // alert plugins of a visualization
-                                Bukkit.getPluginManager().callEvent(new VisualizationEvent(player, visualization, result.claim));
-
-                                Visualization.Apply(player, visualization);
+                                if (result.claim != null)
+                                {
+                                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateSubdivisionOverlap);
+                                    BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE, clickedBlock);
+                                }
+                                else
+                                {
+                                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlapRegion);
+                                }
 
                                 return;
                             }
@@ -2471,12 +2454,7 @@ class PlayerEventHandler implements Listener
                             else
                             {
                                 GriefPrevention.sendMessage(player, TextMode.Success, Messages.SubdivisionSuccess);
-                                Visualization visualization = Visualization.FromClaim(result.claim, clickedBlock.getY(), VisualizationType.Claim, player.getLocation());
-
-                                // alert plugins of a visualization
-                                Bukkit.getPluginManager().callEvent(new VisualizationEvent(player, visualization, result.claim));
-
-                                Visualization.Apply(player, visualization);
+                                BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM, clickedBlock);
                                 playerData.lastShovelLocation = null;
                                 playerData.claimSubdividing = null;
                             }
@@ -2488,12 +2466,7 @@ class PlayerEventHandler implements Listener
                     else
                     {
                         GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlap);
-                        Visualization visualization = Visualization.FromClaim(claim, clickedBlock.getY(), VisualizationType.Claim, player.getLocation());
-
-                        // alert plugins of a visualization
-                        Bukkit.getPluginManager().callEvent(new VisualizationEvent(player, visualization, claim));
-
-                        Visualization.Apply(player, visualization);
+                        BoundaryVisualization.visualizeClaim(player, claim, VisualizationType.CLAIM, clickedBlock);
                     }
                 }
 
@@ -2501,12 +2474,7 @@ class PlayerEventHandler implements Listener
                 else
                 {
                     GriefPrevention.sendMessage(player, TextMode.Err, noEditReason.get());
-                    Visualization visualization = Visualization.FromClaim(claim, clickedBlock.getY(), VisualizationType.ErrorClaim, player.getLocation());
-
-                    // alert plugins of a visualization
-                    Bukkit.getPluginManager().callEvent(new VisualizationEvent(player, visualization, claim));
-
-                    Visualization.Apply(player, visualization);
+                    BoundaryVisualization.visualizeClaim(player, claim, VisualizationType.CONFLICT_ZONE, clickedBlock);
                 }
 
                 return;
@@ -2539,13 +2507,7 @@ class PlayerEventHandler implements Listener
                 GriefPrevention.sendMessage(player, TextMode.Instr, Messages.ClaimStart);
 
                 //show him where he's working
-                Claim newClaim = new Claim(clickedBlock.getLocation(), clickedBlock.getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null);
-                Visualization visualization = Visualization.FromClaim(newClaim, clickedBlock.getY(), VisualizationType.RestoreNature, player.getLocation());
-
-                // alert plugins of a visualization
-                Bukkit.getPluginManager().callEvent(new VisualizationEvent(player, visualization, newClaim));
-
-                Visualization.Apply(player, visualization);
+                BoundaryVisualization.visualizeArea(player, new BoundingBox(clickedBlock), VisualizationType.INITIALIZE_ZONE);
             }
 
             //otherwise, he's trying to finish creating a claim by setting the other boundary corner
@@ -2622,18 +2584,12 @@ class PlayerEventHandler implements Listener
                         player);
 
                 //if it didn't succeed, tell the player why
-                if (!result.succeeded)
+                if (!result.succeeded || result.claim == null)
                 {
                     if (result.claim != null)
                     {
                         GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlapShort);
-
-                        Visualization visualization = Visualization.FromClaim(result.claim, clickedBlock.getY(), VisualizationType.ErrorClaim, player.getLocation());
-
-                        // alert plugins of a visualization
-                        Bukkit.getPluginManager().callEvent(new VisualizationEvent(player, visualization, result.claim));
-
-                        Visualization.Apply(player, visualization);
+                        BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE, clickedBlock);
                     }
                     else
                     {
@@ -2647,12 +2603,7 @@ class PlayerEventHandler implements Listener
                 else
                 {
                     GriefPrevention.sendMessage(player, TextMode.Success, Messages.CreateClaimSuccess);
-                    Visualization visualization = Visualization.FromClaim(result.claim, clickedBlock.getY(), VisualizationType.Claim, player.getLocation());
-
-                    // alert plugins of a visualization
-                    Bukkit.getPluginManager().callEvent(new VisualizationEvent(player, visualization, result.claim));
-
-                    Visualization.Apply(player, visualization);
+                    BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM, clickedBlock);
                     playerData.lastShovelLocation = null;
 
                     //if it's a big claim, tell the player about subdivisions
@@ -2662,7 +2613,7 @@ class PlayerEventHandler implements Listener
                         GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SubdivisionVideo2, 201L, DataStore.SUBDIVISION_VIDEO_URL);
                     }
 
-                    instance.autoExtendClaim(result.claim);
+                    AutoExtendClaimTask.scheduleAsync(result.claim);
                 }
             }
         }

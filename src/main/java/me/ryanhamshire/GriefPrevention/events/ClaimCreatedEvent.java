@@ -3,43 +3,61 @@ package me.ryanhamshire.GriefPrevention.events;
 import me.ryanhamshire.GriefPrevention.Claim;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Cancellable;
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * This Event is thrown when a claim is created but before it is saved. If it is cancelled the claim will not be saved
- * however the player will not recieved information as to why it was cancelled.
- * <p>
- * Created by Narimm on 5/08/2018.
+ * An {@link org.bukkit.event.Event Event} called when a {@link Claim} is created.
+ *
+ * <p>If cancelled, the resulting {@code Claim} will not be saved.
+ * The creator will not be notified why creation was cancelled, if they are notified at all.
+ *
+ * @author Narimm on 5/08/2018.
  */
-
-public class ClaimCreatedEvent extends Event implements Cancellable
+public class ClaimCreatedEvent extends ClaimEvent implements Cancellable
 {
 
-    private static final HandlerList handlers = new HandlerList();
+    private final @Nullable CommandSender creator;
 
-    public static HandlerList getHandlerList()
+    /**
+     * Construct a new {@code ClaimCreatedEvent}.
+     *
+     * @param claim the {@link Claim} being created
+     * @param creator the {@link CommandSender} causing creation
+     */
+    public ClaimCreatedEvent(@NotNull Claim claim, @Nullable CommandSender creator)
     {
-        return handlers;
-    }
-
-    private final Claim claim;
-
-    private final CommandSender creator;
-
-    private boolean cancelled = false;
-
-    public ClaimCreatedEvent(Claim claim, CommandSender creator)
-    {
-        this.claim = claim;
+        super(claim);
         this.creator = creator;
     }
 
-    @Override
-    public HandlerList getHandlers()
+    /**
+     * Get the {@link CommandSender} creating the {@link Claim}.
+     *
+     * @return the actor causing creation
+     */
+    public @Nullable CommandSender getCreator()
     {
-        return handlers;
+        return creator;
     }
+
+    // Listenable event requirements
+    private static final HandlerList HANDLERS = new HandlerList();
+
+    public static HandlerList getHandlerList()
+    {
+        return HANDLERS;
+    }
+
+    @Override
+    public @NotNull HandlerList getHandlers()
+    {
+        return HANDLERS;
+    }
+
+    // Cancellable requirements
+    private boolean cancelled = false;
 
     @Override
     public boolean isCancelled()
@@ -48,28 +66,9 @@ public class ClaimCreatedEvent extends Event implements Cancellable
     }
 
     @Override
-    public void setCancelled(boolean b)
+    public void setCancelled(boolean cancelled)
     {
-        this.cancelled = b;
+        this.cancelled = cancelled;
     }
 
-    /**
-     * The Claim
-     *
-     * @return Claim
-     */
-    public Claim getClaim()
-    {
-        return claim;
-    }
-
-    /**
-     * The actor creating the claim
-     *
-     * @return the CommandSender
-     */
-    public CommandSender getCreator()
-    {
-        return creator;
-    }
 }

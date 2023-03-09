@@ -3,84 +3,59 @@ package me.ryanhamshire.GriefPrevention.events;
 
 import me.ryanhamshire.GriefPrevention.Claim;
 import org.bukkit.command.CommandSender;
-import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
-import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
- * This Event is thrown when a claim is changed....it is not modifiable or cancellable and only serves as a notification
- * a claim has changed. The CommandSender can be null in the event that the modification is called by the plugin itself.
- * Created by Narimm on 5/08/2018.
+ * @deprecated replaced by more descriptive {@link ClaimResizeEvent} and generic {@link ClaimChangeEvent}
+ *
+ * An {@link Event} for when a {@link Claim} is changed.
+ *
+ * <p>If cancelled, the resulting changes will not be made.
+ *
+ * @author Narimm on 5/08/2018.
  */
-public class ClaimModifiedEvent extends Event implements Cancellable
+@Deprecated
+public class ClaimModifiedEvent extends ClaimChangeEvent
 {
 
-    private static final HandlerList handlers = new HandlerList();
+    private final @Nullable CommandSender modifier;
 
-    public static HandlerList getHandlerList()
+    /**
+     * Construct a new {@code ClaimModifiedEvent}.
+     *
+     * <p>Note that the actor causing modification may not be present if done by plugins.
+     *
+     * @param from the unmodified {@link Claim}
+     * @param to the resulting {@code Claim}
+     * @param modifier the {@link CommandSender} causing modification
+     */
+    public ClaimModifiedEvent(@NotNull Claim from, @NotNull Claim to, @Nullable CommandSender modifier)
     {
-        return handlers;
-    }
-
-    private final Claim from;
-    private final Claim to;
-    private final CommandSender modifier;
-    private boolean cancelled;
-
-    public ClaimModifiedEvent(Claim from, Claim to, CommandSender modifier)
-    {
-        this.from = from;
-        this.to = to;
+        super(from, to);
         this.modifier = modifier;
     }
 
-    @Override
-    public HandlerList getHandlers()
-    {
-        return handlers;
-    }
-
     /**
-     * The claim
+     * Get the resulting {@link Claim} after modification.
      *
-     * @return the claim
-     * @deprecated Use the {@link #getTo() getTo} method.
+     * @return the resulting {@code Claim}
+     * @deprecated Use {@link #getTo()} instead.
      */
     @Deprecated
-    public Claim getClaim()
+    public @NotNull Claim getClaim()
     {
-        return to;
-    }
-
-    public Claim getFrom()
-    {
-        return from;
-    }
-
-    public Claim getTo()
-    {
-        return to;
+        return getTo();
     }
 
     /**
-     * The actor making the change...can be null
+     * Get the {@link CommandSender} modifying the {@link Claim}. May be {@code null} if caused by a plugin.
      *
-     * @return the CommandSender or null
+     * @return the actor causing creation
      */
-    public CommandSender getModifier()
+    public @Nullable CommandSender getModifier()
     {
         return modifier;
-    }
-
-    @Override
-    public boolean isCancelled()
-    {
-        return cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancelled)
-    {
-        this.cancelled = cancelled;
     }
 }

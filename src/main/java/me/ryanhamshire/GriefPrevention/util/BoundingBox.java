@@ -1,11 +1,14 @@
 package me.ryanhamshire.GriefPrevention.util;
 
+import com.griefprevention.util.IntVector;
 import me.ryanhamshire.GriefPrevention.Claim;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -30,7 +33,7 @@ public class BoundingBox implements Cloneable
      * @param blocks a collection of blocks to construct a bounding box around
      * @return the bounding box
      */
-    public static BoundingBox ofBlocks(Collection<Block> blocks)
+    public static @NotNull BoundingBox ofBlocks(@NotNull Collection<Block> blocks)
     {
         if (blocks.size() == 0) throw new IllegalArgumentException("Cannot create bounding box with no blocks!");
 
@@ -104,7 +107,7 @@ public class BoundingBox implements Cloneable
      * @param pos2 the position of the second corner
      * @param verify whether or not to verify that the provided corners are in fact the minimum corners
      */
-    private BoundingBox(Location pos1, Location pos2, boolean verify)
+    private BoundingBox(@NotNull Location pos1, @NotNull Location pos2, boolean verify)
     {
         this(pos1.getBlockX(), pos1.getBlockY(), pos1.getBlockZ(),
                 pos2.getBlockX(), pos2.getBlockY(), pos2.getBlockZ(),
@@ -117,7 +120,7 @@ public class BoundingBox implements Cloneable
      * @param pos1 the position of the first corner
      * @param pos2 the position of the second corner
      */
-    public BoundingBox(Location pos1, Location pos2)
+    public BoundingBox(@NotNull Location pos1, @NotNull Location pos2)
     {
         this(pos1, pos2, true);
     }
@@ -128,7 +131,18 @@ public class BoundingBox implements Cloneable
      * @param pos1 the position of the first corner
      * @param pos2 the position of the second corner
      */
-    public BoundingBox(Vector pos1, Vector pos2)
+    public BoundingBox(@NotNull IntVector pos1, @NotNull IntVector pos2)
+    {
+        this(pos1.x(), pos1.y(), pos1.z(), pos2.x(), pos2.y(), pos2.z(), true);
+    }
+
+    /**
+     * Construct a new bounding box with the given corners.
+     *
+     * @param pos1 the position of the first corner
+     * @param pos2 the position of the second corner
+     */
+    public BoundingBox(@NotNull Vector pos1, @NotNull Vector pos2)
     {
         this(pos1.getBlockX(), pos1.getBlockY(), pos1.getBlockZ(),
                 pos2.getBlockX(), pos2.getBlockY(), pos2.getBlockZ(), true);
@@ -139,7 +153,7 @@ public class BoundingBox implements Cloneable
      *
      * @param claim the claim
      */
-    public BoundingBox(Claim claim)
+    public BoundingBox(@NotNull Claim claim)
     {
         this(claim.getLesserBoundaryCorner(), claim.getGreaterBoundaryCorner(), false);
         this.maxY = Objects.requireNonNull(claim.getLesserBoundaryCorner().getWorld()).getMaxHeight();
@@ -150,7 +164,7 @@ public class BoundingBox implements Cloneable
      *
      * @param block the block
      */
-    public BoundingBox(Block block)
+    public BoundingBox(@NotNull Block block)
     {
         this(block.getX(), block.getY(), block.getZ(), block.getX(), block.getY(), block.getZ(), false);
     }
@@ -160,7 +174,7 @@ public class BoundingBox implements Cloneable
      *
      * @param boundingBox the Bukkit bounding box
      */
-    public BoundingBox(org.bukkit.util.BoundingBox boundingBox)
+    public BoundingBox(@NotNull org.bukkit.util.BoundingBox boundingBox)
     {
         this((int) boundingBox.getMinX(),
                 (int) boundingBox.getMinY(),
@@ -253,7 +267,7 @@ public class BoundingBox implements Cloneable
      *
      * @return the minimum corner as a vector
      */
-    public Vector getMin()
+    public @NotNull Vector getMin()
     {
         return new Vector(this.minX, this.minY, this.minZ);
     }
@@ -293,7 +307,7 @@ public class BoundingBox implements Cloneable
      *
      * @return the maximum corner as a vector
      */
-    public Vector getMax()
+    public @NotNull Vector getMax()
     {
         return new Vector(this.maxX, this.maxY, this.maxZ);
     }
@@ -375,7 +389,7 @@ public class BoundingBox implements Cloneable
      *
      * @return the center of the X axis
      */
-    public Vector getCenter()
+    public @NotNull Vector getCenter()
     {
         return new Vector(this.getCenterX(), this.getCenterY(), this.getCenterZ());
     }
@@ -407,7 +421,7 @@ public class BoundingBox implements Cloneable
      *
      * @param other the bounding box to copy
      */
-    public void copy(BoundingBox other)
+    public void copy(@NotNull BoundingBox other)
     {
         this.minX = other.minX;
         this.minY = other.minY;
@@ -428,7 +442,7 @@ public class BoundingBox implements Cloneable
      * @param direction the direction to change size in
      * @param magnitude the magnitude of the resizing
      */
-    public void resize(BlockFace direction, int magnitude)
+    public void resize(@NotNull BlockFace direction, int magnitude)
     {
         if (magnitude == 0 || direction == BlockFace.SELF) return;
 
@@ -478,7 +492,7 @@ public class BoundingBox implements Cloneable
      * @param direction the direction to move in
      * @param magnitude the magnitude of the move
      */
-    public void move(BlockFace direction, int magnitude)
+    public void move(@NotNull BlockFace direction, int magnitude)
     {
         if (magnitude == 0 || direction == BlockFace.SELF) return;
 
@@ -517,7 +531,7 @@ public class BoundingBox implements Cloneable
      *
      * @param position the position to include
      */
-    public void union(Block position)
+    public void union(@NotNull Block position)
     {
         this.union(position.getX(), position.getY(), position.getZ());
     }
@@ -527,7 +541,17 @@ public class BoundingBox implements Cloneable
      *
      * @param position the position to include
      */
-    public void union(Vector position)
+    public void union(@NotNull IntVector position)
+    {
+        this.union(position.x(), position.y(), position.z());
+    }
+
+    /**
+     * Expands the bounding box to contain the position specified.
+     *
+     * @param position the position to include
+     */
+    public void union(@NotNull Vector position)
     {
         this.union(position.getBlockX(), position.getBlockY(), position.getBlockZ());
     }
@@ -537,7 +561,7 @@ public class BoundingBox implements Cloneable
      *
      * @param position the position to include
      */
-    public void union(Location position)
+    public void union(@NotNull Location position)
     {
         this.union(position.getBlockX(), position.getBlockY(), position.getBlockZ());
     }
@@ -547,7 +571,7 @@ public class BoundingBox implements Cloneable
      *
      * @param other the bounding box to include
      */
-    public void union(BoundingBox other)
+    public void union(@NotNull BoundingBox other)
     {
         this.minX = Math.min(this.minX, other.minX);
         this.maxX = Math.max(this.maxX, other.maxX);
@@ -589,7 +613,18 @@ public class BoundingBox implements Cloneable
      * @param position the position
      * @return true if the specified position is inside the bounding box
      */
-    public boolean contains2d(Vector position)
+    public boolean contains2d(@NotNull IntVector position)
+    {
+        return contains2d(position.x(), position.z());
+    }
+
+    /**
+     * Checks if the bounding box contains the position specified.
+     *
+     * @param position the position
+     * @return true if the specified position is inside the bounding box
+     */
+    public boolean contains2d(@NotNull Vector position)
     {
         return contains2d(position.getBlockX(), position.getBlockZ());
     }
@@ -600,7 +635,7 @@ public class BoundingBox implements Cloneable
      * @param position the position
      * @return true if the specified position is inside the bounding box
      */
-    public boolean contains2d(Location position)
+    public boolean contains2d(@NotNull Location position)
     {
         return contains2d(position.getBlockX(), position.getBlockZ());
     }
@@ -611,7 +646,7 @@ public class BoundingBox implements Cloneable
      * @param position the position
      * @return true if the specified position is inside the bounding box
      */
-    public boolean contains2d(Block position)
+    public boolean contains2d(@NotNull Block position)
     {
         return contains2d(position.getX(), position.getZ());
     }
@@ -655,7 +690,7 @@ public class BoundingBox implements Cloneable
      * @param other the other bounding box
      * @return true if the specified positions are inside the bounding box
      */
-    public boolean contains2d(BoundingBox other)
+    public boolean contains2d(@NotNull BoundingBox other)
     {
         return contains2dInternal(other.minX, other.minZ, other.maxX, other.maxZ);
     }
@@ -696,7 +731,18 @@ public class BoundingBox implements Cloneable
      * @param position the position
      * @return true if the specified position is inside the bounding box
      */
-    public boolean contains(Vector position)
+    public boolean contains(@NotNull IntVector position)
+    {
+        return contains(position.x(), position.y(), position.z());
+    }
+
+    /**
+     * Checks if the bounding box contains the position specified.
+     *
+     * @param position the position
+     * @return true if the specified position is inside the bounding box
+     */
+    public boolean contains(@NotNull Vector position)
     {
         return contains(position.getBlockX(), position.getBlockY(), position.getBlockZ());
     }
@@ -707,7 +753,7 @@ public class BoundingBox implements Cloneable
      * @param position the position
      * @return true if the specified position is inside the bounding box
      */
-    public boolean contains(Location position)
+    public boolean contains(@NotNull Location position)
     {
         return contains(position.getBlockX(), position.getBlockY(), position.getBlockZ());
     }
@@ -718,7 +764,7 @@ public class BoundingBox implements Cloneable
      * @param position the position
      * @return true if the specified position is inside the bounding box
      */
-    public boolean contains(Block position)
+    public boolean contains(@NotNull Block position)
     {
         return contains(position.getX(), position.getY(), position.getZ());
     }
@@ -745,7 +791,7 @@ public class BoundingBox implements Cloneable
      * @param other the other bounding box
      * @return true if the specified positions are inside the bounding box
      */
-    public boolean contains(BoundingBox other)
+    public boolean contains(@NotNull BoundingBox other)
     {
         return containsInternal(other.minX, other.minY, other.minZ, other.maxX, other.maxY, other.maxZ);
     }
@@ -756,7 +802,7 @@ public class BoundingBox implements Cloneable
      * @param other the other bounding box
      * @return true if the specified positions are inside the bounding box
      */
-    public boolean intersects(BoundingBox other)
+    public boolean intersects(@NotNull BoundingBox other)
     {
         // For help visualizing test cases, try https://silentmatt.com/rectangle-intersection/
         return this.minX <= other.maxX && this.maxX >= other.minX
@@ -770,7 +816,7 @@ public class BoundingBox implements Cloneable
      * @param other the other bounding box
      * @return the bounding box representing overlapping area or null if the boxes do not overlap.
      */
-    public BoundingBox intersection(BoundingBox other)
+    public @Nullable BoundingBox intersection(@NotNull BoundingBox other)
     {
         if (!intersects(other)) return null;
 
@@ -785,7 +831,7 @@ public class BoundingBox implements Cloneable
     }
 
     @Override
-    public boolean equals(Object o)
+    public boolean equals(@Nullable Object o)
     {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -805,7 +851,7 @@ public class BoundingBox implements Cloneable
     }
 
     @Override
-    public String toString()
+    public @NotNull String toString()
     {
         return "BoundingBox{" +
                 "minX=" + minX +
@@ -818,7 +864,7 @@ public class BoundingBox implements Cloneable
     }
 
     @Override
-    public BoundingBox clone()
+    public @NotNull BoundingBox clone()
     {
         try
         {
