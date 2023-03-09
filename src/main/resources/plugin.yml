@@ -17,7 +17,7 @@ commands:
     abandonallclaims:
       description: Deletes ALL your claims.
       usage: /AbandonAllClaims
-      permission: griefprevention.claims
+      permission: griefprevention.abandonallclaims
     trust:
       description: Grants a player full access to your claim(s).
       usage: /Trust <player>  Grants a player permission to build.  See also /UnTrust, /ContainerTrust, /AccessTrust, and /PermissionTrust.
@@ -320,6 +320,9 @@ permissions:
         default: op
     griefprevention.claims:
         description: Grants access to claim-related slash commands.
+        default: true
+    griefprevention.abandonallclaims:
+        description: Grants access to /AbandonAllClaims.
         default: true
     griefprevention.buysellclaimblocks:
         description: Grants access to claim block buy/sell commands.
