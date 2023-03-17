@@ -53,7 +53,6 @@ import org.bukkit.entity.Tameable;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.WaterMob;
-import org.bukkit.entity.Wolf;
 import org.bukkit.entity.Zombie;
 import org.bukkit.entity.minecart.ExplosiveMinecart;
 import org.bukkit.event.EventHandler;
@@ -1090,9 +1089,8 @@ public class EntityEventHandler implements Listener
             if (((subEvent.getEntity() instanceof Creature || subEvent.getEntity() instanceof WaterMob) && GriefPrevention.instance.config_claims_protectCreatures))
             {
                 //if entity is tameable and has an owner, apply special rules
-                if (subEvent.getEntity() instanceof Tameable)
+                if (subEvent.getEntity() instanceof Tameable tameable)
                 {
-                    Tameable tameable = (Tameable) subEvent.getEntity();
                     if (tameable.isTamed() && tameable.getOwner() != null)
                     {
                         //limit attacks by players to owners and admins in ignore claims mode
@@ -1108,7 +1106,7 @@ public class EntityEventHandler implements Listener
                             if (attackerData.ignoreClaims) return;
 
                             //otherwise disallow in non-pvp worlds (and also pvp worlds if configured to do so)
-                            if (!GriefPrevention.instance.pvpRulesApply(subEvent.getEntity().getLocation().getWorld()) || (GriefPrevention.instance.config_pvp_protectPets && subEvent.getEntityType() != EntityType.WOLF))
+                            if (!GriefPrevention.instance.pvpRulesApply(subEvent.getEntity().getWorld()) || (GriefPrevention.instance.config_pvp_protectPets && subEvent.getEntityType() != EntityType.WOLF))
                             {
                                 OfflinePlayer owner = GriefPrevention.instance.getServer().getOfflinePlayer(ownerID);
                                 String ownerName = owner.getName();
@@ -1139,9 +1137,9 @@ public class EntityEventHandler implements Listener
                             {
                                 if (!tameable.getOwner().equals(attacker))
                                 {
-                                    if (((Wolf) tameable).getTarget() != null)
+                                    if (tameable.getTarget() != null)
                                     {
-                                        if (((Wolf) tameable).getTarget() == attacker) return;
+                                        if (tameable.getTarget() == attacker) return;
                                     }
                                     event.setCancelled(true);
                                     String ownerName = GriefPrevention.lookupPlayerName(tameable.getOwner());
