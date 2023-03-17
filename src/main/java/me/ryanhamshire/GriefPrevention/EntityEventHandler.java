@@ -1144,7 +1144,7 @@ public class EntityEventHandler implements Listener
                                         if (((Wolf) tameable).getTarget() == attacker) return;
                                     }
                                     event.setCancelled(true);
-                                    String ownerName = GriefPrevention.instance.getServer().getOfflinePlayer(ownerID).getName();
+                                    String ownerName = GriefPrevention.lookupPlayerName(tameable.getOwner());
                                     String message = GriefPrevention.instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
                                     if (attacker.hasPermission("griefprevention.ignoreclaims"))
                                         message += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
