@@ -489,7 +489,7 @@ public abstract class DataStore
         // Subclaims should not be added to chunk claim map.
         if (claim.parent != null) return;
 
-        ArrayList<Long> chunkHashes = claim.getChunkHashes();
+        ArrayList<Long> chunkHashes = packChunkIds(claim);
         for (Long chunkHash : chunkHashes)
         {
             ArrayList<Claim> claimsInChunk = this.chunksToClaimsMap.get(chunkHash);
@@ -504,7 +504,7 @@ public abstract class DataStore
 
     private void removeFromChunkClaimMap(Claim claim)
     {
-        ArrayList<Long> chunkHashes = claim.getChunkHashes();
+        ArrayList<Long> chunkHashes = packChunkIds(claim);
         for (Long chunkHash : chunkHashes)
         {
             ArrayList<Claim> claimsInChunk = this.chunksToClaimsMap.get(chunkHash);
@@ -832,7 +832,7 @@ public abstract class DataStore
     }
 
     /**
-     * Get an almost-unique, persistent identifier for a chunk.
+     * Get a persistent identifier for a chunk.
      *
      * @deprecated identifier is not unique; use {@link #packChunkId(long, long)}.
      * @param chunkx the chunk X coordinate
@@ -846,9 +846,9 @@ public abstract class DataStore
     }
 
     /**
-     * Get an almost-unique, persistent identifier for a chunk.
+     * Get a persistent identifier for a chunk.
      *
-     * @deprecated identifier is not unique; use {@link #packChunkId(long, long)}.
+     * @deprecated identifier is not unique; use {@link #packChunkId(Location)}.
      * @param location the location in the chunk
      * @return the combined identifier
      */
@@ -859,18 +859,59 @@ public abstract class DataStore
     }
 
     /**
-     * Get a unique persistent identifier for a chunk's coordinates.
+     * Get persistent identifiers for chunks in a {@link Claim}.
+     *
+     * @deprecated identifier is not unique; use {@link #packChunkIds(Claim)}.
+     * @param claim the Claim
+     * @return the combined identifiers
+     */
+    @Deprecated(since = "16.18.2", forRemoval = true)
+    public static ArrayList<Long> getChunkHashes(Claim claim)
+    {
+        return getChunkHashes(claim.getLesserBoundaryCorner(), claim.getGreaterBoundaryCorner());
+    }
+
+    /**
+     * Get persistent identifiers for chunks within an area.
+     *
+     * @deprecated identifier is not unique; use {@link #packChunkIds(Location, Location)}.
+     * @param min the smaller location
+     * @param max the larger location
+     * @return the combined identifiers
+     */
+    @Deprecated(since = "16.18.2", forRemoval = true)
+    public static ArrayList<Long> getChunkHashes(Location min, Location max) {
+        ArrayList<Long> hashes = new ArrayList<>();
+        int smallX = min.getBlockX() >> 4;
+        int smallZ = min.getBlockZ() >> 4;
+        int largeX = max.getBlockX() >> 4;
+        int largeZ = max.getBlockZ() >> 4;
+
+        for (int x = smallX; x <= largeX; x++)
+        {
+            for (int z = smallZ; z <= largeZ; z++)
+            {
+                hashes.add(getChunkHash(x, z));
+            }
+        }
+
+        return hashes;
+    }
+
+    /**
+     * Get a unique and persistent identifier for a chunk's coordinates.
      *
      * @param chunkX the chunk X coordinate
      * @param chunkZ the chunk Z coordinate
      * @return the combined identifier
      */
-    public static long packChunkId(long chunkX, long chunkZ) {
+    public static long packChunkId(long chunkX, long chunkZ)
+    {
         return (chunkX << 32) | (chunkZ & 0xFFFFFFFFL);
     }
 
     /**
-     * Get a unique persistent identifier for a chunk's coordinates.
+     * Get a unique and persistent identifier for a chunk's coordinates.
      *
      * @param location the location in the chunk
      * @return the combined identifier
@@ -880,11 +921,26 @@ public abstract class DataStore
         return packChunkId(location.getBlockX() >> 4, location.getBlockZ() >> 4);
     }
 
-    public static ArrayList<Long> getChunkHashes(Claim claim) {
-        return getChunkHashes(claim.getLesserBoundaryCorner(), claim.getGreaterBoundaryCorner());
+    /**
+     * Get unique and persistent identifiers for chunks within an area.
+     *
+     * @param claim the area
+     * @return the combined identifiers
+     */
+    public static @NotNull ArrayList<Long> packChunkIds(@NotNull Claim claim)
+    {
+        return packChunkIds(claim.getLesserBoundaryCorner(), claim.getGreaterBoundaryCorner());
     }
 
-    public static ArrayList<Long> getChunkHashes(Location min, Location max) {
+    /**
+     * Get unique and persistent identifiers for chunks within an area.
+     *
+     * @param min the smaller location
+     * @param max the larger location
+     * @return the combined identifiers
+     */
+    public static @NotNull ArrayList<Long> packChunkIds(@NotNull Location min, @NotNull Location max)
+    {
         ArrayList<Long> hashes = new ArrayList<>();
         int smallX = min.getBlockX() >> 4;
         int smallZ = min.getBlockZ() >> 4;

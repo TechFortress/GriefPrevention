@@ -993,9 +993,4 @@ public class Claim
 
         return chunks;
     }
-
-    ArrayList<Long> getChunkHashes()
-    {
-        return DataStore.getChunkHashes(this);
-    }
 }
