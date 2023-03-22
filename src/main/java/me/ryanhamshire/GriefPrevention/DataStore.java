@@ -1998,8 +1998,7 @@ public abstract class DataStore
         {
             for (int chunk_z = lesserChunk.getZ(); chunk_z <= greaterChunk.getZ(); chunk_z++)
             {
-                Chunk chunk = location.getWorld().getChunkAt(chunk_x, chunk_z);
-                Long chunkID = packChunkId(chunk.getBlock(0, 0, 0).getLocation());
+                Long chunkID = packChunkId(chunk_x, chunk_z);
                 ArrayList<Claim> claimsInChunk = this.chunksToClaimsMap.get(chunkID);
                 if (claimsInChunk != null)
                 {
