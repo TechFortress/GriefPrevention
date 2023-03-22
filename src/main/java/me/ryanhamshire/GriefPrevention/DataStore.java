@@ -830,10 +830,29 @@ public abstract class DataStore
         }
     }
 
-    //gets an almost-unique, persistent identifier for a chunk
+    /**
+     * Get an almost-unique, persistent identifier for a chunk.
+     *
+     * @deprecated identifier is not unique; use {@link #getChunkHash(int, int)}.
+     * @param chunkx the chunk X coordinate
+     * @param chunkz the chunk Z coordinate
+     * @return the combined identifier
+     */
+    @Deprecated(since = "16.18.2")
     public static Long getChunkHash(long chunkx, long chunkz)
     {
         return (chunkz ^ (chunkx << 32));
+    }
+
+    /**
+     * Get a unique persistent identifier for a chunk's coordinates.
+     *
+     * @param chunkX the chunk X coordinate
+     * @param chunkZ the chunk Z coordinate
+     * @return the combined identifier
+     */
+    public static long getChunkHash(int chunkX, int chunkZ) {
+        return (((long) chunkX) << 32) | (chunkZ & 0xFFFFFFFFL);
     }
 
     //gets an almost-unique, persistent identifier for a chunk
