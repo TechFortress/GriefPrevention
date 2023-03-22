@@ -638,7 +638,7 @@ public class BlockEventHandler implements Listener
         {
             for (int chunkZ = movedBlocks.getMinZ() >> 4; chunkZ <= chunkZMax; ++chunkZ)
             {
-                ArrayList<Claim> chunkClaims = dataStore.chunksToClaimsMap.get(DataStore.getChunkHash(chunkX, chunkZ));
+                ArrayList<Claim> chunkClaims = dataStore.chunksToClaimsMap.get(DataStore.packChunkId(chunkX, chunkZ));
                 if (chunkClaims == null) continue;
 
                 for (Claim claim : chunkClaims)

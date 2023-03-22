@@ -42,6 +42,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Tameable;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -761,7 +762,7 @@ public abstract class DataStore
             return cachedClaim;
 
         //find a top level claim
-        Long chunkID = getChunkHash(location);
+        Long chunkID = packChunkId(location);
         ArrayList<Claim> claimsInChunk = this.chunksToClaimsMap.get(chunkID);
         if (claimsInChunk == null) return null;
 
@@ -819,7 +820,7 @@ public abstract class DataStore
 
     public Collection<Claim> getClaims(int chunkx, int chunkz)
     {
-        ArrayList<Claim> chunkClaims = this.chunksToClaimsMap.get(getChunkHash(chunkx, chunkz));
+        ArrayList<Claim> chunkClaims = this.chunksToClaimsMap.get(packChunkId(chunkx, chunkz));
         if (chunkClaims != null)
         {
             return Collections.unmodifiableCollection(chunkClaims);
@@ -833,15 +834,28 @@ public abstract class DataStore
     /**
      * Get an almost-unique, persistent identifier for a chunk.
      *
-     * @deprecated identifier is not unique; use {@link #getChunkHash(int, int)}.
+     * @deprecated identifier is not unique; use {@link #packChunkId(long, long)}.
      * @param chunkx the chunk X coordinate
      * @param chunkz the chunk Z coordinate
      * @return the combined identifier
      */
-    @Deprecated(since = "16.18.2")
+    @Deprecated(since = "16.18.2", forRemoval = true)
     public static Long getChunkHash(long chunkx, long chunkz)
     {
         return (chunkz ^ (chunkx << 32));
+    }
+
+    /**
+     * Get an almost-unique, persistent identifier for a chunk.
+     *
+     * @deprecated identifier is not unique; use {@link #packChunkId(long, long)}.
+     * @param location the location in the chunk
+     * @return the combined identifier
+     */
+    @Deprecated(since = "16.18.2", forRemoval = true)
+    public static Long getChunkHash(Location location)
+    {
+        return getChunkHash(location.getBlockX() >> 4, location.getBlockZ() >> 4);
     }
 
     /**
@@ -851,14 +865,19 @@ public abstract class DataStore
      * @param chunkZ the chunk Z coordinate
      * @return the combined identifier
      */
-    public static long getChunkHash(int chunkX, int chunkZ) {
-        return (((long) chunkX) << 32) | (chunkZ & 0xFFFFFFFFL);
+    public static long packChunkId(long chunkX, long chunkZ) {
+        return (chunkX << 32) | (chunkZ & 0xFFFFFFFFL);
     }
 
-    //gets an almost-unique, persistent identifier for a chunk
-    public static Long getChunkHash(Location location)
+    /**
+     * Get a unique persistent identifier for a chunk's coordinates.
+     *
+     * @param location the location in the chunk
+     * @return the combined identifier
+     */
+    public static long packChunkId(@NotNull Location location)
     {
-        return getChunkHash(location.getBlockX() >> 4, location.getBlockZ() >> 4);
+        return packChunkId(location.getBlockX() >> 4, location.getBlockZ() >> 4);
     }
 
     public static ArrayList<Long> getChunkHashes(Claim claim) {
@@ -876,7 +895,7 @@ public abstract class DataStore
         {
             for (int z = smallZ; z <= largeZ; z++)
             {
-                hashes.add(getChunkHash(x, z));
+                hashes.add(packChunkId(x, z));
             }
         }
 
@@ -1980,7 +1999,7 @@ public abstract class DataStore
             for (int chunk_z = lesserChunk.getZ(); chunk_z <= greaterChunk.getZ(); chunk_z++)
             {
                 Chunk chunk = location.getWorld().getChunkAt(chunk_x, chunk_z);
-                Long chunkID = getChunkHash(chunk.getBlock(0, 0, 0).getLocation());
+                Long chunkID = packChunkId(chunk.getBlock(0, 0, 0).getLocation());
                 ArrayList<Claim> claimsInChunk = this.chunksToClaimsMap.get(chunkID);
                 if (claimsInChunk != null)
                 {
