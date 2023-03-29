@@ -47,7 +47,7 @@ public class DatabaseDataStore extends DataStore
     private static final String SQL_UPDATE_NAME =
             "UPDATE griefprevention_playerdata SET name = ? WHERE name = ?";
     private static final String SQL_INSERT_CLAIM =
-            "INSERT INTO griefprevention_claimdata (id, owner, lessercorner, greatercorner, builders, containers, accessors, managers, inheritnothing, parentid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "INSERT INTO griefprevention_claimdata (id, owner, lessercorner, greatercorner, builders, containers, creatures, accessors, managers, inheritnothing, parentid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
     private static final String SQL_DELETE_CLAIM =
             "DELETE FROM griefprevention_claimdata WHERE id = ?";
     private static final String SQL_SELECT_PLAYER_DATA =
@@ -101,7 +101,7 @@ public class DatabaseDataStore extends DataStore
         {
             //ensure the data tables exist
             statement.execute("CREATE TABLE IF NOT EXISTS griefprevention_nextclaimid (nextid INTEGER)");
-            statement.execute("CREATE TABLE IF NOT EXISTS griefprevention_claimdata (id INTEGER, owner VARCHAR(50), lessercorner VARCHAR(100), greatercorner VARCHAR(100), builders TEXT, containers TEXT, accessors TEXT, managers TEXT, inheritnothing BOOLEAN, parentid INTEGER)");
+            statement.execute("CREATE TABLE IF NOT EXISTS griefprevention_claimdata (id INTEGER, owner VARCHAR(50), lessercorner VARCHAR(100), greatercorner VARCHAR(100), builders TEXT, containers TEXT, creatures, TEXT, accessors TEXT, managers TEXT, inheritnothing BOOLEAN, parentid INTEGER)");
             statement.execute("CREATE TABLE IF NOT EXISTS griefprevention_playerdata (name VARCHAR(50), lastlogin DATETIME, accruedblocks INTEGER, bonusblocks INTEGER)");
             statement.execute("CREATE TABLE IF NOT EXISTS griefprevention_schemaversion (version INTEGER)");
 
@@ -112,6 +112,7 @@ public class DatabaseDataStore extends DataStore
             {
                 statement.execute("ALTER TABLE griefprevention_claimdata MODIFY builders TEXT");
                 statement.execute("ALTER TABLE griefprevention_claimdata MODIFY containers TEXT");
+                statement.execute("ALTER TABLE griefprevention_claimdata MODIFY creatures TEXT");
                 statement.execute("ALTER TABLE griefprevention_claimdata MODIFY accessors TEXT");
                 statement.execute("ALTER TABLE griefprevention_claimdata MODIFY managers TEXT");
             }
@@ -339,6 +340,10 @@ public class DatabaseDataStore extends DataStore
                 List<String> containerNames = Arrays.asList(containersString.split(";"));
                 containerNames = this.convertNameListToUUIDList(containerNames);
 
+                String creaturesString = results.getString("creatures");
+                List<String> creaturesNames = Arrays.asList(creaturesString.split(";"));
+                creaturesNames = this.convertNameListToUUIDList(creaturesNames);
+
                 String accessorsString = results.getString("accessors");
                 List<String> accessorNames = Arrays.asList(accessorsString.split(";"));
                 accessorNames = this.convertNameListToUUIDList(accessorNames);
@@ -346,7 +351,7 @@ public class DatabaseDataStore extends DataStore
                 String managersString = results.getString("managers");
                 List<String> managerNames = Arrays.asList(managersString.split(";"));
                 managerNames = this.convertNameListToUUIDList(managerNames);
-                Claim claim = new Claim(lesserBoundaryCorner, greaterBoundaryCorner, ownerID, builderNames, containerNames, accessorNames, managerNames, inheritNothing, claimID);
+                Claim claim = new Claim(lesserBoundaryCorner, greaterBoundaryCorner, ownerID, builderNames, containerNames, creaturesNames, accessorNames, managerNames, inheritNothing, claimID);
 
                 if (removeClaim)
                 {
@@ -434,13 +439,15 @@ public class DatabaseDataStore extends DataStore
 
         ArrayList<String> builders = new ArrayList<>();
         ArrayList<String> containers = new ArrayList<>();
+        ArrayList<String> creatures = new ArrayList<>();
         ArrayList<String> accessors = new ArrayList<>();
         ArrayList<String> managers = new ArrayList<>();
 
-        claim.getPermissions(builders, containers, accessors, managers);
+        claim.getPermissions(builders, containers, creatures, accessors, managers);
 
         String buildersString = this.storageStringBuilder(builders);
         String containersString = this.storageStringBuilder(containers);
+        String creaturesString = this.storageStringBuilder(creatures);
         String accessorsString = this.storageStringBuilder(accessors);
         String managersString = this.storageStringBuilder(managers);
         boolean inheritNothing = claim.getSubclaimRestrictions();
@@ -455,10 +462,11 @@ public class DatabaseDataStore extends DataStore
             insertStmt.setString(4, greaterCornerString);
             insertStmt.setString(5, buildersString);
             insertStmt.setString(6, containersString);
-            insertStmt.setString(7, accessorsString);
-            insertStmt.setString(8, managersString);
-            insertStmt.setBoolean(9, inheritNothing);
-            insertStmt.setLong(10, parentId);
+            insertStmt.setString(7, creaturesString);
+            insertStmt.setString(9, accessorsString);
+            insertStmt.setString(9, managersString);
+            insertStmt.setBoolean(10, inheritNothing);
+            insertStmt.setLong(11, parentId);
             insertStmt.executeUpdate();
         }
         catch (SQLException e)

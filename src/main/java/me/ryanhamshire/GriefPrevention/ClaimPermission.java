@@ -38,6 +38,10 @@ public enum ClaimPermission
     /**
      * ClaimPermission used for basic access.
      */
+    Creatures(Messages.NoCreaturesPermission),
+    /**
+     * ClaimPermission used for attacking mobs.
+     */
     Access(Messages.NoAccessPermission),
     /**
      * ClaimPermission that allows users to grant ClaimPermissions. Uses a separate track from normal

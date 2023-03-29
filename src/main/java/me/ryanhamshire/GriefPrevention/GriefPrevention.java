@@ -1474,9 +1474,10 @@ public class GriefPrevention extends JavaPlugin
             //and send that to the player
             ArrayList<String> builders = new ArrayList<>();
             ArrayList<String> containers = new ArrayList<>();
+            ArrayList<String> creatures = new ArrayList<>();
             ArrayList<String> accessors = new ArrayList<>();
             ArrayList<String> managers = new ArrayList<>();
-            claim.getPermissions(builders, containers, accessors, managers);
+            claim.getPermissions(builders, containers, creatures, accessors, managers);
 
             GriefPrevention.sendMessage(player, TextMode.Info, Messages.TrustListHeader);
 
@@ -1511,6 +1512,16 @@ public class GriefPrevention extends JavaPlugin
 
             player.sendMessage(permissions.toString());
             permissions = new StringBuilder();
+            permissions.append(ChatColor.RED).append('>');
+
+            if (creatures.size() > 0)
+            {
+                for (String creature : creatures)
+                    permissions.append(this.trustEntryToPlayerName(creature)).append(' ');
+            }
+
+            player.sendMessage(permissions.toString());
+            permissions = new StringBuilder();
             permissions.append(ChatColor.BLUE).append('>');
 
             if (accessors.size() > 0)
@@ -1525,6 +1536,7 @@ public class GriefPrevention extends JavaPlugin
                     ChatColor.GOLD + this.dataStore.getMessage(Messages.Manage) + " " +
                             ChatColor.YELLOW + this.dataStore.getMessage(Messages.Build) + " " +
                             ChatColor.GREEN + this.dataStore.getMessage(Messages.Containers) + " " +
+                            ChatColor.RED + this.dataStore.getMessage(Messages.Creatures) + " " +
                             ChatColor.BLUE + this.dataStore.getMessage(Messages.Access));
 
             if (claim.getSubclaimRestrictions())
@@ -1747,6 +1759,17 @@ public class GriefPrevention extends JavaPlugin
             if (args.length != 1) return false;
 
             this.handleTrustCommand(player, null, args[0]);  //null indicates permissiontrust to the helper method
+
+            return true;
+        }
+
+        //creaturetrust <player>
+        else if (cmd.getName().equalsIgnoreCase("creaturetrust") && player != null)
+        {
+            //requires exactly one parameter, the other player's name
+            if (args.length != 1) return false;
+
+            this.handleTrustCommand(player, ClaimPermission.Creatures, args[0]);
 
             return true;
         }
@@ -3102,6 +3125,10 @@ public class GriefPrevention extends JavaPlugin
         else if (permissionLevel == ClaimPermission.Access)
         {
             permissionDescription = this.dataStore.getMessage(Messages.AccessPermission);
+        }
+        else if (permissionLevel == ClaimPermission.Creatures)
+        {
+            permissionDescription = this.dataStore.getMessage(Messages.CreaturesPermission);
         }
         else //ClaimPermission.Inventory
         {

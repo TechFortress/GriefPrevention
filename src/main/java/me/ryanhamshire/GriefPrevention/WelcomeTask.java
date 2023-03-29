@@ -62,7 +62,8 @@ public class WelcomeTask implements Runnable
             page2.append("/SubdivideClaims\n");
             page2.append("/AccessTrust\n");
             page2.append("/ContainerTrust\n");
-            page2.append("/PermissionTrust");
+            page2.append("/PermissionTrust\n");
+            page2.append("/CreatureTrust");
 
             meta.setPages(page1.toString(), page2.toString());
 

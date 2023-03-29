@@ -320,6 +320,11 @@ public class FlatFileDataStore extends DataStore
                         List<String> containerNames = Arrays.asList(line.split(";"));
                         containerNames = this.convertNameListToUUIDList(containerNames);
 
+                        //fifth line is list of players who can access creatures
+                        line = inStream.readLine();
+                        List<String> creatureNames = Arrays.asList(line.split(";"));
+                        creatureNames = this.convertNameListToUUIDList(creatureNames);
+
                         //sixth line is list of players who can use buttons and switches
                         line = inStream.readLine();
                         List<String> accessorNames = Arrays.asList(line.split(";"));
@@ -341,7 +346,7 @@ public class FlatFileDataStore extends DataStore
                         if (topLevelClaim == null)
                         {
                             //instantiate
-                            topLevelClaim = new Claim(lesserBoundaryCorner, greaterBoundaryCorner, ownerID, builderNames, containerNames, accessorNames, managerNames, claimID);
+                            topLevelClaim = new Claim(lesserBoundaryCorner, greaterBoundaryCorner, ownerID, builderNames, containerNames, creatureNames, accessorNames, managerNames, claimID);
 
                             topLevelClaim.modifiedDate = new Date(files[i].lastModified());
                             this.addClaim(topLevelClaim, false);
@@ -350,7 +355,7 @@ public class FlatFileDataStore extends DataStore
                         //otherwise there's already a top level claim, so this must be a subdivision of that top level claim
                         else
                         {
-                            Claim subdivision = new Claim(lesserBoundaryCorner, greaterBoundaryCorner, null, builderNames, containerNames, accessorNames, managerNames, null);
+                            Claim subdivision = new Claim(lesserBoundaryCorner, greaterBoundaryCorner, null, builderNames, containerNames, creatureNames, accessorNames, managerNames, null);
 
                             subdivision.modifiedDate = new Date(files[i].lastModified());
                             subdivision.parent = topLevelClaim;
@@ -513,6 +518,8 @@ public class FlatFileDataStore extends DataStore
 
         List<String> containers = yaml.getStringList("Containers");
 
+        List<String> creatures = yaml.getStringList("Creatures");
+
         List<String> accessors = yaml.getStringList("Accessors");
 
         List<String> managers = yaml.getStringList("Managers");
@@ -522,7 +529,7 @@ public class FlatFileDataStore extends DataStore
         out_parentID.add(yaml.getLong("Parent Claim ID", -1L));
 
         //instantiate
-        claim = new Claim(lesserBoundaryCorner, greaterBoundaryCorner, ownerID, builders, containers, accessors, managers, inheritNothing, claimID);
+        claim = new Claim(lesserBoundaryCorner, greaterBoundaryCorner, ownerID, builders, containers, creatures, accessors, managers, inheritNothing, claimID);
         claim.modifiedDate = new Date(lastModifiedDate);
         claim.id = claimID;
 
@@ -544,12 +551,14 @@ public class FlatFileDataStore extends DataStore
 
         ArrayList<String> builders = new ArrayList<>();
         ArrayList<String> containers = new ArrayList<>();
+        ArrayList<String> creatures = new ArrayList<>();
         ArrayList<String> accessors = new ArrayList<>();
         ArrayList<String> managers = new ArrayList<>();
-        claim.getPermissions(builders, containers, accessors, managers);
+        claim.getPermissions(builders, containers, creatures, accessors, managers);
 
         yaml.set("Builders", builders);
         yaml.set("Containers", containers);
+        yaml.set("Creatures", creatures);
         yaml.set("Accessors", accessors);
         yaml.set("Managers", managers);
 

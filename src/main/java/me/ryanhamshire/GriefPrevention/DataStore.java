@@ -955,6 +955,7 @@ public abstract class DataStore
                 new ArrayList<>(),
                 new ArrayList<>(),
                 new ArrayList<>(),
+                new ArrayList<>(),
                 id);
 
         newClaim.parent = parent;
@@ -1651,7 +1652,8 @@ public abstract class DataStore
         this.addDefault(defaults, Messages.ManageOneClaimPermissionsInstruction, "To manage permissions for a specific claim, stand inside it.", null);
         this.addDefault(defaults, Messages.CollectivePublic, "the public", "as in 'granted the public permission to...'");
         this.addDefault(defaults, Messages.BuildPermission, "build", null);
-        this.addDefault(defaults, Messages.ContainersPermission, "access containers and animals", null);
+        this.addDefault(defaults, Messages.ContainersPermission, "access containers", null);
+        this.addDefault(defaults, Messages.CreaturesPermission, "attack animals", null);
         this.addDefault(defaults, Messages.AccessPermission, "use buttons and levers", null);
         this.addDefault(defaults, Messages.PermissionsPermission, "manage permissions", null);
         this.addDefault(defaults, Messages.LocationCurrentClaim, "in this claim", null);
@@ -1723,6 +1725,7 @@ public abstract class DataStore
         this.addDefault(defaults, Messages.NoAccessPermission, "You don't have {0}'s permission to use that.", "0: owner name.  access permission controls buttons, levers, and beds");
         this.addDefault(defaults, Messages.NoContainersSiege, "This claim is under siege by {0}.  No one can access containers here right now.", "0: attacker name");
         this.addDefault(defaults, Messages.NoContainersPermission, "You don't have {0}'s permission to use that.", "0: owner's name.  containers also include crafting blocks");
+        this.addDefault(defaults, Messages.NoCreaturesPermission, "You don't have {0}'s permission to use that.", "0: owner's name.");
         this.addDefault(defaults, Messages.OwnerNameForAdminClaims, "an administrator", "as in 'You don't have an administrator's permission to build here.'");
         this.addDefault(defaults, Messages.ClaimTooSmallForEntities, "This claim isn't big enough for that.  Try enlarging it.", null);
         this.addDefault(defaults, Messages.TooManyEntitiesInClaim, "This claim has too many entities already.  Try enlarging the claim or removing some animals, monsters, paintings, or minecarts.", null);
@@ -1783,6 +1786,7 @@ public abstract class DataStore
         this.addDefault(defaults, Messages.Build, "Build", null);
         this.addDefault(defaults, Messages.Containers, "Containers", null);
         this.addDefault(defaults, Messages.Access, "Access", null);
+        this.addDefault(defaults, Messages.Creatures, "Creatures", null);
         this.addDefault(defaults, Messages.HasSubclaimRestriction, "This subclaim does not inherit permissions from the parent", null);
         this.addDefault(defaults, Messages.StartBlockMath, "{0} blocks from play + {1} bonus = {2} total.", null);
         this.addDefault(defaults, Messages.ClaimsListHeader, "Claims:", null);

@@ -1118,7 +1118,7 @@ public class EntityEventHandler implements Listener
                                     message += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
                                 if (sendErrorMessagesToPlayers)
                                     GriefPrevention.sendMessage(attacker, TextMode.Err, message);
-                                PreventPvPEvent pvpEvent = new PreventPvPEvent(new Claim(subEvent.getEntity().getLocation(), subEvent.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null), attacker, tameable);
+                                PreventPvPEvent pvpEvent = new PreventPvPEvent(new Claim(subEvent.getEntity().getLocation(), subEvent.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null), attacker, tameable);
                                 Bukkit.getPluginManager().callEvent(pvpEvent);
                                 if (!pvpEvent.isCancelled())
                                 {
@@ -1224,7 +1224,7 @@ public class EntityEventHandler implements Listener
                                 return message;
                             };
                         }
-                        Supplier<String> noContainersReason = claim.checkPermission(attacker, ClaimPermission.Inventory, event, override);
+                        Supplier<String> noContainersReason = claim.checkPermission(attacker, ClaimPermission.Creatures, event, override);
                         if (noContainersReason != null)
                         {
                             event.setCancelled(true);
@@ -1443,7 +1443,7 @@ public class EntityEventHandler implements Listener
                         message += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
                     return message;
                 };
-                Supplier<String> noContainersReason = claim.checkPermission(attacker, ClaimPermission.Inventory, event, override);
+                Supplier<String> noContainersReason = claim.checkPermission(attacker, ClaimPermission.Creatures, event, override);
                 if (noContainersReason != null)
                 {
                     event.setCancelled(true);
@@ -1511,7 +1511,7 @@ public class EntityEventHandler implements Listener
                             {
                                 // Source is a player. Determine if they have permission to access entities in the claim.
                                 Supplier<String> override = () -> instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, claim.getOwnerName());
-                                final Supplier<String> noContainersReason = claim.checkPermission(thrower, ClaimPermission.Inventory, event, override);
+                                final Supplier<String> noContainersReason = claim.checkPermission(thrower, ClaimPermission.Creatures, event, override);
                                 if (noContainersReason != null)
                                 {
                                     event.setIntensity(affected, 0);
