@@ -882,7 +882,12 @@ public class BlockEventHandler implements Listener
             this.lastSpreadFromClaim = fromClaim;
             this.lastSpreadToClaim = toClaim;
 
-            if (fromClaim == null || !Objects.equals(fromClaim.getOwnerID(), toClaim.getOwnerID()))
+            boolean fromWilderness = fromClaim == null;
+            boolean differentOwners = !fromWilderness && !Objects.equals(fromClaim.getOwnerID(), toClaim.getOwnerID());
+            boolean fromSubdivision = !fromWilderness && fromClaim.parent != null;
+            boolean intoSameSubdivision = !fromWilderness && fromClaim.parent == toClaim.parent;
+
+            if (fromWilderness || differentOwners || (fromSubdivision && !intoSameSubdivision))
             {
                 spreadEvent.setCancelled(true);
             }
