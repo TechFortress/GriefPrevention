@@ -870,34 +870,81 @@ public class BlockEventHandler implements Listener
         //where from and where to?
         Location fromLocation = spreadEvent.getBlock().getLocation();
         Location toLocation = spreadEvent.getToBlock().getLocation();
+        boolean isInCreativeRulesWorld = GriefPrevention.instance.creativeRulesApply(toLocation);
         Claim fromClaim = this.dataStore.getClaimAt(fromLocation, false, lastSpreadFromClaim);
         Claim toClaim = this.dataStore.getClaimAt(toLocation, false, lastSpreadToClaim);
 
-        //if into a claim, it must be from the claim of the same owner
-        if (toClaim != null)
-        {
-            //due to the nature of what causes this event (fluid flow/spread),
-            //we'll probably run similar checks for the same pair of claims again
-            //so let's cache them to use in claim lookup later
-            this.lastSpreadFromClaim = fromClaim;
-            this.lastSpreadToClaim = toClaim;
+        //due to the nature of what causes this event (fluid flow/spread),
+        //we'll probably run similar checks for the same pair of claims again,
+        //so we cache them to use in claim lookup later
+        this.lastSpreadFromClaim = fromClaim;
+        this.lastSpreadToClaim = toClaim;
 
-            boolean fromWilderness = fromClaim == null;
-            boolean differentOwners = !fromWilderness && !Objects.equals(fromClaim.getOwnerID(), toClaim.getOwnerID());
-            boolean fromSubdivision = !fromWilderness && fromClaim.parent != null;
-            boolean intoSameSubdivision = !fromWilderness && fromClaim.parent == toClaim.parent;
-
-            if (fromWilderness || differentOwners || (fromSubdivision && !intoSameSubdivision))
-            {
-                spreadEvent.setCancelled(true);
-            }
-        }
-
-        //otherwise if creative mode world, don't flow
-        else if (GriefPrevention.instance.creativeRulesApply(toLocation))
+        if (!isFluidFlowAllowed(fromClaim, toClaim, isInCreativeRulesWorld))
         {
             spreadEvent.setCancelled(true);
         }
+    }
+
+    /**
+     * Determines whether fluid flow is allowed between two claims.
+     *
+     * @param from The claim at the source location of the fluid flow, or null if it's wilderness.
+     * @param to The claim at the destination location of the fluid flow, or null if it's wilderness.
+     * @param creativeRulesApply Whether creative rules apply to the world where claims are located.
+     * @return `true` if fluid flow is allowed, `false` otherwise.
+     */
+    private boolean isFluidFlowAllowed(Claim from, Claim to, boolean creativeRulesApply)
+    {
+        // Special case: if in a world with creative rules,
+        // don't allow fluids to flow into wilderness.
+        if (creativeRulesApply && to == null) return false;
+
+        // The fluid flow should be allowed or denied based on the specific combination
+        // of source and destination claim types. The following matrix outlines these
+        // combinations and indicates whether fluid flow should be permitted:
+        //
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | From \ To    | Wild | Claim A1 | Sub A1_1 | Sub A1_2 | Sub A1_3 (R) | Claim A2 | Claim B |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Wild         | Yes  | -        | -        | -        | -            | -        | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Claim A1     | Yes  | Yes      | Yes      | Yes      | -            | Yes      | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Sub A1_1     | Yes  | -        | Yes      | -        | -            | -        | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Sub A1_2     | Yes  | -        | -        | Yes      | -            | -        | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Sub A1_3 (R) | Yes  | -        | -        | -        | Yes          | -        | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Claim A2     | Yes  | Yes      | -        | -        | -            | Yes      | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Claim B      | Yes  | -        | -        | -        | -            | -        | Yes     |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //
+        //   Legend:
+        //     Wild = wilderness
+        //     Claim A* = claim owned by player A
+        //     Sub A*_* = subdivision of Claim A*
+        //     (R) = Restricted subdivision
+        //     Claim B = claim owned by player B
+        //     Yes = fluid flow allowed
+        //     - = fluid flow not allowed
+
+        boolean fromWilderness = from == null;
+        boolean toWilderness = to == null;
+        boolean sameClaim = from != null && to != null && Objects.equals(from.getID(), to.getID());
+        boolean sameOwner = from != null && to != null && Objects.equals(from.getOwnerID(), to.getOwnerID());
+        boolean isToSubdivision = to != null && to.parent != null;
+        boolean isToRestrictedSubdivision = isToSubdivision && to.getSubclaimRestrictions();
+        boolean isFromSubdivision = from != null && from.parent != null;
+
+        if (toWilderness) return true;
+        if (fromWilderness) return false;
+        if (sameClaim) return true;
+        if (isFromSubdivision) return false;
+        if (isToSubdivision) return !isToRestrictedSubdivision;
+        return sameOwner;
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
