@@ -342,7 +342,6 @@ public class DatabaseDataStore extends DataStore
 
                 String creaturesString = results.getString("creatures");
                 List<String> creaturesNames = Arrays.asList(creaturesString.split(";"));
-                creaturesNames = this.convertNameListToUUIDList(creaturesNames);
 
                 String accessorsString = results.getString("accessors");
                 List<String> accessorNames = Arrays.asList(accessorsString.split(";"));
