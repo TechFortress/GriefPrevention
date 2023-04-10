@@ -320,17 +320,17 @@ public class FlatFileDataStore extends DataStore
                         List<String> containerNames = Arrays.asList(line.split(";"));
                         containerNames = this.convertNameListToUUIDList(containerNames);
 
-                        //fifth line is list of players who can access creatures
+                        //sixth line is list of players who can access creatures
                         line = inStream.readLine();
                         List<String> creatureNames = Arrays.asList(line.split(";"));
                         creatureNames = this.convertNameListToUUIDList(creatureNames);
 
-                        //sixth line is list of players who can use buttons and switches
+                        //seventh line is list of players who can use buttons and switches
                         line = inStream.readLine();
                         List<String> accessorNames = Arrays.asList(line.split(";"));
                         accessorNames = this.convertNameListToUUIDList(accessorNames);
 
-                        //seventh line is list of players who can grant permissions
+                        //eighth line is list of players who can grant permissions
                         line = inStream.readLine();
                         if (line == null) line = "";
                         List<String> managerNames = Arrays.asList(line.split(";"));
