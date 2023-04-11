@@ -24,10 +24,10 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
+import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Animals;
 import org.bukkit.entity.Creature;
 import org.bukkit.entity.Donkey;
@@ -53,7 +53,6 @@ import org.bukkit.entity.Tameable;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.WaterMob;
-import org.bukkit.entity.Wolf;
 import org.bukkit.entity.Zombie;
 import org.bukkit.entity.minecart.ExplosiveMinecart;
 import org.bukkit.event.EventHandler;
@@ -1090,29 +1089,25 @@ public class EntityEventHandler implements Listener
             if (((subEvent.getEntity() instanceof Creature || subEvent.getEntity() instanceof WaterMob) && GriefPrevention.instance.config_claims_protectCreatures))
             {
                 //if entity is tameable and has an owner, apply special rules
-                if (subEvent.getEntity() instanceof Tameable)
+                if (subEvent.getEntity() instanceof Tameable tameable)
                 {
-                    Tameable tameable = (Tameable) subEvent.getEntity();
-                    if (tameable.isTamed() && tameable.getOwner() != null)
+                    AnimalTamer owner = tameable.getOwner();
+                    if (tameable.isTamed() && owner != null)
                     {
                         //limit attacks by players to owners and admins in ignore claims mode
                         if (attacker != null)
                         {
-                            UUID ownerID = tameable.getOwner().getUniqueId();
-
                             //if the player interacting is the owner, always allow
-                            if (attacker.getUniqueId().equals(ownerID)) return;
+                            if (attacker.equals(owner)) return;
 
                             //allow for admin override
                             PlayerData attackerData = this.dataStore.getPlayerData(attacker.getUniqueId());
                             if (attackerData.ignoreClaims) return;
 
                             //otherwise disallow in non-pvp worlds (and also pvp worlds if configured to do so)
-                            if (!GriefPrevention.instance.pvpRulesApply(subEvent.getEntity().getLocation().getWorld()) || (GriefPrevention.instance.config_pvp_protectPets && subEvent.getEntityType() != EntityType.WOLF))
+                            if (!GriefPrevention.instance.pvpRulesApply(subEvent.getEntity().getWorld()) || (GriefPrevention.instance.config_pvp_protectPets && subEvent.getEntityType() != EntityType.WOLF))
                             {
-                                OfflinePlayer owner = GriefPrevention.instance.getServer().getOfflinePlayer(ownerID);
-                                String ownerName = owner.getName();
-                                if (ownerName == null) ownerName = "someone";
+                                String ownerName = GriefPrevention.lookupPlayerName(owner);
                                 String message = GriefPrevention.instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
                                 if (attacker.hasPermission("griefprevention.ignoreclaims"))
                                     message += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
@@ -1137,21 +1132,18 @@ public class EntityEventHandler implements Listener
                             // disallow players attacking tamed wolves (dogs) unless under attack by said wolf
                             else if (tameable.getType() == EntityType.WOLF)
                             {
-                                if (!tameable.getOwner().equals(attacker))
+                                if (tameable.getTarget() != null)
                                 {
-                                    if (((Wolf) tameable).getTarget() != null)
-                                    {
-                                        if (((Wolf) tameable).getTarget() == attacker) return;
-                                    }
-                                    event.setCancelled(true);
-                                    String ownerName = GriefPrevention.instance.getServer().getOfflinePlayer(ownerID).getName();
-                                    String message = GriefPrevention.instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
-                                    if (attacker.hasPermission("griefprevention.ignoreclaims"))
-                                        message += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
-                                    if (sendErrorMessagesToPlayers)
-                                        GriefPrevention.sendMessage(attacker, TextMode.Err, message);
-                                    return;
+                                    if (tameable.getTarget() == attacker) return;
                                 }
+                                event.setCancelled(true);
+                                String ownerName = GriefPrevention.lookupPlayerName(owner);
+                                String message = GriefPrevention.instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
+                                if (attacker.hasPermission("griefprevention.ignoreclaims"))
+                                    message += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                                if (sendErrorMessagesToPlayers)
+                                    GriefPrevention.sendMessage(attacker, TextMode.Err, message);
+                                return;
                             }
                         }
                     }
