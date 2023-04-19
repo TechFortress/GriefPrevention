@@ -1820,6 +1820,7 @@ public abstract class DataStore
         this.addDefault(defaults, Messages.SubclaimUnrestricted, "This subclaim's permissions will now inherit from the parent claim", null);
 
         this.addDefault(defaults, Messages.NetherPortalTrapDetectionMessage, "It seems you might be stuck inside a nether portal. We will rescue you in a few seconds if that is the case!", "Sent to player on join, if they left while inside a nether portal.");
+        this.addDefault(defaults, Messages.InvalidNumber, "The provided number was invalid.");
 
         //load the config file
         FileConfiguration config = YamlConfiguration.loadConfiguration(new File(messagesFilePath));

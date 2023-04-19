@@ -2321,7 +2321,8 @@ public class GriefPrevention extends JavaPlugin
             }
             catch (NumberFormatException numberFormatException)
             {
-                return false;  //causes usage to be displayed
+                GriefPrevention.sendMessage(player, TextMode.Err, Messages.InvalidNumber);
+                return true;
             }
 
             //if granting blocks to all players with a specific permission
