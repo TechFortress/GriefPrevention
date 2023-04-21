@@ -2338,17 +2338,7 @@ public class GriefPrevention extends JavaPlugin
             }
 
             //otherwise, find the specified player
-            OfflinePlayer targetPlayer;
-            try
-            {
-                UUID playerID = UUID.fromString(args[0]);
-                targetPlayer = this.getServer().getOfflinePlayer(playerID);
-
-            }
-            catch (IllegalArgumentException e)
-            {
-                targetPlayer = this.resolvePlayerByName(args[0]);
-            }
+            OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
 
             if (targetPlayer == null)
             {
