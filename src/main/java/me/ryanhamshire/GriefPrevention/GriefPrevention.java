@@ -2681,7 +2681,9 @@ public class GriefPrevention extends JavaPlugin
 
             //find the specified player
             OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
-            if (targetPlayer == null)
+            if (targetPlayer == null
+                    || !targetPlayer.isOnline() && !targetPlayer.hasPlayedBefore()
+                    || targetPlayer.getName() == null)
             {
                 GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerNotFound2);
                 return true;
