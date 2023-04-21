@@ -3189,7 +3189,16 @@ public class GriefPrevention extends JavaPlugin
         }
         if (bestMatchID == null)
         {
-            return null;
+            try
+            {
+                // Try to parse UUID from string.
+                bestMatchID = UUID.fromString(name);
+            }
+            catch (IllegalArgumentException ignored)
+            {
+                // Not a valid UUID string either.
+                return null;
+            }
         }
 
         return this.getServer().getOfflinePlayer(bestMatchID);
