@@ -7,7 +7,7 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * An {@link org.bukkit.event.Event Event} called when a user is rescued from a {@link Claim}.
+ * An {@link org.bukkit.event.Event Event} called when player is about to siege another player in {@link Claim}.
  */
 public class SiegeStartEvent extends ClaimEvent implements Cancellable
 {
