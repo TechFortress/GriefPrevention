@@ -23,6 +23,7 @@ import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
 import me.ryanhamshire.GriefPrevention.events.PreventBlockBreakEvent;
 import me.ryanhamshire.GriefPrevention.events.SaveTrappedPlayerEvent;
+import me.ryanhamshire.GriefPrevention.events.SiegeStartEvent;
 import me.ryanhamshire.GriefPrevention.events.TrustChangedEvent;
 import me.ryanhamshire.GriefPrevention.metrics.MetricsHandler;
 import net.milkbowl.vault.economy.Economy;
@@ -2613,6 +2614,12 @@ public class GriefPrevention extends JavaPlugin
                 GriefPrevention.sendMessage(player, TextMode.Err, Messages.SiegeOnCooldown);
                 return true;
             }
+
+            //rescue destination may be set by GPFlags or other plugin, ask to find out
+            SiegeStartEvent event = new SiegeStartEvent(defenderClaim, attacker, defender);
+            Bukkit.getPluginManager().callEvent(event);
+
+            if (event.isCancelled()) return true;
 
             //start the siege
             dataStore.startSiege(attacker, defender, defenderClaim);
