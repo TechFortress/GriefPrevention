@@ -2615,7 +2615,7 @@ public class GriefPrevention extends JavaPlugin
                 return true;
             }
 
-            //rescue destination may be set by GPFlags or other plugin, ask to find out
+            //listen some addons who want to prevent this siege
             SiegeStartEvent event = new SiegeStartEvent(defenderClaim, attacker, defender);
             Bukkit.getPluginManager().callEvent(event);
 
