@@ -744,6 +744,17 @@ public class BlockEventHandler implements Listener
         // Arrow ignition.
         if (igniteEvent.getCause() == IgniteCause.ARROW && igniteEvent.getIgnitingEntity() != null)
         {
+            // Arrows shot by players may return the shooter, not the arrow.
+            if (igniteEvent.getIgnitingEntity() instanceof Player player)
+            {
+                BlockBreakEvent breakEvent = new BlockBreakEvent(igniteEvent.getBlock(), player);
+                onBlockBreak(breakEvent);
+                if (breakEvent.isCancelled())
+                {
+                    igniteEvent.setCancelled(true);
+                }
+                return;
+            }
             // Flammable lightable blocks do not fire EntityChangeBlockEvent when igniting.
             BlockData blockData = igniteEvent.getBlock().getBlockData();
             if (blockData instanceof Lightable lightable)
