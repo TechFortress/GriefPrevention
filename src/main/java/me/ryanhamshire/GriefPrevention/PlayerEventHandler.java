@@ -40,6 +40,7 @@ import org.bukkit.block.data.Levelled;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.command.Command;
 import org.bukkit.entity.AbstractHorse;
+import org.bukkit.entity.Allay;
 import org.bukkit.entity.Animals;
 import org.bukkit.entity.Creature;
 import org.bukkit.entity.Donkey;
@@ -1185,8 +1186,11 @@ class PlayerEventHandler implements Listener
         if (!instance.config_claims_protectDonkeys && entity instanceof Donkey) return;
         if (!instance.config_claims_protectDonkeys && entity instanceof Mule) return;
         if (!instance.config_claims_protectLlamas && entity instanceof Llama) return;
+        if (!instance.config_claims_protectAllays && entity instanceof Allay) return;
 
         PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+
+
 
         //if entity is tameable and has an owner, apply special rules
         if (entity instanceof Tameable)
@@ -1235,6 +1239,33 @@ class PlayerEventHandler implements Listener
                 {
                     InventoryHolder holder = (InventoryHolder) tameable;
                     holder.getInventory().clear();
+                }
+            }
+
+        }
+        else
+        {
+            if (entity instanceof Allay) //check if player tried to set item
+            {
+                Claim claim = this.dataStore.getClaimAt(entity.getLocation(), false, playerData.lastClaim);
+                if (claim != null) //make sure user is in an active claim
+                {
+                    Supplier<String> override = () ->
+                    {
+                        String message = instance.dataStore.getMessage(Messages.NoContainersPermission, claim.getOwnerName());
+                        if (player.hasPermission("griefprevention.ignoreclaims"))
+                            message += "  " + instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+
+                        return message;
+                    };
+
+                    final Supplier<String> noAllaySetItemReason = claim.checkPermission(player, ClaimPermission.Inventory, event, override);
+                    if (noAllaySetItemReason != null) //disallow setting item if permission is not granted
+                    {
+                        GriefPrevention.sendMessage(player, TextMode.Err, noAllaySetItemReason.get());
+                        event.setCancelled(true);
+                        return;
+                    }
                 }
             }
         }
