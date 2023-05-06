@@ -3284,6 +3284,9 @@ public class GriefPrevention extends JavaPlugin
         //if player is in creative mode, do nothing
         if (player.getGameMode() == GameMode.CREATIVE) return;
 
+        //if player is npc, do nothing
+        if (player.hasMetadata("NPC")) return;
+
         //if the player has the damage any player permission enabled, do nothing
         if (player.hasPermission("griefprevention.nopvpimmunity")) return;
 
