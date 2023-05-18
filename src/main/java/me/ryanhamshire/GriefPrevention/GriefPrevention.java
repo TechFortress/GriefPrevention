@@ -88,6 +88,7 @@ public class GriefPrevention extends JavaPlugin
 
     // Event handlers with common functionality
     EntityEventHandler entityEventHandler;
+    EntityDamageHandler entityDamageHandler;
 
     //this tracks item stacks expected to drop which will need protection
     ArrayList<PendingItemProtection> pendingItemWatchList = new ArrayList<>();
@@ -373,6 +374,10 @@ public class GriefPrevention extends JavaPlugin
         //entity events
         entityEventHandler = new EntityEventHandler(this.dataStore, this);
         pluginManager.registerEvents(entityEventHandler, this);
+
+        //combat/damage-specific entity events
+        entityDamageHandler = new EntityDamageHandler(this.dataStore, this);
+        pluginManager.registerEvents(entityDamageHandler, this);
 
         //siege events
         SiegeEventHandler siegeEventHandler = new SiegeEventHandler();
