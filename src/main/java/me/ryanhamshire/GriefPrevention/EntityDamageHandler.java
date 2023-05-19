@@ -10,7 +10,6 @@ import org.bukkit.entity.Donkey;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Explosive;
-import org.bukkit.entity.Firework;
 import org.bukkit.entity.Horse;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
@@ -34,12 +33,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityCombustByEntityEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.event.vehicle.VehicleDamageEvent;
-import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.metadata.MetadataValue;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -51,7 +47,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.function.Supplier;
 
 public class EntityDamageHandler implements Listener
@@ -162,7 +157,6 @@ public class EntityDamageHandler implements Listener
         //determine which player is attacking, if any
         Player attacker = null;
         Projectile arrow = null;
-        Firework firework = null;
         Entity damageSource = subEvent.getDamager();
 
         if (damageSource != null)
@@ -177,19 +171,6 @@ public class EntityDamageHandler implements Listener
                 if (arrow.getShooter() instanceof Player)
                 {
                     attacker = (Player) arrow.getShooter();
-                }
-            }
-            else if (subEvent.getDamager() instanceof Firework)
-            {
-                damageSource = subEvent.getDamager();
-                if (damageSource.hasMetadata("GP_FIREWORK"))
-                {
-                    List<MetadataValue> data = damageSource.getMetadata("GP_FIREWORK");
-                    if (data != null && data.size() > 0)
-                    {
-                        firework = (Firework) damageSource;
-                        attacker = (Player) data.get(0).value();
-                    }
                 }
             }
 
@@ -227,18 +208,6 @@ public class EntityDamageHandler implements Listener
                 }
             }
         }
-
-        //if the attacker is a firework from a crossbow by a player and defender is a player (nonpvp)
-        if (firework != null && event.getEntityType() == EntityType.PLAYER && !GriefPrevention.instance.pvpRulesApply(attacker.getWorld()))
-        {
-            Player defender = (Player) (event.getEntity());
-            if (attacker != defender)
-            {
-                event.setCancelled(true);
-                return;
-            }
-        }
-
 
         //if the attacker is a player and defender is a player (pvp combat)
         if (attacker != null && event.getEntityType() == EntityType.PLAYER && GriefPrevention.instance.pvpRulesApply(attacker.getWorld()))
@@ -619,15 +588,6 @@ public class EntityDamageHandler implements Listener
         return true;
     }
 
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
-    public void onCrossbowFireWork(EntityShootBowEvent shootEvent)
-    {
-        if (shootEvent.getEntity() instanceof Player && shootEvent.getProjectile() instanceof Firework)
-        {
-            shootEvent.getProjectile().setMetadata("GP_FIREWORK", new FixedMetadataValue(GriefPrevention.instance, shootEvent.getEntity()));
-        }
-    }
-
     //when an entity is damaged
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     public void onEntityDamageMonitor(EntityDamageEvent event)
@@ -667,17 +627,6 @@ public class EntityDamageHandler implements Listener
                 if (arrow.getShooter() instanceof Player)
                 {
                     attacker = (Player) arrow.getShooter();
-                }
-            }
-            else if (damageSource instanceof Firework)
-            {
-                if (damageSource.hasMetadata("GP_FIREWORK"))
-                {
-                    List<MetadataValue> data = damageSource.getMetadata("GP_FIREWORK");
-                    if (data != null && data.size() > 0)
-                    {
-                        attacker = (Player) data.get(0).value();
-                    }
                 }
             }
         }
@@ -731,17 +680,6 @@ public class EntityDamageHandler implements Listener
                 if (arrow.getShooter() instanceof Player)
                 {
                     attacker = (Player) arrow.getShooter();
-                }
-            }
-            else if (damageSource instanceof Firework)
-            {
-                if (damageSource.hasMetadata("GP_FIREWORK"))
-                {
-                    List<MetadataValue> data = damageSource.getMetadata("GP_FIREWORK");
-                    if (data != null && data.size() > 0)
-                    {
-                        attacker = (Player) data.get(0).value();
-                    }
                 }
             }
         }
