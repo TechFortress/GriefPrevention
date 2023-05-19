@@ -118,29 +118,8 @@ public class EntityDamageHandler implements Listener
             }
         }
 
-        //protect pets from environmental damage types which could be easily caused by griefers
-        if (event.getEntity() instanceof Tameable && !GriefPrevention.instance.pvpRulesApply(event.getEntity().getWorld()))
-        {
-            Tameable tameable = (Tameable) event.getEntity();
-            if (tameable.isTamed())
-            {
-                EntityDamageEvent.DamageCause cause = event.getCause();
-                if (cause != null && (
-                        cause == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION ||
-                                cause == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION ||
-                                cause == EntityDamageEvent.DamageCause.FALLING_BLOCK ||
-                                cause == EntityDamageEvent.DamageCause.FIRE ||
-                                cause == EntityDamageEvent.DamageCause.FIRE_TICK ||
-                                cause == EntityDamageEvent.DamageCause.LAVA ||
-                                cause == EntityDamageEvent.DamageCause.SUFFOCATION ||
-                                cause == EntityDamageEvent.DamageCause.CONTACT ||
-                                cause == EntityDamageEvent.DamageCause.DROWNING))
-                {
-                    event.setCancelled(true);
-                    return;
-                }
-            }
-        }
+        // Handle environmental damage to tamed animals that could easily be caused maliciously.
+        if (handlePetDamageByEnvironment(event)) return;
 
         if (handleBlockExplosionDamage(event)) return;
 
@@ -560,6 +539,39 @@ public class EntityDamageHandler implements Listener
         if ((type == EntityType.HOGLIN || type == EntityType.POLAR_BEAR) && entity instanceof Mob)
             return !entity.getPersistentDataContainer().has(luredByPlayer, PersistentDataType.BYTE) && ((Mob) entity).getTarget() != null;
 
+        return false;
+    }
+
+    /**
+     * Handle damage to {@link Tameable} entities by environmental sources.
+     *
+     * @param event the {@link EntityDamageEvent}
+     * @return true if the damage is handled
+     */
+    private boolean handlePetDamageByEnvironment(@NotNull EntityDamageEvent event)
+    {
+        if (event.getEntity() instanceof Tameable && !GriefPrevention.instance.pvpRulesApply(event.getEntity().getWorld()))
+        {
+            Tameable tameable = (Tameable) event.getEntity();
+            if (tameable.isTamed())
+            {
+                EntityDamageEvent.DamageCause cause = event.getCause();
+                if (cause != null && (
+                        cause == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION ||
+                                cause == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION ||
+                                cause == EntityDamageEvent.DamageCause.FALLING_BLOCK ||
+                                cause == EntityDamageEvent.DamageCause.FIRE ||
+                                cause == EntityDamageEvent.DamageCause.FIRE_TICK ||
+                                cause == EntityDamageEvent.DamageCause.LAVA ||
+                                cause == EntityDamageEvent.DamageCause.SUFFOCATION ||
+                                cause == EntityDamageEvent.DamageCause.CONTACT ||
+                                cause == EntityDamageEvent.DamageCause.DROWNING))
+                {
+                    event.setCancelled(true);
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
