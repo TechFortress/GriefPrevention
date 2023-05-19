@@ -2120,9 +2120,14 @@ class PlayerEventHandler implements Listener
                         }
                         Date lastLogin = new Date(Bukkit.getOfflinePlayer(claim.ownerID).getLastPlayed());
                         Date now = new Date();
-                        long daysElapsed = (now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24);
+                        long timeElapsed = now.getTime() - lastLogin.getTime();
+                        long daysElapsed = timeElapsed / (1000 * 60 * 60 * 24);
+                        long hoursElapsed = (timeElapsed / (1000 * 60 * 60)) % 24;
+                        long minutesElapsed = (timeElapsed / (1000 * 60)) % 60;
+                        long secondsElapsed = (timeElapsed / 1000) % 60;
 
-                        GriefPrevention.sendMessage(player, TextMode.Info, Messages.PlayerOfflineTime, String.valueOf(daysElapsed));
+                        String formattedTime = String.format("%d dias, %d horas, %d minutos e %d segundos", daysElapsed, hoursElapsed, minutesElapsed, secondsElapsed);
+                        GriefPrevention.sendMessage(player, TextMode.Info, Messages.PlayerOfflineTime, formattedTime);
 
                         //drop the data we just loaded, if the player isn't online
                         if (instance.getServer().getPlayer(claim.ownerID) == null)
