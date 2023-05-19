@@ -121,7 +121,8 @@ public class EntityDamageHandler implements Listener
         // Handle environmental damage to tamed animals that could easily be caused maliciously.
         if (handlePetDamageByEnvironment(event)) return;
 
-        if (handleBlockExplosionDamage(event)) return;
+        // Handle entity damage by block explosions.
+        if (handleEntityDamageByBlockExplosion(event)) return;
 
         //the rest is only interested in entities damaging entities (ignoring environmental damage)
         if (!(event instanceof EntityDamageByEntityEvent)) return;
@@ -576,12 +577,12 @@ public class EntityDamageHandler implements Listener
     }
 
     /**
-     * Handles entity damage caused by block explosions.
+     * Handle entity damage caused by block explosions.
      *
-     * @param event the EntityDamageEvent
-     * @return true if the damage has been handled
+     * @param event the {@link EntityDamageEvent}
+     * @return true if the damage is handled
      */
-    private boolean handleBlockExplosionDamage(EntityDamageEvent event)
+    private boolean handleEntityDamageByBlockExplosion(@NotNull EntityDamageEvent event)
     {
         if (event.getCause() != EntityDamageEvent.DamageCause.BLOCK_EXPLOSION) return false;
 
