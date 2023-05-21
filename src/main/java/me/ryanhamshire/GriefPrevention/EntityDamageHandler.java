@@ -100,7 +100,7 @@ public class EntityDamageHandler implements Listener
         event.setCancelled(eventWrapper.isCancelled());
     }
 
-    private void handleEntityDamageEvent(EntityDamageEvent event, boolean sendErrorMessagesToPlayers)
+    private void handleEntityDamageEvent(@NotNull EntityDamageEvent event, boolean sendErrorMessagesToPlayers)
     {
         //monsters are never protected
         if (isMonster(event.getEntity())) return;
@@ -126,63 +126,58 @@ public class EntityDamageHandler implements Listener
         if (handleEntityDamageByBlockExplosion(event)) return;
 
         //the rest is only interested in entities damaging entities (ignoring environmental damage)
-        if (!(event instanceof EntityDamageByEntityEvent)) return;
-
-        EntityDamageByEntityEvent subEvent = (EntityDamageByEntityEvent) event;
+        if (!(event instanceof EntityDamageByEntityEvent subEvent)) return;
 
         if (subEvent.getDamager() instanceof LightningStrike && subEvent.getDamager().hasMetadata("GP_TRIDENT"))
         {
             event.setCancelled(true);
             return;
         }
+
         //determine which player is attacking, if any
         Player attacker = null;
         Projectile arrow = null;
         Entity damageSource = subEvent.getDamager();
-
-        if (damageSource != null)
+        if (damageSource instanceof Player damager)
         {
-            if (damageSource.getType() == EntityType.PLAYER)
+            attacker = damager;
+        }
+        else if (damageSource instanceof Projectile projectile)
+        {
+            arrow = projectile;
+            if (arrow.getShooter() instanceof Player shooter)
             {
-                attacker = (Player) damageSource;
+                attacker = shooter;
             }
-            else if (damageSource instanceof Projectile)
-            {
-                arrow = (Projectile) damageSource;
-                if (arrow.getShooter() instanceof Player)
-                {
-                    attacker = (Player) arrow.getShooter();
-                }
-            }
-
-            // Protect players from lingering splash potions if they're protected from PVP.
-            if (handlePvpDamageByLingeringPotion(event, attacker, damageSource)) return;
         }
 
-        //if the attacker is a player and defender is a player (pvp combat)
-        if (attacker != null && event.getEntityType() == EntityType.PLAYER && GriefPrevention.instance.pvpRulesApply(attacker.getWorld()))
-        {
+        boolean pvpEnabled = GriefPrevention.instance.pvpRulesApply(event.getEntity().getWorld());
 
-            Player defender = (Player) (event.getEntity());
+        // Specific handling for PVP-enabled situations.
+        if (pvpEnabled && event.getEntity() instanceof Player defender)
+        {
+            // Protect players from lingering splash potions if they're protected from PVP.
+            if (handlePvpDamageByLingeringPotion(subEvent, attacker, defender)) return;
 
             // Handle regular PVP with an attacker and defender.
-            if (handlePvpDamageByPlayer(event, attacker, defender, sendErrorMessagesToPlayers)) return;
+            if (attacker != null && handlePvpDamageByPlayer(subEvent, attacker, defender, sendErrorMessagesToPlayers))
+            {
+                return;
+            }
         }
 
-        if (event instanceof EntityDamageByEntityEvent)
-        {
-            //don't track in worlds where claims are not enabled
-            if (!GriefPrevention.instance.claimsEnabledForWorld(event.getEntity().getWorld())) return;
+        //don't track in worlds where claims are not enabled
+        if (!GriefPrevention.instance.claimsEnabledForWorld(event.getEntity().getWorld())) return;
 
-            //protect players from being attacked by other players' pets when protected from pvp
-            if (handlePvpDamageByPet(subEvent, attacker)) return;
+        // TODO Why does this not follow the PVP-enabled rule? Why does it require claims enabled?
+        //protect players from being attacked by other players' pets when protected from pvp
+        if (handlePvpDamageByPet(subEvent, attacker)) return;
 
-            //if the damaged entity is a claimed item frame or armor stand, the damager needs to be a player with build trust in the claim
-            if (handleClaimedBuildTrustDamageByEntity(subEvent, attacker, damageSource, sendErrorMessagesToPlayers)) return;
+        //if the damaged entity is a claimed item frame or armor stand, the damager needs to be a player with build trust in the claim
+        if (handleClaimedBuildTrustDamageByEntity(subEvent, attacker, damageSource, sendErrorMessagesToPlayers)) return;
 
-            //if the entity is an non-monster creature (remember monsters disqualified above), or a vehicle
-            handleCreatureDamageByEntity(subEvent, attacker, arrow, damageSource, sendErrorMessagesToPlayers);
-        }
+        //if the entity is an non-monster creature (remember monsters disqualified above), or a vehicle
+        handleCreatureDamageByEntity(subEvent, attacker, arrow, damageSource, sendErrorMessagesToPlayers);
     }
 
     private boolean isMonster(@NotNull Entity entity)
