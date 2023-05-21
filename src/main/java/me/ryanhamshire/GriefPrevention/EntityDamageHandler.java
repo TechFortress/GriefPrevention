@@ -185,7 +185,7 @@ public class EntityDamageHandler implements Listener
         }
     }
 
-    private boolean isMonster(Entity entity)
+    private boolean isMonster(@NotNull Entity entity)
     {
         if (entity instanceof Monster) return true;
 
@@ -193,17 +193,14 @@ public class EntityDamageHandler implements Listener
         if (type == EntityType.GHAST || type == EntityType.MAGMA_CUBE || type == EntityType.SHULKER)
             return true;
 
-        if (type == EntityType.SLIME)
-            return ((Slime) entity).getSize() > 0;
+        if (entity instanceof Slime slime) return slime.getSize() > 0;
 
-        if (type == EntityType.RABBIT)
-            return ((Rabbit) entity).getRabbitType() == Rabbit.Type.THE_KILLER_BUNNY;
+        if (entity instanceof Rabbit rabbit) return rabbit.getRabbitType() == Rabbit.Type.THE_KILLER_BUNNY;
 
-        if (type == EntityType.PANDA)
-            return ((Panda) entity).getMainGene() == Panda.Gene.AGGRESSIVE;
+        if (entity instanceof Panda panda) return panda.getMainGene() == Panda.Gene.AGGRESSIVE;
 
-        if ((type == EntityType.HOGLIN || type == EntityType.POLAR_BEAR) && entity instanceof Mob)
-            return !entity.getPersistentDataContainer().has(luredByPlayer, PersistentDataType.BYTE) && ((Mob) entity).getTarget() != null;
+        if ((type == EntityType.HOGLIN || type == EntityType.POLAR_BEAR) && entity instanceof Mob mob)
+            return !entity.getPersistentDataContainer().has(luredByPlayer, PersistentDataType.BYTE) && mob.getTarget() != null;
 
         return false;
     }
