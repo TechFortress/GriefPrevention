@@ -162,76 +162,11 @@ public class EntityDamageHandler implements Listener
         //if the attacker is a player and defender is a player (pvp combat)
         if (attacker != null && event.getEntityType() == EntityType.PLAYER && GriefPrevention.instance.pvpRulesApply(attacker.getWorld()))
         {
-            //FEATURE: prevent pvp in the first minute after spawn, and prevent pvp when one or both players have no inventory
 
             Player defender = (Player) (event.getEntity());
 
-            if (attacker != defender)
-            {
-                PlayerData defenderData = this.dataStore.getPlayerData(((Player) event.getEntity()).getUniqueId());
-                PlayerData attackerData = this.dataStore.getPlayerData(attacker.getUniqueId());
-
-                //otherwise if protecting spawning players
-                if (GriefPrevention.instance.config_pvp_protectFreshSpawns)
-                {
-                    if (defenderData.pvpImmune)
-                    {
-                        event.setCancelled(true);
-                        if (sendErrorMessagesToPlayers)
-                            GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.ThatPlayerPvPImmune);
-                        return;
-                    }
-
-                    if (attackerData.pvpImmune)
-                    {
-                        event.setCancelled(true);
-                        if (sendErrorMessagesToPlayers)
-                            GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.CantFightWhileImmune);
-                        return;
-                    }
-                }
-
-                //FEATURE: prevent players from engaging in PvP combat inside land claims (when it's disabled)
-                if (GriefPrevention.instance.config_pvp_noCombatInPlayerLandClaims || GriefPrevention.instance.config_pvp_noCombatInAdminLandClaims)
-                {
-                    Claim attackerClaim = this.dataStore.getClaimAt(attacker.getLocation(), false, attackerData.lastClaim);
-                    if (!attackerData.ignoreClaims)
-                    {
-                        if (attackerClaim != null && //ignore claims mode allows for pvp inside land claims
-                                !attackerData.inPvpCombat() &&
-                                GriefPrevention.instance.claimIsPvPSafeZone(attackerClaim))
-                        {
-                            attackerData.lastClaim = attackerClaim;
-                            PreventPvPEvent pvpEvent = new PreventPvPEvent(attackerClaim, attacker, defender);
-                            Bukkit.getPluginManager().callEvent(pvpEvent);
-                            if (!pvpEvent.isCancelled())
-                            {
-                                event.setCancelled(true);
-                                if (sendErrorMessagesToPlayers)
-                                    GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.CantFightWhileImmune);
-                            }
-                            return;
-                        }
-
-                        Claim defenderClaim = this.dataStore.getClaimAt(defender.getLocation(), false, defenderData.lastClaim);
-                        if (defenderClaim != null &&
-                                !defenderData.inPvpCombat() &&
-                                GriefPrevention.instance.claimIsPvPSafeZone(defenderClaim))
-                        {
-                            defenderData.lastClaim = defenderClaim;
-                            PreventPvPEvent pvpEvent = new PreventPvPEvent(defenderClaim, attacker, defender);
-                            Bukkit.getPluginManager().callEvent(pvpEvent);
-                            if (!pvpEvent.isCancelled())
-                            {
-                                event.setCancelled(true);
-                                if (sendErrorMessagesToPlayers)
-                                    GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.PlayerInPvPSafeZone);
-                            }
-                            return;
-                        }
-                    }
-                }
-            }
+            // Handle regular PVP with an attacker and defender.
+            if (handlePvpDamageByPlayer(event, attacker, defender, sendErrorMessagesToPlayers)) return;
         }
 
         if (event instanceof EntityDamageByEntityEvent)
@@ -610,6 +545,86 @@ public class EntityDamageHandler implements Listener
                         if (!pvpEvent.isCancelled())
                         {
                             event.setCancelled(true);
+                        }
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * General PVP handler.
+     *
+     * @param event the {@link EntityDamageByEntityEvent}
+     * @param attacker the attacking {@link Player}
+     * @param defender the defending {@link Player}
+     * @param sendErrorMessagesToPlayers whether to send denial messages to users involved
+     * @return true if the damage is handled
+     */
+    private boolean handlePvpDamageByPlayer(EntityDamageEvent event, Player attacker, Player defender, boolean sendErrorMessagesToPlayers)
+    {
+        if (attacker != defender)
+        {
+            PlayerData defenderData = this.dataStore.getPlayerData(((Player) event.getEntity()).getUniqueId());
+            PlayerData attackerData = this.dataStore.getPlayerData(attacker.getUniqueId());
+
+            //FEATURE: prevent pvp in the first minute after spawn, and prevent pvp when one or both players have no inventory
+            if (GriefPrevention.instance.config_pvp_protectFreshSpawns)
+            {
+                if (defenderData.pvpImmune)
+                {
+                    event.setCancelled(true);
+                    if (sendErrorMessagesToPlayers)
+                        GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.ThatPlayerPvPImmune);
+                    return true;
+                }
+
+                if (attackerData.pvpImmune)
+                {
+                    event.setCancelled(true);
+                    if (sendErrorMessagesToPlayers)
+                        GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.CantFightWhileImmune);
+                    return true;
+                }
+            }
+
+            //FEATURE: prevent players from engaging in PvP combat inside land claims (when it's disabled)
+            if (GriefPrevention.instance.config_pvp_noCombatInPlayerLandClaims || GriefPrevention.instance.config_pvp_noCombatInAdminLandClaims)
+            {
+                Claim attackerClaim = this.dataStore.getClaimAt(attacker.getLocation(), false, attackerData.lastClaim);
+                if (!attackerData.ignoreClaims)
+                {
+                    if (attackerClaim != null && //ignore claims mode allows for pvp inside land claims
+                            !attackerData.inPvpCombat() &&
+                            GriefPrevention.instance.claimIsPvPSafeZone(attackerClaim))
+                    {
+                        attackerData.lastClaim = attackerClaim;
+                        PreventPvPEvent pvpEvent = new PreventPvPEvent(attackerClaim, attacker, defender);
+                        Bukkit.getPluginManager().callEvent(pvpEvent);
+                        if (!pvpEvent.isCancelled())
+                        {
+                            event.setCancelled(true);
+                            if (sendErrorMessagesToPlayers)
+                                GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.CantFightWhileImmune);
+                        }
+                        return true;
+                    }
+
+                    Claim defenderClaim = this.dataStore.getClaimAt(defender.getLocation(), false, defenderData.lastClaim);
+                    if (defenderClaim != null &&
+                            !defenderData.inPvpCombat() &&
+                            GriefPrevention.instance.claimIsPvPSafeZone(defenderClaim))
+                    {
+                        defenderData.lastClaim = defenderClaim;
+                        PreventPvPEvent pvpEvent = new PreventPvPEvent(defenderClaim, attacker, defender);
+                        Bukkit.getPluginManager().callEvent(pvpEvent);
+                        if (!pvpEvent.isCancelled())
+                        {
+                            event.setCancelled(true);
+                            if (sendErrorMessagesToPlayers)
+                                GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.PlayerInPvPSafeZone);
                         }
                         return true;
                     }
