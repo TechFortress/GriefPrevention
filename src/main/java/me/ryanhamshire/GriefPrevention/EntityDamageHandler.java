@@ -213,29 +213,34 @@ public class EntityDamageHandler implements Listener
      */
     private boolean handlePetDamageByEnvironment(@NotNull EntityDamageEvent event)
     {
-        if (event.getEntity() instanceof Tameable && !GriefPrevention.instance.pvpRulesApply(event.getEntity().getWorld()))
+        // If PVP is enabled, the damaged entity is not a pet, or the pet has no owner, allow.
+        if (GriefPrevention.instance.pvpRulesApply(event.getEntity().getWorld())
+                || !(event.getEntity() instanceof Tameable tameable)
+                || !tameable.isTamed())
         {
-            Tameable tameable = (Tameable) event.getEntity();
-            if (tameable.isTamed())
+            return false;
+        }
+        switch (event.getCause())
+        {
+            // Block environmental and easy-to-cause damage sources.
+            case BLOCK_EXPLOSION,
+                    ENTITY_EXPLOSION,
+                    FALLING_BLOCK,
+                    FIRE,
+                    FIRE_TICK,
+                    LAVA,
+                    SUFFOCATION,
+                    CONTACT,
+                    DROWNING ->
             {
-                EntityDamageEvent.DamageCause cause = event.getCause();
-                if (cause != null && (
-                        cause == EntityDamageEvent.DamageCause.BLOCK_EXPLOSION ||
-                                cause == EntityDamageEvent.DamageCause.ENTITY_EXPLOSION ||
-                                cause == EntityDamageEvent.DamageCause.FALLING_BLOCK ||
-                                cause == EntityDamageEvent.DamageCause.FIRE ||
-                                cause == EntityDamageEvent.DamageCause.FIRE_TICK ||
-                                cause == EntityDamageEvent.DamageCause.LAVA ||
-                                cause == EntityDamageEvent.DamageCause.SUFFOCATION ||
-                                cause == EntityDamageEvent.DamageCause.CONTACT ||
-                                cause == EntityDamageEvent.DamageCause.DROWNING))
-                {
-                    event.setCancelled(true);
-                    return true;
-                }
+                event.setCancelled(true);
+                return true;
+            }
+            default ->
+            {
+                return false;
             }
         }
-        return false;
     }
 
     /**
