@@ -2,6 +2,7 @@ package me.ryanhamshire.GriefPrevention;
 
 import me.ryanhamshire.GriefPrevention.events.PreventPvPEvent;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Animals;
@@ -266,48 +267,47 @@ public class EntityDamageHandler implements Listener
     /**
      * Handle PVP damage caused by a lingering splash potion.
      *
+     * <p>For logical simplicity, this method does not check the state of the PVP rules. PVP rules should be confirmed
+     * to be enabled before calling this method.
+     *
      * @param event the {@link EntityDamageByEntityEvent}
      * @param attacker the attacking {@link Player}, if any
-     * @param damageSource the damage source
-     * @return true if the damage is handled
+     * @param damaged the defending {@link Player}
+     * @return true if the damage has been handled
      */
     private boolean handlePvpDamageByLingeringPotion(
-            @NotNull EntityDamageEvent event,
+            @NotNull EntityDamageByEntityEvent event,
             @Nullable Player attacker,
-            @NotNull Entity damageSource)
+            @NotNull Player damaged)
     {
-        if (damageSource.getType() == EntityType.AREA_EFFECT_CLOUD && event.getEntityType() == EntityType.PLAYER && GriefPrevention.instance.pvpRulesApply(event.getEntity().getWorld()))
-        {
-            Player damaged = (Player) event.getEntity();
-            PlayerData damagedData = GriefPrevention.instance.dataStore.getPlayerData(damaged.getUniqueId());
+        if (event.getDamager().getType() != EntityType.AREA_EFFECT_CLOUD) return false;
 
-            //case 1: recently spawned
-            if (GriefPrevention.instance.config_pvp_protectFreshSpawns && damagedData.pvpImmune)
+        PlayerData damagedData = GriefPrevention.instance.dataStore.getPlayerData(damaged.getUniqueId());
+
+        //case 1: recently spawned
+        if (GriefPrevention.instance.config_pvp_protectFreshSpawns && damagedData.pvpImmune)
+        {
+            event.setCancelled(true);
+            return true;
+        }
+
+        //case 2: in a pvp safe zone
+        Claim damagedClaim = GriefPrevention.instance.dataStore.getClaimAt(damaged.getLocation(), false, damagedData.lastClaim);
+        if (damagedClaim != null)
+        {
+            damagedData.lastClaim = damagedClaim;
+            if (GriefPrevention.instance.claimIsPvPSafeZone(damagedClaim))
             {
-                event.setCancelled(true);
+                PreventPvPEvent pvpEvent = new PreventPvPEvent(damagedClaim, attacker, damaged);
+                Bukkit.getPluginManager().callEvent(pvpEvent);
+                if (!pvpEvent.isCancelled())
+                {
+                    event.setCancelled(true);
+                }
                 return true;
             }
-
-            //case 2: in a pvp safe zone
-            else
-            {
-                Claim damagedClaim = GriefPrevention.instance.dataStore.getClaimAt(damaged.getLocation(), false, damagedData.lastClaim);
-                if (damagedClaim != null)
-                {
-                    damagedData.lastClaim = damagedClaim;
-                    if (GriefPrevention.instance.claimIsPvPSafeZone(damagedClaim))
-                    {
-                        PreventPvPEvent pvpEvent = new PreventPvPEvent(damagedClaim, attacker, damaged);
-                        Bukkit.getPluginManager().callEvent(pvpEvent);
-                        if (!pvpEvent.isCancelled())
-                        {
-                            event.setCancelled(true);
-                        }
-                        return true;
-                    }
-                }
-            }
         }
+
         return false;
     }
 
