@@ -641,63 +641,42 @@ public class EntityDamageHandler implements Listener
         return false;
     }
 
-    //when an entity is damaged
+    // Flag players engaging in PVP.
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-    public void onEntityDamageMonitor(EntityDamageEvent event)
+    public void onEntityDamageByEntityMonitor(@NotNull EntityDamageByEntityEvent event)
     {
         //FEATURE: prevent players who very recently participated in pvp combat from hiding inventory to protect it from looting
         //FEATURE: prevent players who are in pvp combat from logging out to avoid being defeated
 
-        if (event.getEntity().getType() != EntityType.PLAYER) return;
-
-        Player defender = (Player) event.getEntity();
-
-        //only interested in entities damaging entities (ignoring environmental damage)
-        if (!(event instanceof EntityDamageByEntityEvent)) return;
-
-        //Ignore "damage" from snowballs, eggs, etc. from triggering the PvP timer
-        if (event.getDamage() == 0) return;
-
-        EntityDamageByEntityEvent subEvent = (EntityDamageByEntityEvent) event;
-
-        //if not in a pvp rules world, do nothing
-        if (!GriefPrevention.instance.pvpRulesApply(defender.getWorld())) return;
+        // If there is no damage (snowballs, eggs, etc.) or the defender is not a player in a PVP world, do nothing.
+        if (event.getDamage() == 0
+                || !(event.getEntity() instanceof Player defender)
+                || !GriefPrevention.instance.pvpRulesApply(defender.getWorld())) return;
 
         //determine which player is attacking, if any
         Player attacker = null;
-        Projectile arrow = null;
-        Entity damageSource = subEvent.getDamager();
+        Entity damageSource = event.getDamager();
 
-        if (damageSource != null)
+        if (damageSource instanceof Player damager)
         {
-            if (damageSource.getType() == EntityType.PLAYER)
-            {
-                attacker = (Player) damageSource;
-            }
-            else if (damageSource instanceof Projectile)
-            {
-                arrow = (Projectile) damageSource;
-                if (arrow.getShooter() instanceof Player)
-                {
-                    attacker = (Player) arrow.getShooter();
-                }
-            }
+            attacker = damager;
+        }
+        else if (damageSource instanceof Projectile arrow && arrow.getShooter() instanceof Player shooter)
+        {
+            attacker = shooter;
         }
 
-        //if attacker not a player, do nothing
-        if (attacker == null) return;
+        // If not PVP or attacking self, do nothing.
+        if (attacker == null || attacker == defender) return;
 
         PlayerData defenderData = this.dataStore.getPlayerData(defender.getUniqueId());
         PlayerData attackerData = this.dataStore.getPlayerData(attacker.getUniqueId());
 
-        if (attacker != defender)
-        {
-            long now = Calendar.getInstance().getTimeInMillis();
-            defenderData.lastPvpTimestamp = now;
-            defenderData.lastPvpPlayer = attacker.getName();
-            attackerData.lastPvpTimestamp = now;
-            attackerData.lastPvpPlayer = defender.getName();
-        }
+        long now = Calendar.getInstance().getTimeInMillis();
+        defenderData.lastPvpTimestamp = now;
+        defenderData.lastPvpPlayer = attacker.getName();
+        attackerData.lastPvpTimestamp = now;
+        attackerData.lastPvpPlayer = defender.getName();
     }
 
     //when a vehicle is damaged
