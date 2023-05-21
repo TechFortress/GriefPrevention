@@ -181,161 +181,7 @@ public class EntityDamageHandler implements Listener
             if (handleClaimedBuildTrustDamageByEntity(subEvent, attacker, damageSource, sendErrorMessagesToPlayers)) return;
 
             //if the entity is an non-monster creature (remember monsters disqualified above), or a vehicle
-            if (((subEvent.getEntity() instanceof Creature || subEvent.getEntity() instanceof WaterMob) && GriefPrevention.instance.config_claims_protectCreatures))
-            {
-                //if entity is tameable and has an owner, apply special rules
-                if (subEvent.getEntity() instanceof Tameable tameable)
-                {
-                    AnimalTamer owner = tameable.getOwner();
-                    if (tameable.isTamed() && owner != null)
-                    {
-                        //limit attacks by players to owners and admins in ignore claims mode
-                        if (attacker != null)
-                        {
-                            //if the player interacting is the owner, always allow
-                            if (attacker.equals(owner)) return;
-
-                            //allow for admin override
-                            PlayerData attackerData = this.dataStore.getPlayerData(attacker.getUniqueId());
-                            if (attackerData.ignoreClaims) return;
-
-                            //otherwise disallow in non-pvp worlds (and also pvp worlds if configured to do so)
-                            if (!GriefPrevention.instance.pvpRulesApply(subEvent.getEntity().getWorld()) || (GriefPrevention.instance.config_pvp_protectPets && subEvent.getEntityType() != EntityType.WOLF))
-                            {
-                                String ownerName = GriefPrevention.lookupPlayerName(owner);
-                                String message = GriefPrevention.instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
-                                if (attacker.hasPermission("griefprevention.ignoreclaims"))
-                                    message += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
-                                if (sendErrorMessagesToPlayers)
-                                    GriefPrevention.sendMessage(attacker, TextMode.Err, message);
-                                PreventPvPEvent pvpEvent = new PreventPvPEvent(new Claim(subEvent.getEntity().getLocation(), subEvent.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null), attacker, tameable);
-                                Bukkit.getPluginManager().callEvent(pvpEvent);
-                                if (!pvpEvent.isCancelled())
-                                {
-                                    event.setCancelled(true);
-                                }
-                                return;
-                            }
-                            //and disallow if attacker is pvp immune
-                            else if (attackerData.pvpImmune)
-                            {
-                                event.setCancelled(true);
-                                if (sendErrorMessagesToPlayers)
-                                    GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.CantFightWhileImmune);
-                                return;
-                            }
-                            // disallow players attacking tamed wolves (dogs) unless under attack by said wolf
-                            else if (tameable.getType() == EntityType.WOLF)
-                            {
-                                if (tameable.getTarget() != null)
-                                {
-                                    if (tameable.getTarget() == attacker) return;
-                                }
-                                event.setCancelled(true);
-                                String ownerName = GriefPrevention.lookupPlayerName(owner);
-                                String message = GriefPrevention.instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
-                                if (attacker.hasPermission("griefprevention.ignoreclaims"))
-                                    message += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
-                                if (sendErrorMessagesToPlayers)
-                                    GriefPrevention.sendMessage(attacker, TextMode.Err, message);
-                                return;
-                            }
-                        }
-                    }
-                }
-
-                Claim cachedClaim = null;
-                PlayerData playerData = null;
-
-                //if not a player or an explosive, allow
-                //RoboMWM: Or a lingering potion, or a witch
-                if (attacker == null
-                        && damageSource != null
-                        && damageSource.getType() != EntityType.CREEPER
-                        && damageSource.getType() != EntityType.WITHER
-                        && damageSource.getType() != EntityType.ENDER_CRYSTAL
-                        && damageSource.getType() != EntityType.AREA_EFFECT_CLOUD
-                        && damageSource.getType() != EntityType.WITCH
-                        && !(damageSource instanceof Projectile)
-                        && !(damageSource instanceof Explosive)
-                        && !(damageSource instanceof ExplosiveMinecart))
-                {
-                    return;
-                }
-
-                if (attacker != null)
-                {
-                    playerData = this.dataStore.getPlayerData(attacker.getUniqueId());
-                    cachedClaim = playerData.lastClaim;
-                }
-
-                Claim claim = this.dataStore.getClaimAt(event.getEntity().getLocation(), false, cachedClaim);
-
-                //if it's claimed
-                if (claim != null)
-                {
-                    //if damaged by anything other than a player (exception villagers injured by zombies in admin claims), cancel the event
-                    //why exception?  so admins can set up a village which can't be CHANGED by players, but must be "protected" by players.
-                    //TODO: Discuss if this should only apply to admin claims...?
-                    if (attacker == null)
-                    {
-                        //exception case
-                        if (event.getEntityType() == EntityType.VILLAGER && damageSource != null && (damageSource.getType() == EntityType.ZOMBIE || damageSource.getType() == EntityType.VINDICATOR || damageSource.getType() == EntityType.EVOKER || damageSource.getType() == EntityType.EVOKER_FANGS || damageSource.getType() == EntityType.VEX))
-                        {
-                            return;
-                        }
-
-                        //all other cases
-                        else
-                        {
-                            event.setCancelled(true);
-                            if (damageSource instanceof Projectile)
-                            {
-                                damageSource.remove();
-                            }
-                        }
-                    }
-
-                    //otherwise the player damaging the entity must have permission, unless it's a dog in a pvp world
-                    else if (!(event.getEntity().getWorld().getPVP() && event.getEntity().getType() == EntityType.WOLF))
-                    {
-                        Supplier<String> override = null;
-                        if (sendErrorMessagesToPlayers)
-                        {
-                            final Player finalAttacker = attacker;
-                            override = () ->
-                            {
-                                String message = GriefPrevention.instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, claim.getOwnerName());
-                                if (finalAttacker.hasPermission("griefprevention.ignoreclaims"))
-                                    message += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
-                                return message;
-                            };
-                        }
-                        Supplier<String> noContainersReason = claim.checkPermission(attacker, ClaimPermission.Inventory, event, override);
-                        if (noContainersReason != null)
-                        {
-                            event.setCancelled(true);
-
-                            //kill the arrow to avoid infinite bounce between crowded together animals //RoboMWM: except for tridents
-                            if (arrow != null && arrow.getType() != EntityType.TRIDENT) arrow.remove();
-                            if (damageSource != null && damageSource.getType() == EntityType.FIREWORK && event.getEntity().getType() != EntityType.PLAYER)
-                                return;
-
-                            if (sendErrorMessagesToPlayers)
-                            {
-                                GriefPrevention.sendMessage(attacker, TextMode.Err, noContainersReason.get());
-                            }
-                            event.setCancelled(true);
-                        }
-
-                        //cache claim for later
-                        if (playerData != null)
-                        {
-                            playerData.lastClaim = claim;
-                        }
-                    }
-                }
-            }
+            handleCreatureDamageByEntity(subEvent, attacker, arrow, damageSource, sendErrorMessagesToPlayers);
         }
     }
 
@@ -651,6 +497,165 @@ public class EntityDamageHandler implements Listener
             }
         }
         return false;
+    }
+
+    private void handleCreatureDamageByEntity(@NotNull EntityDamageByEntityEvent event, Player attacker, Projectile arrow, Entity damageSource, boolean sendErrorMessagesToPlayers)
+    {
+        if (((event.getEntity() instanceof Creature || event.getEntity() instanceof WaterMob) && GriefPrevention.instance.config_claims_protectCreatures))
+        {
+            //if entity is tameable and has an owner, apply special rules
+            if (event.getEntity() instanceof Tameable tameable)
+            {
+                AnimalTamer owner = tameable.getOwner();
+                if (tameable.isTamed() && owner != null)
+                {
+                    //limit attacks by players to owners and admins in ignore claims mode
+                    if (attacker != null)
+                    {
+                        //if the player interacting is the owner, always allow
+                        if (attacker.equals(owner)) return;
+
+                        //allow for admin override
+                        PlayerData attackerData = this.dataStore.getPlayerData(attacker.getUniqueId());
+                        if (attackerData.ignoreClaims) return;
+
+                        //otherwise disallow in non-pvp worlds (and also pvp worlds if configured to do so)
+                        if (!GriefPrevention.instance.pvpRulesApply(event.getEntity().getWorld()) || (GriefPrevention.instance.config_pvp_protectPets && event.getEntityType() != EntityType.WOLF))
+                        {
+                            String ownerName = GriefPrevention.lookupPlayerName(owner);
+                            String message = GriefPrevention.instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
+                            if (attacker.hasPermission("griefprevention.ignoreclaims"))
+                                message += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                            if (sendErrorMessagesToPlayers)
+                                GriefPrevention.sendMessage(attacker, TextMode.Err, message);
+                            PreventPvPEvent pvpEvent = new PreventPvPEvent(new Claim(event.getEntity().getLocation(), event.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null), attacker, tameable);
+                            Bukkit.getPluginManager().callEvent(pvpEvent);
+                            if (!pvpEvent.isCancelled())
+                            {
+                                event.setCancelled(true);
+                            }
+                            return;
+                        }
+                        //and disallow if attacker is pvp immune
+                        else if (attackerData.pvpImmune)
+                        {
+                            event.setCancelled(true);
+                            if (sendErrorMessagesToPlayers)
+                                GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.CantFightWhileImmune);
+                            return;
+                        }
+                        // disallow players attacking tamed wolves (dogs) unless under attack by said wolf
+                        else if (tameable.getType() == EntityType.WOLF)
+                        {
+                            if (tameable.getTarget() != null)
+                            {
+                                if (tameable.getTarget() == attacker) return;
+                            }
+                            event.setCancelled(true);
+                            String ownerName = GriefPrevention.lookupPlayerName(owner);
+                            String message = GriefPrevention.instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
+                            if (attacker.hasPermission("griefprevention.ignoreclaims"))
+                                message += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                            if (sendErrorMessagesToPlayers)
+                                GriefPrevention.sendMessage(attacker, TextMode.Err, message);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            Claim cachedClaim = null;
+            PlayerData playerData = null;
+
+            //if not a player or an explosive, allow
+            //RoboMWM: Or a lingering potion, or a witch
+            if (attacker == null
+                    && damageSource != null
+                    && damageSource.getType() != EntityType.CREEPER
+                    && damageSource.getType() != EntityType.WITHER
+                    && damageSource.getType() != EntityType.ENDER_CRYSTAL
+                    && damageSource.getType() != EntityType.AREA_EFFECT_CLOUD
+                    && damageSource.getType() != EntityType.WITCH
+                    && !(damageSource instanceof Projectile)
+                    && !(damageSource instanceof Explosive)
+                    && !(damageSource instanceof ExplosiveMinecart))
+            {
+                return;
+            }
+
+            if (attacker != null)
+            {
+                playerData = this.dataStore.getPlayerData(attacker.getUniqueId());
+                cachedClaim = playerData.lastClaim;
+            }
+
+            Claim claim = this.dataStore.getClaimAt(event.getEntity().getLocation(), false, cachedClaim);
+
+            //if it's claimed
+            if (claim != null)
+            {
+                //if damaged by anything other than a player (exception villagers injured by zombies in admin claims), cancel the event
+                //why exception?  so admins can set up a village which can't be CHANGED by players, but must be "protected" by players.
+                //TODO: Discuss if this should only apply to admin claims...?
+                if (attacker == null)
+                {
+                    //exception case
+                    if (event.getEntityType() == EntityType.VILLAGER && damageSource != null && (damageSource.getType() == EntityType.ZOMBIE || damageSource.getType() == EntityType.VINDICATOR || damageSource.getType() == EntityType.EVOKER || damageSource.getType() == EntityType.EVOKER_FANGS || damageSource.getType() == EntityType.VEX))
+                    {
+                        return;
+                    }
+
+                    //all other cases
+                    else
+                    {
+                        event.setCancelled(true);
+                        if (damageSource instanceof Projectile)
+                        {
+                            damageSource.remove();
+                        }
+                    }
+                }
+
+                //otherwise the player damaging the entity must have permission, unless it's a dog in a pvp world
+                else if (!(event.getEntity().getWorld().getPVP() && event.getEntity().getType() == EntityType.WOLF))
+                {
+                    Supplier<String> override = null;
+                    if (sendErrorMessagesToPlayers)
+                    {
+                        final Player finalAttacker = attacker;
+                        override = () ->
+                        {
+                            String message = GriefPrevention.instance.dataStore.getMessage(Messages.NoDamageClaimedEntity, claim.getOwnerName());
+                            if (finalAttacker.hasPermission("griefprevention.ignoreclaims"))
+                                message += "  " + GriefPrevention.instance.dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                            return message;
+                        };
+                    }
+                    Supplier<String> noContainersReason = claim.checkPermission(attacker, ClaimPermission.Inventory, event, override);
+                    if (noContainersReason != null)
+                    {
+                        event.setCancelled(true);
+
+                        //kill the arrow to avoid infinite bounce between crowded together animals //RoboMWM: except for tridents
+                        if (arrow != null && arrow.getType() != EntityType.TRIDENT) arrow.remove();
+                        if (damageSource != null && damageSource.getType() == EntityType.FIREWORK && event.getEntity().getType() != EntityType.PLAYER)
+                            return;
+
+                        if (sendErrorMessagesToPlayers)
+                        {
+                            GriefPrevention.sendMessage(attacker, TextMode.Err, noContainersReason.get());
+                        }
+                        event.setCancelled(true);
+                    }
+
+                    //cache claim for later
+                    if (playerData != null)
+                    {
+                        playerData.lastClaim = claim;
+                    }
+                }
+            }
+        }
     }
 
     //when an entity is damaged
