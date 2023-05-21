@@ -178,57 +178,7 @@ public class EntityDamageHandler implements Listener
             if (handlePvpDamageByPet(subEvent, attacker)) return;
 
             //if the damaged entity is a claimed item frame or armor stand, the damager needs to be a player with build trust in the claim
-            if (subEvent.getEntityType() == EntityType.ITEM_FRAME
-                    || subEvent.getEntityType() == EntityType.GLOW_ITEM_FRAME
-                    || subEvent.getEntityType() == EntityType.ARMOR_STAND
-                    || subEvent.getEntityType() == EntityType.VILLAGER
-                    || subEvent.getEntityType() == EntityType.ENDER_CRYSTAL)
-            {
-                //allow for disabling villager protections in the config
-                if (subEvent.getEntityType() == EntityType.VILLAGER && !GriefPrevention.instance.config_claims_protectCreatures)
-                    return;
-
-                //don't protect polar bears, they may be aggressive
-                if (subEvent.getEntityType() == EntityType.POLAR_BEAR) return;
-
-                //decide whether it's claimed
-                Claim cachedClaim = null;
-                PlayerData playerData = null;
-                if (attacker != null)
-                {
-                    playerData = this.dataStore.getPlayerData(attacker.getUniqueId());
-                    cachedClaim = playerData.lastClaim;
-                }
-
-                Claim claim = this.dataStore.getClaimAt(event.getEntity().getLocation(), false, cachedClaim);
-
-                //if it's claimed
-                if (claim != null)
-                {
-                    //if attacker isn't a player, cancel
-                    if (attacker == null)
-                    {
-                        //exception case
-                        if (event.getEntityType() == EntityType.VILLAGER && damageSource != null && damageSource instanceof Zombie)
-                        {
-                            return;
-                        }
-
-                        event.setCancelled(true);
-                        return;
-                    }
-
-                    //otherwise player must have container trust in the claim
-                    Supplier<String> failureReason = claim.checkPermission(attacker, ClaimPermission.Build, event);
-                    if (failureReason != null)
-                    {
-                        event.setCancelled(true);
-                        if (sendErrorMessagesToPlayers)
-                            GriefPrevention.sendMessage(attacker, TextMode.Err, failureReason.get());
-                        return;
-                    }
-                }
-            }
+            if (handleClaimedBuildTrustDamageByEntity(subEvent, attacker, damageSource, sendErrorMessagesToPlayers)) return;
 
             //if the entity is an non-monster creature (remember monsters disqualified above), or a vehicle
             if (((subEvent.getEntity() instanceof Creature || subEvent.getEntity() instanceof WaterMob) && GriefPrevention.instance.config_claims_protectCreatures))
@@ -641,6 +591,62 @@ public class EntityDamageHandler implements Listener
                             return true;
                         }
                     }
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean handleClaimedBuildTrustDamageByEntity(@NotNull EntityDamageByEntityEvent event, Player attacker, Entity damageSource, boolean sendErrorMessagesToPlayers)
+    {
+        if (event.getEntityType() == EntityType.ITEM_FRAME
+                || event.getEntityType() == EntityType.GLOW_ITEM_FRAME
+                || event.getEntityType() == EntityType.ARMOR_STAND
+                || event.getEntityType() == EntityType.VILLAGER
+                || event.getEntityType() == EntityType.ENDER_CRYSTAL)
+        {
+            //allow for disabling villager protections in the config
+            if (event.getEntityType() == EntityType.VILLAGER && !GriefPrevention.instance.config_claims_protectCreatures)
+                return true;
+
+            //don't protect polar bears, they may be aggressive
+            if (event.getEntityType() == EntityType.POLAR_BEAR) return true;
+
+            //decide whether it's claimed
+            Claim cachedClaim = null;
+            PlayerData playerData = null;
+            if (attacker != null)
+            {
+                playerData = this.dataStore.getPlayerData(attacker.getUniqueId());
+                cachedClaim = playerData.lastClaim;
+            }
+
+            Claim claim = this.dataStore.getClaimAt(event.getEntity().getLocation(), false, cachedClaim);
+
+            //if it's claimed
+            if (claim != null)
+            {
+                //if attacker isn't a player, cancel
+                if (attacker == null)
+                {
+                    //exception case
+                    if (event.getEntityType() == EntityType.VILLAGER && damageSource != null && damageSource instanceof Zombie)
+                    {
+                        return true;
+                    }
+
+                    event.setCancelled(true);
+                    return true;
+                }
+
+                //otherwise player must have container trust in the claim
+                Supplier<String> failureReason = claim.checkPermission(attacker, ClaimPermission.Build, event);
+                if (failureReason != null)
+                {
+                    event.setCancelled(true);
+                    if (sendErrorMessagesToPlayers)
+                        GriefPrevention.sendMessage(attacker, TextMode.Err, failureReason.get());
+                    return true;
                 }
             }
         }
