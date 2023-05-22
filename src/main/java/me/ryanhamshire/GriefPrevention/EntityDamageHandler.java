@@ -10,6 +10,7 @@ import org.bukkit.entity.Creature;
 import org.bukkit.entity.Donkey;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.EvokerFangs;
 import org.bukkit.entity.Explosive;
 import org.bukkit.entity.Horse;
 import org.bukkit.entity.LightningStrike;
@@ -22,9 +23,11 @@ import org.bukkit.entity.Panda;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Rabbit;
+import org.bukkit.entity.Raider;
 import org.bukkit.entity.Slime;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.ThrownPotion;
+import org.bukkit.entity.Vex;
 import org.bukkit.entity.Zombie;
 import org.bukkit.entity.minecart.ExplosiveMinecart;
 import org.bukkit.event.EventHandler;
@@ -435,12 +438,13 @@ public class EntityDamageHandler implements Listener
         if (entityType == EntityType.VILLAGER
                 // Allow disabling villager protections in the config.
                 && (!instance.config_claims_protectCreatures
-                // Always allow zombies to target villagers.
+                // Always allow zombies and raids to target villagers.
                 //why exception?  so admins can set up a village which can't be CHANGED by players, but must be "protected" by players.
-                // TODO BigScary's intent was to have players defend villagers either via careful building or in
-                //  admin-claimed areas. This does not include raiders. Raiders were erroneously included in an
-                //  unreachable code section at a later date.
-                || event.getDamager() instanceof Zombie))
+                || event.getDamager() instanceof Zombie
+                || event.getDamager() instanceof Raider
+                || event.getDamager() instanceof Vex
+                || event.getDamager() instanceof Projectile projectile && projectile.getShooter() instanceof Raider
+                || event.getDamager() instanceof EvokerFangs fangs && fangs.getOwner() instanceof Raider))
         {
             return true;
         }
