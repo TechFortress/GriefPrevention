@@ -690,9 +690,6 @@ public class EntityDamageHandler implements Listener
         //all of this is anti theft code
         if (!instance.config_claims_preventTheft) return;
 
-        //input validation
-        if (event.getVehicle() == null) return;
-
         //don't track in worlds where claims are not enabled
         if (!instance.claimsEnabledForWorld(event.getVehicle().getWorld())) return;
 
@@ -706,17 +703,13 @@ public class EntityDamageHandler implements Listener
         {
             damageSourceType = damageSource.getType();
 
-            if (damageSource.getType() == EntityType.PLAYER)
+            if (damageSource instanceof Player player)
             {
-                attacker = (Player) damageSource;
+                attacker = player;
             }
-            else if (damageSource instanceof Projectile)
+            else if (damageSource instanceof Projectile arrow && arrow.getShooter() instanceof Player shooter)
             {
-                Projectile arrow = (Projectile) damageSource;
-                if (arrow.getShooter() instanceof Player)
-                {
-                    attacker = (Player) arrow.getShooter();
-                }
+                attacker = shooter;
             }
         }
 
@@ -739,40 +732,34 @@ public class EntityDamageHandler implements Listener
 
         Claim claim = this.dataStore.getClaimAt(event.getVehicle().getLocation(), false, cachedClaim);
 
-        //if it's claimed
-        if (claim != null)
+        // Require a claim.
+        if (claim == null) return;
+
+        //if damaged by anything other than a player, cancel the event
+        if (attacker == null)
         {
-            //if damaged by anything other than a player, cancel the event
-            if (attacker == null)
-            {
-                event.setCancelled(true);
-            }
-
-            //otherwise the player damaging the entity must have permission
-            else
-            {
-                final Player finalAttacker = attacker;
-                Supplier<String> override = () ->
-                {
-                    String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, claim.getOwnerName());
-                    if (finalAttacker.hasPermission("griefprevention.ignoreclaims"))
-                        message += "  " + dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
-                    return message;
-                };
-                Supplier<String> noContainersReason = claim.checkPermission(attacker, ClaimPermission.Inventory, event, override);
-                if (noContainersReason != null)
-                {
-                    event.setCancelled(true);
-                    GriefPrevention.sendMessage(attacker, TextMode.Err, noContainersReason.get());
-                }
-
-                //cache claim for later
-                if (playerData != null)
-                {
-                    playerData.lastClaim = claim;
-                }
-            }
+            event.setCancelled(true);
+            return;
         }
+
+        //otherwise the player damaging the entity must have permission
+        final Player finalAttacker = attacker;
+        Supplier<String> override = () ->
+        {
+            String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, claim.getOwnerName());
+            if (finalAttacker.hasPermission("griefprevention.ignoreclaims"))
+                message += "  " + dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+            return message;
+        };
+        Supplier<String> noContainersReason = claim.checkPermission(attacker, ClaimPermission.Inventory, event, override);
+        if (noContainersReason != null)
+        {
+            event.setCancelled(true);
+            GriefPrevention.sendMessage(attacker, TextMode.Err, noContainersReason.get());
+        }
+
+        //cache claim for later
+        playerData.lastClaim = claim;
     }
 
     //when a splash potion effects one or more entities...
