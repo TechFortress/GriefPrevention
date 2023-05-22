@@ -43,6 +43,7 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.ProjectileSource;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -577,8 +578,8 @@ public class EntityDamageHandler implements Listener
 
         event.setCancelled(true);
 
-        // Kill non-trident projectiles to prevent infinite bounces spamming the shooter.
-        if (arrow != null && arrow.getType() != EntityType.TRIDENT) arrow.remove();
+        // Prevent projectiles from bouncing infinitely.
+        preventInfiniteBounce(arrow, event.getEntity());
 
         if (sendErrorMessagesToPlayers) GriefPrevention.sendMessage(attacker, TextMode.Err, noContainersReason.get());
 
@@ -653,6 +654,21 @@ public class EntityDamageHandler implements Listener
         return false;
     }
 
+    private void preventInfiniteBounce(@Nullable Projectile projectile, @NotNull Entity entity)
+    {
+        if (projectile != null)
+        {
+            if (projectile.getType() == EntityType.TRIDENT)
+            {
+                // Instead of removing a trident, teleport it to the entity's foot location and remove velocity.
+                projectile.teleport(entity);
+                projectile.setVelocity(new Vector());
+            }
+            // Otherwise remove the projectile.
+            else projectile.remove();
+        }
+    }
+
     // Flag players engaging in PVP.
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     public void onEntityDamageByEntityMonitor(@NotNull EntityDamageByEntityEvent event)
@@ -703,6 +719,7 @@ public class EntityDamageHandler implements Listener
 
         //determine which player is attacking, if any
         Player attacker = null;
+        Projectile arrow = null;
         Entity damageSource = event.getAttacker();
         EntityType damageSourceType = null;
 
@@ -715,9 +732,13 @@ public class EntityDamageHandler implements Listener
             {
                 attacker = player;
             }
-            else if (damageSource instanceof Projectile arrow && arrow.getShooter() instanceof Player shooter)
+            else if (damageSource instanceof Projectile projectile)
             {
-                attacker = shooter;
+                arrow = projectile;
+                if (arrow.getShooter() instanceof Player shooter)
+                {
+                    attacker = shooter;
+                }
             }
         }
 
@@ -747,6 +768,7 @@ public class EntityDamageHandler implements Listener
         if (attacker == null)
         {
             event.setCancelled(true);
+            if (arrow != null) arrow.remove();
             return;
         }
 
@@ -763,6 +785,7 @@ public class EntityDamageHandler implements Listener
         if (noContainersReason != null)
         {
             event.setCancelled(true);
+            preventInfiniteBounce(arrow, event.getVehicle());
             GriefPrevention.sendMessage(attacker, TextMode.Err, noContainersReason.get());
         }
 
