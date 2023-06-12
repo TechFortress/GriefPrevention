@@ -161,7 +161,10 @@ public class EntityDamageHandler implements Listener
         // Specific handling for PVP-enabled situations.
         if (pvpEnabled && event.getEntity() instanceof Player defender)
         {
-            // Protect players from lingering splash potions if they're protected from PVP.
+            // Protect players from other players' pets when protected from PVP.
+            if (handlePvpDamageByPet(subEvent, attacker, defender)) return;
+
+            // Protect players from lingering splash potions when protected from PVP.
             if (handlePvpDamageByLingeringPotion(subEvent, attacker, defender)) return;
 
             // Handle regular PVP with an attacker and defender.
@@ -173,10 +176,6 @@ public class EntityDamageHandler implements Listener
 
         //don't track in worlds where claims are not enabled
         if (!instance.claimsEnabledForWorld(event.getEntity().getWorld())) return;
-
-        // TODO Why does this not follow the PVP-enabled rule? Why does it require claims enabled?
-        //protect players from being attacked by other players' pets when protected from pvp
-        if (handlePvpDamageByPet(subEvent, attacker)) return;
 
         //if the damaged entity is a claimed item frame or armor stand, the damager needs to be a player with build trust in the claim
         if (handleClaimedBuildTrustDamageByEntity(subEvent, attacker, sendErrorMessagesToPlayers)) return;
@@ -381,25 +380,29 @@ public class EntityDamageHandler implements Listener
      * @param attacker the attacking {@link Player}, if any
      * @return true if the damage is handled
      */
-    private boolean handlePvpDamageByPet(@NotNull EntityDamageByEntityEvent event, @Nullable Player attacker)
+    private boolean handlePvpDamageByPet(
+            @NotNull EntityDamageByEntityEvent event,
+            @Nullable Player attacker,
+            @NotNull Player defender)
     {
-        if (!(event.getEntity() instanceof Player defender)
-                || !(event.getDamager() instanceof Tameable pet)
-                || !pet.isTamed()
-                || pet.getOwner() == null)
-        {
-            return false;
-        }
+        if (!(event.getDamager() instanceof Tameable pet) || !pet.isTamed() || pet.getOwner() == null) return false;
 
-        PlayerData defenderData = dataStore.getPlayerData(event.getEntity().getUniqueId());
-        // Return whether PVP is handled by a claim at the defender's location if they are not PVP-immune.
+        PlayerData defenderData = dataStore.getPlayerData(defender.getUniqueId());
         Runnable cancelHandler = () ->
         {
             event.setCancelled(true);
             pet.setTarget(null);
         };
-        return !defenderData.pvpImmune
-                && handlePvpInClaim(attacker, defender, defender.getLocation(), defenderData, cancelHandler);
+
+        // If the defender is PVP-immune, prevent the attack.
+        if (defenderData.pvpImmune)
+        {
+            cancelHandler.run();
+            return true;
+        }
+
+        // Return whether PVP is handled by a claim at the defender's location.
+        return handlePvpInClaim(attacker, defender, defender.getLocation(), defenderData, cancelHandler);
     }
 
     /**
