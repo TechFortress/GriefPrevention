@@ -108,7 +108,7 @@ public class EntityDamageHandler implements Listener
     private void handleEntityDamageEvent(@NotNull EntityDamageEvent event, boolean sendErrorMessagesToPlayers)
     {
         //monsters are never protected
-        if (isMonster(event.getEntity())) return;
+        if (isHostile(event.getEntity())) return;
 
         //horse protections can be disabled
         if (event.getEntity() instanceof Horse && !instance.config_claims_protectHorses) return;
@@ -185,7 +185,13 @@ public class EntityDamageHandler implements Listener
         if (handleCreatureDamageByEntity(subEvent, attacker, arrow, sendErrorMessagesToPlayers)) return;
     }
 
-    private boolean isMonster(@NotNull Entity entity)
+    /**
+     * Check if an {@link Entity} is considered hostile.
+     *
+     * @param entity the {@code Entity}
+     * @return true if the {@code Entity} is hostile
+     */
+    private boolean isHostile(@NotNull Entity entity)
     {
         if (entity instanceof Monster) return true;
 
@@ -396,6 +402,17 @@ public class EntityDamageHandler implements Listener
                 && handlePvpInClaim(attacker, defender, defender.getLocation(), defenderData, cancelHandler);
     }
 
+    /**
+     * Handle a PVP action depending on configured rules. Fires a {@link PreventPvPEvent} to allow addons to change
+     * default behavior.
+     *
+     * @param attacker the attacking {@link Player}, or null for indirect PVP like pet-induced damage
+     * @param defender the defending {@link Player}
+     * @param location the {@link Location} to be checked
+     * @param playerData the {@link PlayerData} used for caching last claim
+     * @param cancelHandler the {@link Runnable} to run if PVP is disallowed
+     * @return true if PVP is handled by claim rules
+     */
     private boolean handlePvpInClaim(
             @Nullable Player attacker,
             @NotNull Player defender,
@@ -421,6 +438,14 @@ public class EntityDamageHandler implements Listener
         return true;
     }
 
+    /**
+     * Handle actions requiring build trust.
+     *
+     * @param event the {@link EntityDamageByEntityEvent}
+     * @param attacker the attacking {@link Player}, if any
+     * @param sendErrorMessagesToPlayers whether to send denial messages to users involved
+     * @return true if the damage is handled
+     */
     private boolean handleClaimedBuildTrustDamageByEntity(
             @NotNull EntityDamageByEntityEvent event,
             @Nullable Player attacker,
@@ -586,6 +611,14 @@ public class EntityDamageHandler implements Listener
         return true;
     }
 
+    /**
+     * Handle damage to a {@link Tameable} by a {@link Player}.
+     *
+     * @param event the {@link EntityDamageByEntityEvent}
+     * @param attacker the attacking {@link Player}, if any
+     * @param sendErrorMessagesToPlayers whether to send denial messages to users involved
+     * @return true if the damage is handled
+     */
     private boolean handlePetDamageByEntity(
             @NotNull EntityDamageByEntityEvent event,
             @Nullable Player attacker,
@@ -654,6 +687,13 @@ public class EntityDamageHandler implements Listener
         return false;
     }
 
+    /**
+     * Prevent infinite bounces for cancelled projectile hits by removing or grounding {@link Projectile Projectiles}
+     * as necessary.
+     *
+     * @param projectile the {@code Projectile} that has been prevented from hitting
+     * @param entity the {@link Entity} being hit
+     */
     private void preventInfiniteBounce(@Nullable Projectile projectile, @NotNull Entity entity)
     {
         if (projectile != null)
