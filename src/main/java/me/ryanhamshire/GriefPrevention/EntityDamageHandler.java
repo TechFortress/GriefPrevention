@@ -105,7 +105,7 @@ public class EntityDamageHandler implements Listener
         event.setCancelled(eventWrapper.isCancelled());
     }
 
-    private void handleEntityDamageEvent(@NotNull EntityDamageEvent event, boolean sendErrorMessagesToPlayers)
+    private void handleEntityDamageEvent(@NotNull EntityDamageEvent event, boolean sendMessages)
     {
         //monsters are never protected
         if (isHostile(event.getEntity())) return;
@@ -167,14 +167,14 @@ public class EntityDamageHandler implements Listener
                 if (handlePvpDamageByLingeringPotion(subEvent, attacker, defender)) return;
 
                 // Handle regular PVP with an attacker and defender.
-                if (attacker != null && handlePvpDamageByPlayer(subEvent, attacker, defender, sendErrorMessagesToPlayers))
+                if (attacker != null && handlePvpDamageByPlayer(subEvent, attacker, defender, sendMessages))
                 {
                     return;
                 }
             }
             else if (event.getEntity() instanceof Tameable tameable)
             {
-                if (attacker != null && handlePvpPetDamageByPlayer(subEvent, tameable, attacker, sendErrorMessagesToPlayers))
+                if (attacker != null && handlePvpPetDamageByPlayer(subEvent, tameable, attacker, sendMessages))
                 {
                     return;
                 }
@@ -185,10 +185,10 @@ public class EntityDamageHandler implements Listener
         if (!instance.claimsEnabledForWorld(event.getEntity().getWorld())) return;
 
         //if the damaged entity is a claimed item frame or armor stand, the damager needs to be a player with build trust in the claim
-        if (handleClaimedBuildTrustDamageByEntity(subEvent, attacker, sendErrorMessagesToPlayers)) return;
+        if (handleClaimedBuildTrustDamageByEntity(subEvent, attacker, sendMessages)) return;
 
         //if the entity is a non-monster creature (remember monsters disqualified above), or a vehicle
-        if (handleCreatureDamageByEntity(subEvent, attacker, arrow, sendErrorMessagesToPlayers)) return;
+        if (handleCreatureDamageByEntity(subEvent, attacker, arrow, sendMessages)) return;
     }
 
     /**
@@ -333,14 +333,14 @@ public class EntityDamageHandler implements Listener
      * @param event the {@link EntityDamageByEntityEvent}
      * @param attacker the attacking {@link Player}
      * @param defender the defending {@link Player}
-     * @param sendErrorMessagesToPlayers whether to send denial messages to users involved
+     * @param sendMessages whether to send denial messages to users involved
      * @return true if the damage is handled
      */
     private boolean handlePvpDamageByPlayer(
             @NotNull EntityDamageByEntityEvent event,
             @NotNull Player attacker,
             @NotNull Player defender,
-            boolean sendErrorMessagesToPlayers)
+            boolean sendMessages)
     {
         if (attacker == defender) return false;
 
@@ -353,7 +353,7 @@ public class EntityDamageHandler implements Listener
             if (attackerData.pvpImmune || defenderData.pvpImmune)
             {
                 event.setCancelled(true);
-                if (sendErrorMessagesToPlayers)
+                if (sendMessages)
                     GriefPrevention.sendMessage(
                             attacker,
                             TextMode.Err,
@@ -373,7 +373,7 @@ public class EntityDamageHandler implements Listener
         Consumer<Messages> cancelHandler = message ->
         {
             event.setCancelled(true);
-            if (sendErrorMessagesToPlayers) GriefPrevention.sendMessage(attacker, TextMode.Err, message);
+            if (sendMessages) GriefPrevention.sendMessage(attacker, TextMode.Err, message);
         };
         // Return whether PVP is handled by a claim at the attacker or defender's locations.
         return handlePvpInClaim(attacker, defender, attacker.getLocation(), attackerData, () -> cancelHandler.accept(Messages.CantFightWhileImmune))
@@ -412,15 +412,24 @@ public class EntityDamageHandler implements Listener
         return handlePvpInClaim(attacker, defender, defender.getLocation(), defenderData, cancelHandler);
     }
 
+    /**
+     * Handle PVP damage to an owned pet.
+     *
+     * @param event the {@link EntityDamageByEntityEvent}
+     * @param pet the potential pet being damaged
+     * @param attacker the attacking {@link Player}
+     * @param sendMessages whether to send denial messages to users involved
+     * @return true if the damage is handled
+     */
     private boolean handlePvpPetDamageByPlayer(
             @NotNull EntityDamageByEntityEvent event,
-            @NotNull Tameable tameable,
+            @NotNull Tameable pet,
             @NotNull Player attacker,
-            boolean sendErrorMessagesToPlayers) {
+            boolean sendMessages) {
 
-        if (!tameable.isTamed()) return false;
+        if (!pet.isTamed()) return false;
 
-        AnimalTamer owner = tameable.getOwner();
+        AnimalTamer owner = pet.getOwner();
         if (owner == null) return false;
 
         // If the player interacting is the owner, always allow.
@@ -434,7 +443,7 @@ public class EntityDamageHandler implements Listener
         if (attackerData.pvpImmune)
         {
             event.setCancelled(true);
-            if (sendErrorMessagesToPlayers)
+            if (sendMessages)
                 GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.CantFightWhileImmune);
             return true;
         }
@@ -444,12 +453,12 @@ public class EntityDamageHandler implements Listener
             // Wolves are exempt from pet protections in PVP worlds due to their offensive nature.
             if (event.getEntity().getType() == EntityType.WOLF) return true;
 
-            PreventPvPEvent pvpEvent = new PreventPvPEvent(new Claim(event.getEntity().getLocation(), event.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null), attacker, tameable);
+            PreventPvPEvent pvpEvent = new PreventPvPEvent(new Claim(event.getEntity().getLocation(), event.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null), attacker, pet);
             Bukkit.getPluginManager().callEvent(pvpEvent);
             if (!pvpEvent.isCancelled())
             {
                 event.setCancelled(true);
-                if (sendErrorMessagesToPlayers)
+                if (sendMessages)
                 {
                     String ownerName = GriefPrevention.lookupPlayerName(owner);
                     String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
@@ -503,13 +512,13 @@ public class EntityDamageHandler implements Listener
      *
      * @param event the {@link EntityDamageByEntityEvent}
      * @param attacker the attacking {@link Player}, if any
-     * @param sendErrorMessagesToPlayers whether to send denial messages to users involved
+     * @param sendMessages whether to send denial messages to users involved
      * @return true if the damage is handled
      */
     private boolean handleClaimedBuildTrustDamageByEntity(
             @NotNull EntityDamageByEntityEvent event,
             @Nullable Player attacker,
-            boolean sendErrorMessagesToPlayers)
+            boolean sendMessages)
     {
         EntityType entityType = event.getEntityType();
         if (entityType != EntityType.ITEM_FRAME
@@ -563,7 +572,7 @@ public class EntityDamageHandler implements Listener
         if (failureReason == null) return false;
 
         event.setCancelled(true);
-        if (sendErrorMessagesToPlayers) GriefPrevention.sendMessage(attacker, TextMode.Err, failureReason.get());
+        if (sendMessages) GriefPrevention.sendMessage(attacker, TextMode.Err, failureReason.get());
         return true;
     }
 
@@ -574,20 +583,20 @@ public class EntityDamageHandler implements Listener
      * @param event the {@link EntityDamageByEntityEvent}
      * @param attacker the attacking {@link Player}, if any
      * @param arrow the {@link Projectile} dealing the damage, if any
-     * @param sendErrorMessagesToPlayers whether to send denial messages to users involved
+     * @param sendMessages whether to send denial messages to users involved
      * @return true if the damage is handled
      */
     private boolean handleCreatureDamageByEntity(
             @NotNull EntityDamageByEntityEvent event,
             @Nullable Player attacker,
             @Nullable Projectile arrow,
-            boolean sendErrorMessagesToPlayers)
+            boolean sendMessages)
     {
         if (!(event.getEntity() instanceof Creature) || !instance.config_claims_protectCreatures)
             return false;
 
         //if entity is tameable and has an owner, apply special rules
-        if (handlePetDamageByEntity(event, attacker, sendErrorMessagesToPlayers)) return true;
+        if (handlePetDamageByEntity(event, attacker, sendMessages)) return true;
 
         Entity damageSource = event.getDamager();
         EntityType damageSourceType = damageSource.getType();
@@ -631,10 +640,10 @@ public class EntityDamageHandler implements Listener
         playerData.lastClaim = claim;
 
         // Do not message players about fireworks to prevent spam due to multi-hits.
-        sendErrorMessagesToPlayers &= damageSourceType != EntityType.FIREWORK;
+        sendMessages &= damageSourceType != EntityType.FIREWORK;
 
         Supplier<String> override = null;
-        if (sendErrorMessagesToPlayers)
+        if (sendMessages)
         {
             final Player finalAttacker = attacker;
             override = () ->
@@ -657,7 +666,7 @@ public class EntityDamageHandler implements Listener
         // Prevent projectiles from bouncing infinitely.
         preventInfiniteBounce(arrow, event.getEntity());
 
-        if (sendErrorMessagesToPlayers) GriefPrevention.sendMessage(attacker, TextMode.Err, noContainersReason.get());
+        if (sendMessages) GriefPrevention.sendMessage(attacker, TextMode.Err, noContainersReason.get());
 
         return true;
     }
@@ -667,13 +676,13 @@ public class EntityDamageHandler implements Listener
      *
      * @param event the {@link EntityDamageByEntityEvent}
      * @param attacker the attacking {@link Player}, if any
-     * @param sendErrorMessagesToPlayers whether to send denial messages to users involved
+     * @param sendMessages whether to send denial messages to users involved
      * @return true if the damage is handled
      */
     private boolean handlePetDamageByEntity(
             @NotNull EntityDamageByEntityEvent event,
             @Nullable Player attacker,
-            boolean sendErrorMessagesToPlayers)
+            boolean sendMessages)
     {
         if (!(event.getEntity() instanceof Tameable tameable) || !tameable.isTamed()) return false;
 
@@ -697,7 +706,7 @@ public class EntityDamageHandler implements Listener
         }
 
         event.setCancelled(true);
-        if (sendErrorMessagesToPlayers)
+        if (sendMessages)
         {
             String ownerName = GriefPrevention.lookupPlayerName(owner);
             String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
