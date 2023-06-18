@@ -598,8 +598,6 @@ public class EntityDamageHandler implements Listener
 
         Supplier<String> failureReason = claim.checkPermission(attacker, ClaimPermission.Build, event);
 
-        // TODO Should build trust not fall through? It's the highest tier of trust.
-        //  These are specific build-requiring entities, not pets etc.
         // If player has build trust, fall through to next checks.
         if (failureReason == null) return false;
 
