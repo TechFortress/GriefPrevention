@@ -573,15 +573,6 @@ public class EntityDamageHandler implements Listener
         //cache claim for later
         playerData.lastClaim = claim;
 
-        //otherwise the player damaging the entity must have permission, unless it's a dog in a pvp world
-        if (event.getEntity().getWorld().getPVP() && event.getEntity().getType() == EntityType.WOLF)
-        {
-            // TODO this check is technically a completely different ruleset from GP's own PVP tameable settings
-            //  It applies only in claims and only to worlds with vanilla PVP enabled.
-            //  Does the general tameable check supersede this?
-            return true;
-        }
-
         // Do not message players about fireworks to prevent spam due to multi-hits.
         sendErrorMessagesToPlayers &= damageSourceType != EntityType.FIREWORK;
 
@@ -642,52 +633,57 @@ public class EntityDamageHandler implements Listener
         PlayerData attackerData = this.dataStore.getPlayerData(attacker.getUniqueId());
         if (attackerData.ignoreClaims) return true;
 
-        //otherwise disallow in non-pvp worlds (and also pvp worlds if configured to do so)
-        if (!instance.pvpRulesApply(event.getEntity().getWorld()) || (instance.config_pvp_protectPets && event.getEntityType() != EntityType.WOLF))
+        // TODO extract to PVP section
+        if (instance.pvpRulesApply(event.getEntity().getWorld()))
         {
-            PreventPvPEvent pvpEvent = new PreventPvPEvent(new Claim(event.getEntity().getLocation(), event.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null), attacker, tameable);
-            Bukkit.getPluginManager().callEvent(pvpEvent);
-            if (!pvpEvent.isCancelled())
+            // Disallow provocations while PVP-immune.
+            if (attackerData.pvpImmune)
             {
                 event.setCancelled(true);
                 if (sendErrorMessagesToPlayers)
+                    GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.CantFightWhileImmune);
+                return true;
+            }
+
+            if (instance.config_pvp_protectPets)
+            {
+                // Wolves are exempt from pet protections in PVP worlds due to their offensive nature.
+                if (event.getEntity().getType() == EntityType.WOLF) return true;
+
+                PreventPvPEvent pvpEvent = new PreventPvPEvent(new Claim(event.getEntity().getLocation(), event.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null), attacker, tameable);
+                Bukkit.getPluginManager().callEvent(pvpEvent);
+                if (!pvpEvent.isCancelled())
                 {
-                    String ownerName = GriefPrevention.lookupPlayerName(owner);
-                    String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
-                    if (attacker.hasPermission("griefprevention.ignoreclaims"))
-                        message += "  " + dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
-                    GriefPrevention.sendMessage(attacker, TextMode.Err, message);
+                    event.setCancelled(true);
+                    if (sendErrorMessagesToPlayers)
+                    {
+                        String ownerName = GriefPrevention.lookupPlayerName(owner);
+                        String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
+                        if (attacker.hasPermission("griefprevention.ignoreclaims"))
+                            message += "  " + dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                        GriefPrevention.sendMessage(attacker, TextMode.Err, message);
+                    }
                 }
             }
             return true;
         }
-        //and disallow if attacker is pvp immune
-        else if (attackerData.pvpImmune)
+
+        // Allow players to attack wolves (dogs) if under attack by them.
+        if (tameable.getType() == EntityType.WOLF && tameable.getTarget() != null)
         {
-            event.setCancelled(true);
-            if (sendErrorMessagesToPlayers)
-                GriefPrevention.sendMessage(attacker, TextMode.Err, Messages.CantFightWhileImmune);
-            return true;
+            if (tameable.getTarget() == attacker) return true;
         }
-        // disallow players attacking tamed wolves (dogs) unless under attack by said wolf
-        else if (tameable.getType() == EntityType.WOLF)
+
+        event.setCancelled(true);
+        if (sendErrorMessagesToPlayers)
         {
-            if (tameable.getTarget() != null)
-            {
-                if (tameable.getTarget() == attacker) return true;
-            }
-            event.setCancelled(true);
-            if (sendErrorMessagesToPlayers)
-            {
-                String ownerName = GriefPrevention.lookupPlayerName(owner);
-                String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
-                if (attacker.hasPermission("griefprevention.ignoreclaims"))
-                    message += "  " + dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
-                GriefPrevention.sendMessage(attacker, TextMode.Err, message);
-            }
-            return true;
+            String ownerName = GriefPrevention.lookupPlayerName(owner);
+            String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
+            if (attacker.hasPermission("griefprevention.ignoreclaims"))
+                message += "  " + dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+            GriefPrevention.sendMessage(attacker, TextMode.Err, message);
         }
-        return false;
+        return true;
     }
 
     /**
