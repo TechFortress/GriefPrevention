@@ -58,6 +58,36 @@ import java.util.function.Supplier;
 public class EntityDamageHandler implements Listener
 {
 
+    private static final Set<PotionEffectType> GRIEF_EFFECTS = Set.of(
+            // Damaging effects
+            PotionEffectType.HARM,
+            PotionEffectType.POISON,
+            PotionEffectType.WITHER,
+            // Effects that could remove entities from normally-secure pens
+            PotionEffectType.JUMP,
+            PotionEffectType.LEVITATION
+    );
+    private static final Set<PotionEffectType> POSITIVE_EFFECTS = Set.of(
+            PotionEffectType.ABSORPTION,
+            PotionEffectType.CONDUIT_POWER,
+            PotionEffectType.DAMAGE_RESISTANCE,
+            PotionEffectType.DOLPHINS_GRACE,
+            PotionEffectType.FAST_DIGGING,
+            PotionEffectType.FIRE_RESISTANCE,
+            PotionEffectType.HEAL,
+            PotionEffectType.HEALTH_BOOST,
+            PotionEffectType.HERO_OF_THE_VILLAGE,
+            PotionEffectType.INCREASE_DAMAGE,
+            PotionEffectType.INVISIBILITY,
+            PotionEffectType.JUMP,
+            PotionEffectType.LUCK,
+            PotionEffectType.NIGHT_VISION,
+            PotionEffectType.REGENERATION,
+            PotionEffectType.SATURATION,
+            PotionEffectType.SLOW_FALLING,
+            PotionEffectType.SPEED,
+            PotionEffectType.WATER_BREATHING
+    );
     private final @NotNull DataStore dataStore;
     private final @NotNull GriefPrevention instance;
     private final @NotNull NamespacedKey luredByPlayer;
@@ -159,7 +189,8 @@ public class EntityDamageHandler implements Listener
         // Specific handling for PVP-enabled situations.
         if (instance.pvpRulesApply(event.getEntity().getWorld()))
         {
-            if (event.getEntity() instanceof Player defender) {
+            if (event.getEntity() instanceof Player defender)
+            {
                 // Protect players from other players' pets when protected from PVP.
                 if (handlePvpDamageByPet(subEvent, attacker, defender)) return;
 
@@ -425,7 +456,8 @@ public class EntityDamageHandler implements Listener
             @NotNull EntityDamageByEntityEvent event,
             @NotNull Tameable pet,
             @NotNull Player attacker,
-            boolean sendMessages) {
+            boolean sendMessages)
+    {
 
         if (!pet.isTamed()) return false;
 
@@ -964,37 +996,5 @@ public class EntityDamageHandler implements Listener
             }
         }
     }
-
-    public static final Set<PotionEffectType> GRIEF_EFFECTS = Set.of(
-            // Damaging effects
-            PotionEffectType.HARM,
-            PotionEffectType.POISON,
-            PotionEffectType.WITHER,
-            // Effects that could remove entities from normally-secure pens
-            PotionEffectType.JUMP,
-            PotionEffectType.LEVITATION
-    );
-
-    public static final Set<PotionEffectType> POSITIVE_EFFECTS = Set.of(
-            PotionEffectType.ABSORPTION,
-            PotionEffectType.CONDUIT_POWER,
-            PotionEffectType.DAMAGE_RESISTANCE,
-            PotionEffectType.DOLPHINS_GRACE,
-            PotionEffectType.FAST_DIGGING,
-            PotionEffectType.FIRE_RESISTANCE,
-            PotionEffectType.HEAL,
-            PotionEffectType.HEALTH_BOOST,
-            PotionEffectType.HERO_OF_THE_VILLAGE,
-            PotionEffectType.INCREASE_DAMAGE,
-            PotionEffectType.INVISIBILITY,
-            PotionEffectType.JUMP,
-            PotionEffectType.LUCK,
-            PotionEffectType.NIGHT_VISION,
-            PotionEffectType.REGENERATION,
-            PotionEffectType.SATURATION,
-            PotionEffectType.SLOW_FALLING,
-            PotionEffectType.SPEED,
-            PotionEffectType.WATER_BREATHING
-    );
 
 }
