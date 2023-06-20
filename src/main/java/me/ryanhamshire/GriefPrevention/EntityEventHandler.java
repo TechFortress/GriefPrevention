@@ -18,7 +18,6 @@
 
 package me.ryanhamshire.GriefPrevention;
 
-import com.google.common.base.Objects;
 import me.ryanhamshire.GriefPrevention.events.ProtectDeathDropsEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -70,6 +69,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -718,7 +718,7 @@ public class EntityEventHandler implements Listener
         OfflinePlayer owner = instance.getServer().getOfflinePlayer(ownerID);
 
         // Owner must be online and can pick up their own drops.
-        if (!owner.isOnline() || Objects.equal(player, owner)) return;
+        if (!owner.isOnline() || Objects.equals(player, owner)) return;
 
         PlayerData playerData = this.dataStore.getPlayerData(ownerID);
 
