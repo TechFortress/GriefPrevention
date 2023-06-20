@@ -47,7 +47,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fish;
 import org.bukkit.entity.Hanging;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Llama;
 import org.bukkit.entity.Mule;
 import org.bukkit.entity.Player;
@@ -78,7 +77,6 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerLoginEvent.Result;
-import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -89,7 +87,6 @@ import org.bukkit.event.raid.RaidTriggerEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -1422,72 +1419,6 @@ class PlayerEventHandler implements Listener
                     GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoDamageClaimedEntity, claim.getOwnerName());
                     return;
                 }
-            }
-        }
-    }
-
-    //when a player picks up an item...
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
-    public void onPlayerPickupItem(PlayerPickupItemEvent event)
-    {
-        Player player = event.getPlayer();
-
-        //FEATURE: lock dropped items to player who dropped them
-
-        //who owns this stack?
-        Item item = event.getItem();
-        List<MetadataValue> data = item.getMetadata("GP_ITEMOWNER");
-        if (data != null && data.size() > 0)
-        {
-            UUID ownerID = (UUID) data.get(0).value();
-
-            //has that player unlocked his drops?
-            OfflinePlayer owner = instance.getServer().getOfflinePlayer(ownerID);
-            String ownerName = GriefPrevention.lookupPlayerName(ownerID);
-            if (owner.isOnline() && !player.equals(owner))
-            {
-                PlayerData playerData = this.dataStore.getPlayerData(ownerID);
-
-                //if locked, don't allow pickup
-                if (!playerData.dropsAreUnlocked)
-                {
-                    event.setCancelled(true);
-
-                    //if hasn't been instructed how to unlock, send explanatory messages
-                    if (!playerData.receivedDropUnlockAdvertisement)
-                    {
-                        GriefPrevention.sendMessage(owner.getPlayer(), TextMode.Instr, Messages.DropUnlockAdvertisement);
-                        GriefPrevention.sendMessage(player, TextMode.Err, Messages.PickupBlockedExplanation, ownerName);
-                        playerData.receivedDropUnlockAdvertisement = true;
-                    }
-
-                    return;
-                }
-            }
-        }
-
-        //the rest of this code is specific to pvp worlds
-        if (!instance.pvpRulesApply(player.getWorld())) return;
-
-        //if we're preventing spawn camping and the player was previously empty handed...
-        if (instance.config_pvp_protectFreshSpawns && (instance.getItemInHand(player, EquipmentSlot.HAND).getType() == Material.AIR))
-        {
-            //if that player is currently immune to pvp
-            PlayerData playerData = this.dataStore.getPlayerData(event.getPlayer().getUniqueId());
-            if (playerData.pvpImmune)
-            {
-                //if it's been less than 10 seconds since the last time he spawned, don't pick up the item
-                long now = Calendar.getInstance().getTimeInMillis();
-                long elapsedSinceLastSpawn = now - playerData.lastSpawn;
-                if (elapsedSinceLastSpawn < 10000)
-                {
-                    event.setCancelled(true);
-                    return;
-                }
-
-                //otherwise take away his immunity. he may be armed now.  at least, he's worth killing for some loot
-                playerData.pvpImmune = false;
-                GriefPrevention.sendMessage(player, TextMode.Warn, Messages.PvPImmunityEnd);
             }
         }
     }

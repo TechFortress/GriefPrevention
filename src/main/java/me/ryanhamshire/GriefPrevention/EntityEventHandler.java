@@ -18,10 +18,12 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.google.common.base.Objects;
 import me.ryanhamshire.GriefPrevention.events.ProtectDeathDropsEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
@@ -56,6 +58,7 @@ import org.bukkit.event.hanging.HangingBreakByEntityEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.hanging.HangingBreakEvent.RemoveCause;
 import org.bukkit.event.hanging.HangingPlaceEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.metadata.MetadataValue;
@@ -65,6 +68,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -684,14 +688,86 @@ public class EntityEventHandler implements Listener
     }
 
     @EventHandler
-    public void onEntityPickUpItem(@NotNull EntityPickupItemEvent event) {
+    public void onEntityPickUpItem(@NotNull EntityPickupItemEvent event)
+    {
         // Hostiles are allowed to equip death drops to preserve the challenge of item retrieval.
         if (event.getEntity() instanceof Monster) return;
 
-        // Prevent passive mobs (Allays, Dolphins, etc.) from picking up and indirectly unlocking death drops.
-        if (event.getItem().hasMetadata("GP_ITEMOWNER"))
+        Player player = null;
+        if (event.getEntity() instanceof Player)
         {
-            event.setCancelled(true);
+            player = (Player) event.getEntity();
+        }
+
+        //FEATURE: Lock dropped items to player who dropped them.
+        protectLockedDrops(event, player);
+
+        // FEATURE: Protect freshly-spawned players from PVP.
+        preventPvpSpawnCamp(event, player);
+    }
+
+    private void protectLockedDrops(@NotNull EntityPickupItemEvent event, @Nullable Player player)
+    {
+        Item item = event.getItem();
+        List<MetadataValue> data = item.getMetadata("GP_ITEMOWNER");
+
+        // Ignore absent or invalid data.
+        if (data.isEmpty() || !(data.get(0).value() instanceof UUID ownerID)) return;
+
+        // Get owner from stored UUID.
+        OfflinePlayer owner = instance.getServer().getOfflinePlayer(ownerID);
+
+        // Owner must be online and can pick up their own drops.
+        if (!owner.isOnline() || Objects.equal(player, owner)) return;
+
+        PlayerData playerData = this.dataStore.getPlayerData(ownerID);
+
+        // If drops are unlocked, allow pick up.
+        if (playerData.dropsAreUnlocked) return;
+
+        // Block pick up.
+        event.setCancelled(true);
+
+        // Non-players (dolphins, allays) do not need to generate prompts.
+        if (player == null)
+        {
+            return;
+        }
+
+        // If the owner hasn't been instructed how to unlock, send explanatory messages.
+        if (!playerData.receivedDropUnlockAdvertisement)
+        {
+            GriefPrevention.sendMessage(owner.getPlayer(), TextMode.Instr, Messages.DropUnlockAdvertisement);
+            GriefPrevention.sendMessage(player, TextMode.Err, Messages.PickupBlockedExplanation, GriefPrevention.lookupPlayerName(ownerID));
+            playerData.receivedDropUnlockAdvertisement = true;
+        }
+    }
+
+    private void preventPvpSpawnCamp(@NotNull EntityPickupItemEvent event, @Nullable Player player)
+    {
+        // This is specific to players in pvp worlds.
+        if (player == null || !instance.pvpRulesApply(player.getWorld())) return;
+
+        //if we're preventing spawn camping and the player was previously empty handed...
+        if (instance.config_pvp_protectFreshSpawns && (instance.getItemInHand(player, EquipmentSlot.HAND).getType() == Material.AIR))
+        {
+            //if that player is currently immune to pvp
+            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
+            if (playerData.pvpImmune)
+            {
+                //if it's been less than 10 seconds since the last time he spawned, don't pick up the item
+                long now = Calendar.getInstance().getTimeInMillis();
+                long elapsedSinceLastSpawn = now - playerData.lastSpawn;
+                if (elapsedSinceLastSpawn < 10000)
+                {
+                    event.setCancelled(true);
+                    return;
+                }
+
+                //otherwise take away his immunity. he may be armed now.  at least, he's worth killing for some loot
+                playerData.pvpImmune = false;
+                GriefPrevention.sendMessage(player, TextMode.Warn, Messages.PvPImmunityEnd);
+            }
         }
     }
 
