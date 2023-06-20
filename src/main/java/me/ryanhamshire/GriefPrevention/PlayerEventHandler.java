@@ -1806,11 +1806,11 @@ class PlayerEventHandler implements Listener
         //otherwise apply rules for doors and beds, if configured that way
         else if (clickedBlock != null &&
 
-                (instance.config_claims_lockWoodenDoors && Tag.WOODEN_DOORS.isTagged(clickedBlockType) ||
+                (instance.config_claims_lockWoodenDoors && Tag.DOORS.isTagged(clickedBlockType) ||
 
                 instance.config_claims_preventButtonsSwitches && Tag.BEDS.isTagged(clickedBlockType) ||
 
-                instance.config_claims_lockTrapDoors && Tag.WOODEN_TRAPDOORS.isTagged(clickedBlockType) ||
+                instance.config_claims_lockTrapDoors && Tag.TRAPDOORS.isTagged(clickedBlockType) ||
 
                 instance.config_claims_lecternReadingRequiresAccessTrust && clickedBlockType == Material.LECTERN ||
 
