@@ -6,7 +6,7 @@ and with very little (self service) effort from players.
 Because GriefPrevention teaches players for you, you won't have to publish a
 training manual or tutorial for players, or add explanatory signs to your world.
 
-### Help+Support
+- [Download GriefPrevention.jar](https://github.com/TechFortress/GriefPrevention/releases/latest)
 
 If you need help or have questions, first check the **[Documentation](https://docs.griefprevention.com).**
 
@@ -15,10 +15,8 @@ If you need help or have questions, first check the **[Documentation](https://do
 - [Bug tracker](https://github.com/TechFortress/GriefPrevention/issues)
 - [Chat](https://griefprevention.com/chat/)
 - [Discord](https://r.griefprevention.com/dumcord)
+- [Download older versions](https://dev.bukkit.org/projects/grief-prevention/files)
 
-### Download
-- [Downloads](https://dev.bukkit.org/projects/grief-prevention/files)
-- [Release Notes](https://github.com/TechFortress/GriefPrevention/releases)
 
 GriefPrevention is compatible with Purpur, Spigot, Paper, and any other implemention of the Bukkit API.
 
