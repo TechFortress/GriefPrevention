@@ -357,18 +357,6 @@ permissions:
     griefprevention.eavesdropimmune:
         description: Players with this permission can't have their private messages eavesdropped.
         default: op
-    griefprevention.fasteraccrual:
-        description: Players with this permission accrue claim blocks at the faster rate specified in the config file.
-        default: false
-    griefprevention.fastestaccrual:
-        description: Players with this permission accrue claim blocks at the fastest rate specified in the config file.
-        default: false
-    griefprevention.moreaccrued:
-        description: Players with this permission can accrue more claim blocks (limit specified in the config file).
-        default: false
-    griefprevention.mostaccrued:
-        description: Players with this permission can accrue more claim blocks (limit specified in the config file).
-        default: false
     griefprevention.siegeteleport:
         description: Players with this permission can teleport into and out of besieged areas.
         default: op

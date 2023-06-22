@@ -1778,7 +1778,7 @@ public abstract class DataStore
         this.addDefault(defaults, Messages.SeparateConfirmation, "Those players will now ignore each other in chat.", null);
         this.addDefault(defaults, Messages.UnSeparateConfirmation, "Those players will no longer ignore each other in chat.", null);
         this.addDefault(defaults, Messages.NotIgnoringAnyone, "You're not ignoring anyone.", null);
-        this.addDefault(defaults, Messages.TrustListHeader, "Explicit permissions here:", null);
+        this.addDefault(defaults, Messages.TrustListHeader, "Explicit permissions here:", "0: The claim's owner");
         this.addDefault(defaults, Messages.Manage, "Manage", null);
         this.addDefault(defaults, Messages.Build, "Build", null);
         this.addDefault(defaults, Messages.Containers, "Containers", null);
