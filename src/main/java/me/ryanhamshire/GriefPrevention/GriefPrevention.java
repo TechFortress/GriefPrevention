@@ -44,6 +44,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -53,6 +54,8 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -85,6 +88,7 @@ public class GriefPrevention extends JavaPlugin
 
     // Event handlers with common functionality
     EntityEventHandler entityEventHandler;
+    EntityDamageHandler entityDamageHandler;
 
     //this tracks item stacks expected to drop which will need protection
     ArrayList<PendingItemProtection> pendingItemWatchList = new ArrayList<>();
@@ -92,6 +96,8 @@ public class GriefPrevention extends JavaPlugin
     //log entry manager for GP's custom log files
     CustomLogger customLogger;
 
+    // Player event handler
+    PlayerEventHandler playerEventHandler;
     //configuration variables, loaded/saved from a config.yml
 
     //claim mode for each world
@@ -358,7 +364,7 @@ public class GriefPrevention extends JavaPlugin
         PluginManager pluginManager = this.getServer().getPluginManager();
 
         //player events
-        PlayerEventHandler playerEventHandler = new PlayerEventHandler(this.dataStore, this);
+        playerEventHandler = new PlayerEventHandler(this.dataStore, this);
         pluginManager.registerEvents(playerEventHandler, this);
 
         //block events
@@ -368,6 +374,10 @@ public class GriefPrevention extends JavaPlugin
         //entity events
         entityEventHandler = new EntityEventHandler(this.dataStore, this);
         pluginManager.registerEvents(entityEventHandler, this);
+
+        //combat/damage-specific entity events
+        entityDamageHandler = new EntityDamageHandler(this.dataStore, this);
+        pluginManager.registerEvents(entityDamageHandler, this);
 
         //siege events
         SiegeEventHandler siegeEventHandler = new SiegeEventHandler();
@@ -2333,17 +2343,7 @@ public class GriefPrevention extends JavaPlugin
             }
 
             //otherwise, find the specified player
-            OfflinePlayer targetPlayer;
-            try
-            {
-                UUID playerID = UUID.fromString(args[0]);
-                targetPlayer = this.getServer().getOfflinePlayer(playerID);
-
-            }
-            catch (IllegalArgumentException e)
-            {
-                targetPlayer = this.resolvePlayerByName(args[0]);
-            }
+            OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
 
             if (targetPlayer == null)
             {
@@ -2654,6 +2654,8 @@ public class GriefPrevention extends JavaPlugin
         else if (cmd.getName().equalsIgnoreCase("gpreload"))
         {
             this.loadConfig();
+            this.dataStore.loadMessages();
+            playerEventHandler.resetPattern();
             if (player != null)
             {
                 GriefPrevention.sendMessage(player, TextMode.Success, "Configuration updated.  If you have updated your Grief Prevention JAR, you still need to /reload or reboot your server.");
@@ -2684,7 +2686,9 @@ public class GriefPrevention extends JavaPlugin
 
             //find the specified player
             OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
-            if (targetPlayer == null)
+            if (targetPlayer == null
+                    || !targetPlayer.isOnline() && !targetPlayer.hasPlayedBefore()
+                    || targetPlayer.getName() == null)
             {
                 GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerNotFound2);
                 return true;
@@ -3182,28 +3186,43 @@ public class GriefPrevention extends JavaPlugin
         }
         if (bestMatchID == null)
         {
-            return null;
+            try
+            {
+                // Try to parse UUID from string.
+                bestMatchID = UUID.fromString(name);
+            }
+            catch (IllegalArgumentException ignored)
+            {
+                // Not a valid UUID string either.
+                return null;
+            }
         }
 
         return this.getServer().getOfflinePlayer(bestMatchID);
     }
 
     //helper method to resolve a player name from the player's UUID
-    static String lookupPlayerName(UUID playerID)
+    static @NotNull String lookupPlayerName(@Nullable UUID playerID)
     {
         //parameter validation
-        if (playerID == null) return "somebody";
+        if (playerID == null) return "someone";
 
         //check the cache
         OfflinePlayer player = GriefPrevention.instance.getServer().getOfflinePlayer(playerID);
-        if (player.hasPlayedBefore() || player.isOnline())
+        return lookupPlayerName(player);
+    }
+
+    static @NotNull String lookupPlayerName(@NotNull AnimalTamer tamer)
+    {
+        // If the tamer is not a player or has played, prefer their name if it exists.
+        if (!(tamer instanceof OfflinePlayer player) || player.hasPlayedBefore() || player.isOnline())
         {
-            return player.getName();
+            String name = tamer.getName();
+            if (name != null) return name;
         }
-        else
-        {
-            return "someone(" + playerID.toString() + ")";
-        }
+
+        // Fall back to tamer's UUID.
+        return "someone(" + tamer.getUniqueId() + ")";
     }
 
     //cache for player name lookups, to save searches of all offline players

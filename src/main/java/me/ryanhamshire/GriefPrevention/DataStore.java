@@ -21,6 +21,7 @@ package me.ryanhamshire.GriefPrevention;
 import com.google.common.io.Files;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
+import me.ryanhamshire.GriefPrevention.events.ClaimModifiedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimResizeEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimCreatedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimDeletedEvent;
@@ -793,7 +794,16 @@ public abstract class DataStore
     {
         for (Claim claim : this.claims)
         {
-            if (claim.inDataStore && claim.getID() == id) return claim;
+            if (claim.inDataStore)
+            {
+                if (claim.getID() == id)
+                    return claim;
+                for (Claim subClaim : claim.children)
+                {
+                    if (subClaim.getID() == id)
+                    return subClaim;
+                }
+            }
         }
 
         return null;
@@ -1442,7 +1452,7 @@ public abstract class DataStore
         newClaim.greaterBoundaryCorner = new Location(world, newx2, newy2, newz2);
 
         //call event here to check if it has been cancelled
-        ClaimResizeEvent event = new ClaimResizeEvent(oldClaim, newClaim, player);
+        ClaimResizeEvent event = new ClaimModifiedEvent(oldClaim, newClaim, player); // Swap to ClaimResizeEvent when ClaimModifiedEvent is removed
         Bukkit.getPluginManager().callEvent(event);
 
         //return here if event is cancelled
@@ -1564,7 +1574,7 @@ public abstract class DataStore
         }
     }
 
-    private void loadMessages()
+    protected void loadMessages()
     {
         Messages[] messageIDs = Messages.values();
         this.messages = new String[Messages.values().length];

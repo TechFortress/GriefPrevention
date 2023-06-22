@@ -1,8 +1,7 @@
 name: GriefPrevention
 main: me.ryanhamshire.GriefPrevention.GriefPrevention
-softdepend: [Vault, Multiverse-Core, My_Worlds, MystCraft, Transporter, TheUnderground, WorldGuard, WorldEdit, RoyalCommands, MultiWorld, Denizen]
+softdepend: [Vault, Multiverse-Core, My_Worlds, MystCraft, Transporter, WorldGuard, WorldEdit, RoyalCommands, MultiWorld, Denizen, CommandHelper]
 dev-url: https://dev.bukkit.org/projects/grief-prevention
-loadbefore: [TheUnderground]
 version: '${git.commit.id.describe}'
 api-version: '1.17'
 commands:
@@ -18,7 +17,7 @@ commands:
     abandonallclaims:
       description: Deletes ALL your claims.
       usage: /AbandonAllClaims
-      permission: griefprevention.claims
+      permission: griefprevention.abandonallclaims
     trust:
       description: Grants a player full access to your claim(s).
       usage: /Trust <player>  Grants a player permission to build.  See also /UnTrust, /ContainerTrust, /AccessTrust, and /PermissionTrust.
@@ -322,6 +321,9 @@ permissions:
     griefprevention.claims:
         description: Grants access to claim-related slash commands.
         default: true
+    griefprevention.abandonallclaims:
+        description: Grants access to /AbandonAllClaims.
+        default: true
     griefprevention.buysellclaimblocks:
         description: Grants access to claim block buy/sell commands.
         default: true
@@ -370,3 +372,6 @@ permissions:
     griefprevention.siegeteleport:
         description: Players with this permission can teleport into and out of besieged areas.
         default: op
+    griefprevention.premovementchat:
+        description: Players with this permission can chat before moving.
+        default: false

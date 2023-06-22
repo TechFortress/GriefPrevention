@@ -744,6 +744,17 @@ public class BlockEventHandler implements Listener
         // Arrow ignition.
         if (igniteEvent.getCause() == IgniteCause.ARROW && igniteEvent.getIgnitingEntity() != null)
         {
+            // Arrows shot by players may return the shooter, not the arrow.
+            if (igniteEvent.getIgnitingEntity() instanceof Player player)
+            {
+                BlockBreakEvent breakEvent = new BlockBreakEvent(igniteEvent.getBlock(), player);
+                onBlockBreak(breakEvent);
+                if (breakEvent.isCancelled())
+                {
+                    igniteEvent.setCancelled(true);
+                }
+                return;
+            }
             // Flammable lightable blocks do not fire EntityChangeBlockEvent when igniting.
             BlockData blockData = igniteEvent.getBlock().getBlockData();
             if (blockData instanceof Lightable lightable)
@@ -855,7 +866,8 @@ public class BlockEventHandler implements Listener
 
 
     //ensures fluids don't flow into land claims from outside
-    private Claim lastSpreadClaim = null;
+    private Claim lastSpreadFromClaim = null;
+    private Claim lastSpreadToClaim = null;
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onBlockFromTo(BlockFromToEvent spreadEvent)
@@ -866,30 +878,84 @@ public class BlockEventHandler implements Listener
         //don't track in worlds where claims are not enabled
         if (!GriefPrevention.instance.claimsEnabledForWorld(spreadEvent.getBlock().getWorld())) return;
 
-        //where to?
-        Block toBlock = spreadEvent.getToBlock();
-        Location toLocation = toBlock.getLocation();
-        Claim toClaim = this.dataStore.getClaimAt(toLocation, false, lastSpreadClaim);
+        //where from and where to?
+        Location fromLocation = spreadEvent.getBlock().getLocation();
+        Location toLocation = spreadEvent.getToBlock().getLocation();
+        boolean isInCreativeRulesWorld = GriefPrevention.instance.creativeRulesApply(toLocation);
+        Claim fromClaim = this.dataStore.getClaimAt(fromLocation, false, lastSpreadFromClaim);
+        Claim toClaim = this.dataStore.getClaimAt(toLocation, false, lastSpreadToClaim);
 
-        //if into a land claim, it must be from the same land claim
-        if (toClaim != null)
-        {
-            this.lastSpreadClaim = toClaim;
-            if (!toClaim.contains(spreadEvent.getBlock().getLocation(), false, true))
-            {
-                //exception: from parent into subdivision
-                if (toClaim.parent == null || !toClaim.parent.contains(spreadEvent.getBlock().getLocation(), false, false))
-                {
-                    spreadEvent.setCancelled(true);
-                }
-            }
-        }
+        //due to the nature of what causes this event (fluid flow/spread),
+        //we'll probably run similar checks for the same pair of claims again,
+        //so we cache them to use in claim lookup later
+        this.lastSpreadFromClaim = fromClaim;
+        this.lastSpreadToClaim = toClaim;
 
-        //otherwise if creative mode world, don't flow
-        else if (GriefPrevention.instance.creativeRulesApply(toLocation))
+        if (!isFluidFlowAllowed(fromClaim, toClaim, isInCreativeRulesWorld))
         {
             spreadEvent.setCancelled(true);
         }
+    }
+
+    /**
+     * Determines whether fluid flow is allowed between two claims.
+     *
+     * @param from The claim at the source location of the fluid flow, or null if it's wilderness.
+     * @param to The claim at the destination location of the fluid flow, or null if it's wilderness.
+     * @param creativeRulesApply Whether creative rules apply to the world where claims are located.
+     * @return `true` if fluid flow is allowed, `false` otherwise.
+     */
+    private boolean isFluidFlowAllowed(Claim from, Claim to, boolean creativeRulesApply)
+    {
+        // Special case: if in a world with creative rules,
+        // don't allow fluids to flow into wilderness.
+        if (creativeRulesApply && to == null) return false;
+
+        // The fluid flow should be allowed or denied based on the specific combination
+        // of source and destination claim types. The following matrix outlines these
+        // combinations and indicates whether fluid flow should be permitted:
+        //
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | From \ To    | Wild | Claim A1 | Sub A1_1 | Sub A1_2 | Sub A1_3 (R) | Claim A2 | Claim B |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Wild         | Yes  | -        | -        | -        | -            | -        | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Claim A1     | Yes  | Yes      | Yes      | Yes      | -            | Yes      | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Sub A1_1     | Yes  | -        | Yes      | -        | -            | -        | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Sub A1_2     | Yes  | -        | -        | Yes      | -            | -        | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Sub A1_3 (R) | Yes  | -        | -        | -        | Yes          | -        | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Claim A2     | Yes  | Yes      | -        | -        | -            | Yes      | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Claim B      | Yes  | -        | -        | -        | -            | -        | Yes     |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //
+        //   Legend:
+        //     Wild = wilderness
+        //     Claim A* = claim owned by player A
+        //     Sub A*_* = subdivision of Claim A*
+        //     (R) = Restricted subdivision
+        //     Claim B = claim owned by player B
+        //     Yes = fluid flow allowed
+        //     - = fluid flow not allowed
+
+        boolean fromWilderness = from == null;
+        boolean toWilderness = to == null;
+        boolean sameClaim = from != null && to != null && Objects.equals(from.getID(), to.getID());
+        boolean sameOwner = from != null && to != null && Objects.equals(from.getOwnerID(), to.getOwnerID());
+        boolean isToSubdivision = to != null && to.parent != null;
+        boolean isToRestrictedSubdivision = isToSubdivision && to.getSubclaimRestrictions();
+        boolean isFromSubdivision = from != null && from.parent != null;
+
+        if (toWilderness) return true;
+        if (fromWilderness) return false;
+        if (sameClaim) return true;
+        if (isFromSubdivision) return false;
+        if (isToSubdivision) return !isToRestrictedSubdivision;
+        return sameOwner;
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)

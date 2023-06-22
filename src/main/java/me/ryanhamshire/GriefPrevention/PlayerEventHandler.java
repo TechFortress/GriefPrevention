@@ -141,6 +141,11 @@ class PlayerEventHandler implements Listener
         bannedWordFinder = new WordFinder(instance.dataStore.loadBannedWords());
     }
 
+    protected void resetPattern()
+    {
+        this.howToClaimPattern = null;
+    }
+
     //when a player chats, monitor for spam
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     synchronized void onPlayerChat(AsyncPlayerChatEvent event)
@@ -688,7 +693,7 @@ class PlayerEventHandler implements Listener
         this.lastLoginThisServerSessionMap.put(playerID, nowDate);
 
         //if newish, prevent chat until he's moved a bit to prove he's not a bot
-        if (GriefPrevention.isNewToServer(player))
+        if (GriefPrevention.isNewToServer(player) && !player.hasPermission("griefprevention.premovementchat"))
         {
             playerData.noChatLocation = player.getLocation();
         }
@@ -1351,7 +1356,7 @@ class PlayerEventHandler implements Listener
         if (itemInHand.getType() == Material.NAME_TAG)
         {
             EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(player, entity, EntityDamageEvent.DamageCause.CUSTOM, 0);
-            instance.entityEventHandler.onEntityDamage(damageEvent);
+            instance.entityDamageHandler.onEntityDamage(damageEvent);
             if (damageEvent.isCancelled())
             {
                 event.setCancelled(true);
@@ -1740,6 +1745,8 @@ class PlayerEventHandler implements Listener
                                 clickedBlockType == Material.CAKE ||
                                 clickedBlockType == Material.CARTOGRAPHY_TABLE ||
                                 clickedBlockType == Material.CAULDRON ||
+                                clickedBlockType == Material.WATER_CAULDRON ||
+                                clickedBlockType == Material.LAVA_CAULDRON ||
                                 clickedBlockType == Material.CAVE_VINES ||
                                 clickedBlockType == Material.CAVE_VINES_PLANT ||
                                 clickedBlockType == Material.CHIPPED_ANVIL ||
@@ -1799,11 +1806,11 @@ class PlayerEventHandler implements Listener
         //otherwise apply rules for doors and beds, if configured that way
         else if (clickedBlock != null &&
 
-                (instance.config_claims_lockWoodenDoors && Tag.WOODEN_DOORS.isTagged(clickedBlockType) ||
+                (instance.config_claims_lockWoodenDoors && Tag.DOORS.isTagged(clickedBlockType) ||
 
                 instance.config_claims_preventButtonsSwitches && Tag.BEDS.isTagged(clickedBlockType) ||
 
-                instance.config_claims_lockTrapDoors && Tag.WOODEN_TRAPDOORS.isTagged(clickedBlockType) ||
+                instance.config_claims_lockTrapDoors && Tag.TRAPDOORS.isTagged(clickedBlockType) ||
 
                 instance.config_claims_lecternReadingRequiresAccessTrust && clickedBlockType == Material.LECTERN ||
 
