@@ -101,7 +101,7 @@ public abstract class BoundaryVisualization
                 GriefPrevention.instance,
                 () -> {
                     // Only revert if this is the active visualization.
-                    if (playerData.getVisibleBoundaries() == this) revert(player);
+                    if (playerData.getVisibleBoundaries() == this) playerData.setVisibleBoundaries(null);
                 },
                 20L * 60);
     }
