@@ -1851,8 +1851,7 @@ class PlayerEventHandler implements Listener
                     dyes.add(material);
             }
 
-            //if it's bonemeal, armor stand, spawn egg, etc - check for build permission //RoboMWM: also check flint and steel to stop TNT ignition
-            //add glowing ink sac and ink sac, due to their usage on signs
+            // Require build permission for items that may have an effect on the world when used.
             if (clickedBlock != null && (materialInHand == Material.BONE_MEAL
                     || materialInHand == Material.ARMOR_STAND
                     || (spawn_eggs.contains(materialInHand) && GriefPrevention.instance.config_claims_preventGlobalMonsterEggs)
@@ -1860,6 +1859,7 @@ class PlayerEventHandler implements Listener
                     || materialInHand == Material.FLINT_AND_STEEL
                     || materialInHand == Material.INK_SAC
                     || materialInHand == Material.GLOW_INK_SAC
+                    || materialInHand == Material.HONEYCOMB
                     || dyes.contains(materialInHand)))
             {
                 String noBuildReason = instance
