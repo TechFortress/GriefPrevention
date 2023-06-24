@@ -981,7 +981,7 @@ public class EntityDamageHandler implements Listener
                     Consumer<Messages> cancelHandler = message ->
                     {
                         event.setIntensity(affected, 0);
-                        if (!messagedPlayer.compareAndSet(false, true))
+                        if (messagedPlayer.compareAndSet(false, true))
                             GriefPrevention.sendMessage(thrower, TextMode.Err, message);
                     };
                     if (handlePvpInClaim(thrower, affectedPlayer, thrower.getLocation(), playerData, () -> cancelHandler.accept(Messages.CantFightWhileImmune)))
