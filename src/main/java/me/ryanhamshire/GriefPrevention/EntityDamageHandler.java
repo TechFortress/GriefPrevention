@@ -947,10 +947,9 @@ public class EntityDamageHandler implements Listener
                                 if (noContainersReason != null)
                                 {
                                     event.setIntensity(affected, 0);
-                                    if (!messagedPlayer.get())
+                                    if (messagedPlayer.compareAndSet(false, true))
                                     {
                                         GriefPrevention.sendMessage(thrower, TextMode.Err, noContainersReason.get());
-                                        messagedPlayer.set(true);
                                     }
                                 }
                             }
