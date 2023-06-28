@@ -35,6 +35,7 @@ import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.Sign;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.block.data.Waterlogged;
@@ -1811,7 +1812,10 @@ class PlayerEventHandler implements Listener
                                 clickedBlockType == Material.COMPARATOR ||
                                 clickedBlockType == Material.REDSTONE_WIRE ||
                                 Tag.FLOWER_POTS.isTagged(clickedBlockType) ||
-                                Tag.CANDLES.isTagged(clickedBlockType)
+                                Tag.CANDLES.isTagged(clickedBlockType) ||
+                                // Only block interaction with un-editable signs to allow command signs to function.
+                                // TODO: When we are required to update Spigot API to 1.20 to support a change, swap to Sign#isWaxed
+                                Tag.SIGNS.isTagged(clickedBlockType) && clickedBlock.getState() instanceof Sign sign && sign.isEditable()
                 ))
         {
             if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
@@ -1851,8 +1855,7 @@ class PlayerEventHandler implements Listener
                     dyes.add(material);
             }
 
-            //if it's bonemeal, armor stand, spawn egg, etc - check for build permission //RoboMWM: also check flint and steel to stop TNT ignition
-            //add glowing ink sac and ink sac, due to their usage on signs
+            // Require build permission for items that may have an effect on the world when used.
             if (clickedBlock != null && (materialInHand == Material.BONE_MEAL
                     || materialInHand == Material.ARMOR_STAND
                     || (spawn_eggs.contains(materialInHand) && GriefPrevention.instance.config_claims_preventGlobalMonsterEggs)
@@ -1860,6 +1863,7 @@ class PlayerEventHandler implements Listener
                     || materialInHand == Material.FLINT_AND_STEEL
                     || materialInHand == Material.INK_SAC
                     || materialInHand == Material.GLOW_INK_SAC
+                    || materialInHand == Material.HONEYCOMB
                     || dyes.contains(materialInHand)))
             {
                 String noBuildReason = instance
