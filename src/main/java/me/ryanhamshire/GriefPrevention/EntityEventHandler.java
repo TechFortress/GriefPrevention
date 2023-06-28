@@ -304,7 +304,8 @@ public class EntityEventHandler implements Listener
             if (mob.getTarget() instanceof Player localPlayer)
                 player = localPlayer;
             // Handle players leading burning leashed entities.
-            else if (mob.isLeashed() && mob.getLeashHolder() instanceof Player localPlayer) player = localPlayer;
+            else if (mob.isLeashed() && mob.getLeashHolder() instanceof Player localPlayer)
+                player = localPlayer;
         }
 
         if (player != null)
