@@ -1850,7 +1850,7 @@ public class GriefPrevention extends JavaPlugin
                 double totalCost = blockCount * GriefPrevention.instance.config_economy_claimBlocksPurchaseCost;
                 if (totalCost > balance)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.InsufficientFunds, String.valueOf(totalCost), String.valueOf(balance));
+                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.InsufficientFunds, economy.format(totalCost), economy.format(balance));
                 }
 
                 //otherwise carry out transaction
@@ -1874,7 +1874,7 @@ public class GriefPrevention extends JavaPlugin
                     this.dataStore.savePlayerData(player.getUniqueId(), playerData);
 
                     //inform player
-                    GriefPrevention.sendMessage(player, TextMode.Success, Messages.PurchaseConfirmation, String.valueOf(totalCost), String.valueOf(playerData.getRemainingClaimBlocks()));
+                    GriefPrevention.sendMessage(player, TextMode.Success, Messages.PurchaseConfirmation, economy.format(totalCost), String.valueOf(playerData.getRemainingClaimBlocks()));
                 }
 
                 return true;
@@ -1950,7 +1950,7 @@ public class GriefPrevention extends JavaPlugin
                 this.dataStore.savePlayerData(player.getUniqueId(), playerData);
 
                 //inform player
-                GriefPrevention.sendMessage(player, TextMode.Success, Messages.BlockSaleConfirmation, String.valueOf(totalValue), String.valueOf(playerData.getRemainingClaimBlocks()));
+                GriefPrevention.sendMessage(player, TextMode.Success, Messages.BlockSaleConfirmation, economyWrapper.getEconomy().format(totalValue), String.valueOf(playerData.getRemainingClaimBlocks()));
             }
 
             return true;
