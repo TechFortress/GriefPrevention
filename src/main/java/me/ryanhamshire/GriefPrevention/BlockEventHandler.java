@@ -1104,15 +1104,19 @@ public class BlockEventHandler implements Listener
         }
 
         List<MetadataValue> meta = event.getItem().getMetadata("GP_ITEMOWNER");
+        // We only care about an item if it has been flagged as belonging to a player.
         if (meta.isEmpty())
         {
             return;
         }
 
         UUID itemOwnerId = (UUID) meta.get(0).value();
+        // Determine if the owner has unlocked their dropped items.
+        // This first requires that the player is logged in.
         if (Bukkit.getServer().getPlayer(itemOwnerId) != null)
         {
             PlayerData itemOwner = dataStore.getPlayerData(itemOwnerId);
+            // If locked, don't allow pickup
             if (!itemOwner.dropsAreUnlocked)
             {
                 event.setCancelled(true);
