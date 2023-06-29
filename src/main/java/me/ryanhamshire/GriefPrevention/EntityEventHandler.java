@@ -245,14 +245,6 @@ public class EntityEventHandler implements Listener
         // Wilderness rules
         if (claim == null)
         {
-            // TNT change means ignition. If no claim is present, use global fire rules.
-            if (block.getType() == Material.TNT)
-            {
-                if (!GriefPrevention.instance.config_fireDestroys || !GriefPrevention.instance.config_fireSpreads)
-                    event.setCancelled(true);
-                return;
-            }
-
             // No modification in the wilderness in creative mode.
             if (instance.creativeRulesApply(block.getLocation()) || instance.config_claims_worldModes.get(block.getWorld()) == ClaimsMode.SurvivalRequiringClaims)
             {
