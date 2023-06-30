@@ -74,6 +74,8 @@ final class TabCompletions
             }
         }
 
+        // Sort completions alphabetically.
+        completions.sort(String.CASE_INSENSITIVE_ORDER);
         return completions;
     }
 
