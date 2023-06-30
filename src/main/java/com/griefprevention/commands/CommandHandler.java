@@ -48,7 +48,7 @@ public abstract class CommandHandler implements TabExecutor
             @NotNull CommandSender sender,
             @NotNull Command command,
             @NotNull String alias,
-            @NotNull String @NotNull [] args)
+            @NotNull String[] args)
     {
         // Tab complete visible online players by default.
         return TabCompletions.visiblePlayers(sender, args);

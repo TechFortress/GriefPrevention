@@ -25,7 +25,7 @@ final class TabCompletions
      * @param args the existing command arguments
      * @return the matching players' names
      */
-    static @NotNull List<String> visiblePlayers(@Nullable CommandSender sender, @NotNull String @NotNull [] args)
+    static @NotNull List<String> visiblePlayers(@Nullable CommandSender sender, @NotNull String[] args)
     {
         // Bukkit returns a view of the player list. So that Craftbukkit doesn't have to hack around type limitations,
         // this is actually a view of the player implementation, represented via Bukkit as a generic extending Player.
@@ -52,7 +52,7 @@ final class TabCompletions
             T @NotNull [] completable,
             @NotNull Function<T, String> asString,
             @Nullable Predicate<T> filter,
-            @NotNull String @NotNull [] args)
+            @NotNull String[] args)
     {
         // Length should never be 0 because that case should be handled by Bukkit completing the raw command name.
         String prefix = args.length == 0 ? "" : args[args.length - 1];
