@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,61 @@ import java.util.function.Predicate;
  */
 final class TabCompletions
 {
+
+    public static @NotNull List<String> integer(
+            @NotNull String[] args,
+            @Range(from = 1, to = Integer.MAX_VALUE - 1) int maxDigits,
+            boolean allowNegative)
+    {
+        String prefix = asPrefix(args);
+
+        // If completing nothing, return all eligible values.
+        if (prefix.isEmpty())
+        {
+            List<String> completions = new ArrayList<>(allowNegative ? 19 : 10);
+            for (int i = allowNegative ? -9 : 0; i <= 9; ++i)
+            {
+                completions.add(Integer.toString(i));
+            }
+            return completions;
+        }
+
+        char[] prefixChars = prefix.toCharArray();
+        // If we allow negatives, ignore the appropriate prefix character.
+        int startIndex = allowNegative && prefixChars[0] == '-' ? 1 : 0;
+
+        // Ensure that all characters are digits.
+        for (int index = startIndex; index < prefixChars.length; ++index)
+        {
+            char prefixChar = prefixChars[index];
+            if (prefixChar < '0' || prefixChar > '9')
+            {
+                return List.of();
+            }
+        }
+
+        int digitsLength = prefixChars.length - startIndex;
+        List<String> completions = new ArrayList<>(11);
+
+        // If the existing value has digits, add it.
+        if (digitsLength > 0)
+        {
+            completions.add(prefix);
+        }
+
+        // If the input already has the max number of digits, don't suggest more.
+        if (digitsLength >= maxDigits)
+        {
+            return completions;
+        }
+
+        // Prefix is acceptable, offer all digits prefixed by existing content.
+        for (int i = 0; i <= 9; ++i)
+        {
+            completions.add(Integer.toString(i));
+        }
+        return completions;
+    }
 
     /**
      * Offer completions for visible players' names.
@@ -54,8 +110,7 @@ final class TabCompletions
             @Nullable Predicate<T> filter,
             @NotNull String[] args)
     {
-        // Length should never be 0 because that case should be handled by Bukkit completing the raw command name.
-        String prefix = args.length == 0 ? "" : args[args.length - 1];
+        String prefix = asPrefix(args);
 
         List<String> completions = new ArrayList<>();
 
@@ -77,6 +132,13 @@ final class TabCompletions
         // Sort completions alphabetically.
         completions.sort(String.CASE_INSENSITIVE_ORDER);
         return completions;
+    }
+
+    private static @NotNull String asPrefix(@NotNull String[] args)
+    {
+        // Length should never be 0 because that case should be handled by Bukkit completing the raw command name.
+        // Never hurts to be safe though.
+        return args.length == 0 ? "" : args[args.length - 1];
     }
 
     private TabCompletions() {}

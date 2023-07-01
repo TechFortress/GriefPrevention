@@ -176,7 +176,9 @@ public class ClaimCommand extends CommandHandler
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String alias, @NotNull String[] args)
     {
-        return List.of();
+        if (args.length != 1)
+            return List.of();
+        return TabCompletions.integer(args, 5, false);
     }
 
 }
