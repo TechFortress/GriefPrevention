@@ -86,11 +86,9 @@ public class ClaimCommand extends CommandHandler
         }
 
         // If the player has no claims, allow them to create their starter claim via command instead of chest placement.
-        else if (playerData.getClaims().isEmpty())
+        else if (playerData.getClaims().isEmpty() && plugin.config_claims_automaticClaimsForNewPlayersRadius >= 0)
         {
             radius = plugin.config_claims_automaticClaimsForNewPlayersRadius;
-            if (radius < 0)
-                radius = getClaimMinRadius();
         }
 
         //if player has any claims, respect claim minimum size setting
