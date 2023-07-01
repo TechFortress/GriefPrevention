@@ -69,7 +69,7 @@ final class TabCompletions
         // Prefix is acceptable, offer all digits prefixed by existing content.
         for (int i = 0; i <= 9; ++i)
         {
-            completions.add(Integer.toString(i));
+            completions.add(prefix + i);
         }
         return completions;
     }
