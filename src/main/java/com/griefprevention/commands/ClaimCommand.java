@@ -39,8 +39,7 @@ public class ClaimCommand extends CommandHandler
         if (!(sender instanceof Player player))
             return false;
 
-        World world = player.getWorld();
-        if (!plugin.claimsEnabledForWorld(world))
+        if (!plugin.claimsEnabledForWorld(player.getWorld()))
         {
             GriefPrevention.sendMessage(player, TextMode.Err, Messages.ClaimsDisabledWorld);
             return true;
@@ -106,17 +105,17 @@ public class ClaimCommand extends CommandHandler
 
         if (radius < 0) radius = 0;
 
-        Location lc = player.getLocation().add(-radius, 0, -radius);
-        Location gc = player.getLocation().add(radius, 0, radius);
+        Location lesser = player.getLocation().add(-radius, 0, -radius);
+        Location greater = player.getLocation().add(radius, 0, radius);
 
-        UUID playerId;
+        UUID ownerId;
         if (playerData.shovelMode == ShovelMode.Admin)
         {
-            playerId = null;
+            ownerId = null;
         } else
         {
             //player must have sufficient unused claim blocks
-            int area = Math.abs((gc.getBlockX() - lc.getBlockX() + 1) * (gc.getBlockZ() - lc.getBlockZ() + 1));
+            int area = Math.abs((greater.getBlockX() - lesser.getBlockX() + 1) * (greater.getBlockZ() - lesser.getBlockZ() + 1));
             int remaining = playerData.getRemainingClaimBlocks();
             if (remaining < area)
             {
@@ -124,15 +123,27 @@ public class ClaimCommand extends CommandHandler
                 plugin.dataStore.tryAdvertiseAdminAlternatives(player);
                 return true;
             }
-            playerId = player.getUniqueId();
+            ownerId = player.getUniqueId();
         }
 
+        createClaim(player, playerData, lesser, greater, ownerId);
+        return true;
+    }
+
+    private void createClaim(
+            @NotNull Player player,
+            @NotNull PlayerData playerData,
+            @NotNull Location lesser,
+            @NotNull Location greater,
+            @Nullable UUID ownerId)
+    {
+        World world = player.getWorld();
         CreateClaimResult result = plugin.dataStore.createClaim(world,
-                lc.getBlockX(), gc.getBlockX(),
-                lc.getBlockY() - plugin.config_claims_claimsExtendIntoGroundDistance - 1,
-                world.getHighestBlockYAt(gc) - plugin.config_claims_claimsExtendIntoGroundDistance - 1,
-                lc.getBlockZ(), gc.getBlockZ(),
-                playerId, null, null, player);
+                lesser.getBlockX(), greater.getBlockX(),
+                lesser.getBlockY() - plugin.config_claims_claimsExtendIntoGroundDistance - 1,
+                world.getHighestBlockYAt(greater) - plugin.config_claims_claimsExtendIntoGroundDistance - 1,
+                lesser.getBlockZ(), greater.getBlockZ(),
+                ownerId, null, null, player);
         if (!result.succeeded || result.claim == null)
         {
             if (result.claim != null)
@@ -166,7 +177,6 @@ public class ClaimCommand extends CommandHandler
             AutoExtendClaimTask.scheduleAsync(result.claim);
 
         }
-        return true;
     }
 
     private boolean needsShovel(@NotNull PlayerData playerData, @NotNull Player player)
