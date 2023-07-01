@@ -196,7 +196,7 @@ public class ClaimCommand extends CommandHandler
     {
         if (args.length != 1)
             return List.of();
-        return TabCompletions.integer(args, 5, false);
+        return TabCompletions.integer(args, 3, false);
     }
 
 }
