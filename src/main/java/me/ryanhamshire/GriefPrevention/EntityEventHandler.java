@@ -31,6 +31,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mob;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -159,6 +160,12 @@ public class EntityEventHandler implements Listener
             }
         }
 
+        // Prevent melting powdered snow.
+        else if (event.getBlock().getType() == Material.POWDER_SNOW && event.getTo() == Material.AIR)
+        {
+            handleEntityMeltPowderedSnow(event);
+        }
+
         // Prevent breaking lily pads via collision with a boat.
         else if (event.getEntity() instanceof Vehicle && !event.getEntity().getPassengers().isEmpty())
         {
@@ -238,14 +245,6 @@ public class EntityEventHandler implements Listener
         // Wilderness rules
         if (claim == null)
         {
-            // TNT change means ignition. If no claim is present, use global fire rules.
-            if (block.getType() == Material.TNT)
-            {
-                if (!GriefPrevention.instance.config_fireDestroys || !GriefPrevention.instance.config_fireSpreads)
-                    event.setCancelled(true);
-                return;
-            }
-
             // No modification in the wilderness in creative mode.
             if (instance.creativeRulesApply(block.getLocation()) || instance.config_claims_worldModes.get(block.getWorld()) == ClaimsMode.SurvivalRequiringClaims)
             {
@@ -281,6 +280,40 @@ public class EntityEventHandler implements Listener
 
         // Prevent change in all other cases.
         event.setCancelled(true);
+    }
+
+    private void handleEntityMeltPowderedSnow(@NotNull EntityChangeBlockEvent event)
+    {
+        // Note: this does not handle flaming arrows; they are handled earlier by #handleProjectileChangeBlock
+        Player player = null;
+        if (event.getEntity() instanceof Player localPlayer)
+        {
+            player = localPlayer;
+        }
+        else if (event.getEntity() instanceof Mob mob)
+        {
+            // Handle players leading packs of zombies.
+            if (mob.getTarget() instanceof Player localPlayer)
+                player = localPlayer;
+            // Handle players leading burning leashed entities.
+            else if (mob.isLeashed() && mob.getLeashHolder() instanceof Player localPlayer)
+                player = localPlayer;
+        }
+
+        if (player != null)
+        {
+            Block block = event.getBlock();
+            if (GriefPrevention.instance.allowBreak(player, block, block.getLocation()) != null)
+            {
+                event.setCancelled(true);
+            }
+        }
+        else
+        {
+            // Unhandled case, i.e. skeletons on fire due to sunlight lose target to search for cover.
+            // Possible to handle by tagging entities during combustion, but likely not worth it.
+            event.setCancelled(true);
+        }
     }
 
     static boolean isBlockSourceInClaim(@Nullable ProjectileSource projectileSource, @Nullable Claim claim)

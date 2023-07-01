@@ -21,28 +21,25 @@ package me.ryanhamshire.GriefPrevention;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
-import org.bukkit.block.Hopper;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Lightable;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.Dispenser;
 import org.bukkit.entity.Fireball;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
-import org.bukkit.entity.minecart.HopperMinecart;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -64,9 +61,9 @@ import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.world.PortalCreateEvent;
 import org.bukkit.event.world.StructureGrowEvent;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.projectiles.BlockProjectileSource;
@@ -1100,30 +1097,29 @@ public class BlockEventHandler implements Listener
     @EventHandler(ignoreCancelled = true)
     public void onInventoryPickupItem(InventoryPickupItemEvent event)
     {
-        //prevent hoppers from picking-up items dropped by players on death
-
-        InventoryHolder holder = event.getInventory().getHolder();
-        if (holder instanceof HopperMinecart || holder instanceof Hopper)
+        // Prevent hoppers from taking items dropped by players upon death.
+        if (event.getInventory().getType() != InventoryType.HOPPER)
         {
-            Item item = event.getItem();
-            List<MetadataValue> data = item.getMetadata("GP_ITEMOWNER");
-            //if this is marked as belonging to a player
-            if (data != null && data.size() > 0)
+            return;
+        }
+
+        List<MetadataValue> meta = event.getItem().getMetadata("GP_ITEMOWNER");
+        // We only care about an item if it has been flagged as belonging to a player.
+        if (meta.isEmpty())
+        {
+            return;
+        }
+
+        UUID itemOwnerId = (UUID) meta.get(0).value();
+        // Determine if the owner has unlocked their dropped items.
+        // This first requires that the player is logged in.
+        if (Bukkit.getServer().getPlayer(itemOwnerId) != null)
+        {
+            PlayerData itemOwner = dataStore.getPlayerData(itemOwnerId);
+            // If locked, don't allow pickup
+            if (!itemOwner.dropsAreUnlocked)
             {
-                UUID ownerID = (UUID) data.get(0).value();
-
-                //has that player unlocked his drops?
-                OfflinePlayer owner = GriefPrevention.instance.getServer().getOfflinePlayer(ownerID);
-                if (owner.isOnline())
-                {
-                    PlayerData playerData = this.dataStore.getPlayerData(ownerID);
-
-                    //if locked, don't allow pickup
-                    if (!playerData.dropsAreUnlocked)
-                    {
-                        event.setCancelled(true);
-                    }
-                }
+                event.setCancelled(true);
             }
         }
     }
