@@ -22,15 +22,15 @@ final class TabCompletions
     public static @NotNull List<String> integer(
             @NotNull String[] args,
             @Range(from = 1, to = Integer.MAX_VALUE - 1) int maxDigits,
-            boolean allowNegative)
+            boolean allowBelowOne)
     {
         String prefix = asPrefix(args);
 
         // If completing nothing, return all eligible values.
         if (prefix.isEmpty())
         {
-            List<String> completions = new ArrayList<>(allowNegative ? 19 : 10);
-            for (int i = allowNegative ? -9 : 0; i <= 9; ++i)
+            List<String> completions = new ArrayList<>(allowBelowOne ? 19 : 10);
+            for (int i = allowBelowOne ? -9 : 1; i <= 9; ++i)
             {
                 completions.add(Integer.toString(i));
             }
@@ -39,7 +39,7 @@ final class TabCompletions
 
         char[] prefixChars = prefix.toCharArray();
         // If we allow negatives, ignore the appropriate prefix character.
-        int startIndex = allowNegative && prefixChars[0] == '-' ? 1 : 0;
+        int startIndex = allowBelowOne && prefixChars[0] == '-' ? 1 : 0;
 
         // Ensure that all characters are digits.
         for (int index = startIndex; index < prefixChars.length; ++index)
