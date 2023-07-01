@@ -8,6 +8,7 @@ import me.ryanhamshire.GriefPrevention.DataStore;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.Messages;
 import me.ryanhamshire.GriefPrevention.PlayerData;
+import me.ryanhamshire.GriefPrevention.ShovelMode;
 import me.ryanhamshire.GriefPrevention.TextMode;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -19,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.UUID;
 
 public class ClaimCommand extends CommandHandler
 {
@@ -109,14 +111,22 @@ public class ClaimCommand extends CommandHandler
         Location lc = player.getLocation().add(-radius, 0, -radius);
         Location gc = player.getLocation().add(radius, 0, radius);
 
-        //player must have sufficient unused claim blocks
-        int area = Math.abs((gc.getBlockX() - lc.getBlockX() + 1) * (gc.getBlockZ() - lc.getBlockZ() + 1));
-        int remaining = playerData.getRemainingClaimBlocks();
-        if (remaining < area)
+        UUID playerId;
+        if (playerData.shovelMode == ShovelMode.Admin)
         {
-            GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimInsufficientBlocks, String.valueOf(area - remaining));
-            plugin.dataStore.tryAdvertiseAdminAlternatives(player);
-            return true;
+            playerId = null;
+        } else
+        {
+            //player must have sufficient unused claim blocks
+            int area = Math.abs((gc.getBlockX() - lc.getBlockX() + 1) * (gc.getBlockZ() - lc.getBlockZ() + 1));
+            int remaining = playerData.getRemainingClaimBlocks();
+            if (remaining < area)
+            {
+                GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimInsufficientBlocks, String.valueOf(area - remaining));
+                plugin.dataStore.tryAdvertiseAdminAlternatives(player);
+                return true;
+            }
+            playerId = player.getUniqueId();
         }
 
         CreateClaimResult result = plugin.dataStore.createClaim(world,
@@ -124,7 +134,7 @@ public class ClaimCommand extends CommandHandler
                 lc.getBlockY() - plugin.config_claims_claimsExtendIntoGroundDistance - 1,
                 world.getHighestBlockYAt(gc) - plugin.config_claims_claimsExtendIntoGroundDistance - 1,
                 lc.getBlockZ(), gc.getBlockZ(),
-                player.getUniqueId(), null, null, player);
+                playerId, null, null, player);
         if (!result.succeeded || result.claim == null)
         {
             if (result.claim != null)
