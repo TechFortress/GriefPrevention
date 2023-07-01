@@ -18,6 +18,7 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.griefprevention.commands.ClaimCommand;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
 import me.ryanhamshire.GriefPrevention.events.PreventBlockBreakEvent;
 import me.ryanhamshire.GriefPrevention.events.SaveTrappedPlayerEvent;
@@ -398,6 +399,8 @@ public class GriefPrevention extends JavaPlugin
         {
             new IgnoreLoaderThread(player.getUniqueId(), this.dataStore.getPlayerData(player.getUniqueId()).ignoredPlayers).start();
         }
+
+        setUpCommands();
 
         AddLogEntry("Boot finished.");
 
@@ -997,6 +1000,11 @@ public class GriefPrevention extends JavaPlugin
         {
             return null;
         }
+    }
+
+    private void setUpCommands()
+    {
+        new ClaimCommand(this);
     }
 
     //handles slash commands
