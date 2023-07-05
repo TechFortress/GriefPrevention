@@ -278,6 +278,10 @@ public class EntityEventHandler implements Listener
         if (isBlockSourceInClaim(shooter, claim))
             return;
 
+        // Allow change if the config value is set, to enable things like TNT music disc farms on claims.
+        if (GriefPrevention.instance.config_mobProjectilesChangeBlocks && shooter instanceof Mob)
+            return;
+
         // Prevent change in all other cases.
         event.setCancelled(true);
     }
