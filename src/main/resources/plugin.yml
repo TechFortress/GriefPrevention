@@ -1,7 +1,8 @@
 name: GriefPrevention
 main: me.ryanhamshire.GriefPrevention.GriefPrevention
-softdepend: [Vault, Multiverse-Core, My_Worlds, MystCraft, Transporter, TheUnderground, WorldGuard, WorldEdit, RoyalCommands, MultiWorld, Denizen, cLibraries, CommandHelper]
+softdepend: [Vault, Multiverse-Core, My_Worlds, MystCraft, Transporter, TheUnderground, WorldGuard, WorldEdit, RoyalCommands, MultiWorld, Denizen, cLibraries]
 dev-url: https://dev.bukkit.org/projects/grief-prevention
+loadbefore: [TheUnderground]
 version: '${git.commit.id.describe}'
 api-version: '1.17'
 commands:
@@ -26,7 +27,7 @@ commands:
     abandonallclaims:
       description: Deletes ALL your claims.
       usage: /AbandonAllClaims
-      permission: griefprevention.abandonallclaims
+      permission: griefprevention.claims
     trust:
       description: Grants a player full access to your claim(s).
       usage: /Trust <player>  Grants a player permission to build.  See also /UnTrust, /ContainerTrust, /AccessTrust, and /PermissionTrust.
@@ -330,9 +331,6 @@ permissions:
     griefprevention.claims:
         description: Grants access to claim-related slash commands.
         default: true
-    griefprevention.abandonallclaims:
-        description: Grants access to /AbandonAllClaims.
-        default: true
     griefprevention.buysellclaimblocks:
         description: Grants access to claim block buy/sell commands.
         default: true
@@ -366,9 +364,18 @@ permissions:
     griefprevention.eavesdropimmune:
         description: Players with this permission can't have their private messages eavesdropped.
         default: op
+    griefprevention.fasteraccrual:
+        description: Players with this permission accrue claim blocks at the faster rate specified in the config file.
+        default: false
+    griefprevention.fastestaccrual:
+        description: Players with this permission accrue claim blocks at the fastest rate specified in the config file.
+        default: false
+    griefprevention.moreaccrued:
+        description: Players with this permission can accrue more claim blocks (limit specified in the config file).
+        default: false
+    griefprevention.mostaccrued:
+        description: Players with this permission can accrue more claim blocks (limit specified in the config file).
+        default: false
     griefprevention.siegeteleport:
         description: Players with this permission can teleport into and out of besieged areas.
         default: op
-    griefprevention.premovementchat:
-        description: Players with this permission can chat before moving.
-        default: false
