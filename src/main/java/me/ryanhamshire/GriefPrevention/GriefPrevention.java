@@ -51,6 +51,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -61,6 +62,8 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -96,6 +99,7 @@ public class GriefPrevention extends JavaPlugin
 
     // Event handlers with common functionality
     EntityEventHandler entityEventHandler;
+    EntityDamageHandler entityDamageHandler;
 
     //this tracks item stacks expected to drop which will need protection
     ArrayList<PendingItemProtection> pendingItemWatchList = new ArrayList<>();
@@ -103,6 +107,8 @@ public class GriefPrevention extends JavaPlugin
     //log entry manager for GP's custom log files
     CustomLogger customLogger;
 
+    // Player event handler
+    PlayerEventHandler playerEventHandler;
     //configuration variables, loaded/saved from a config.yml
 
     //claim mode for each world
@@ -119,6 +125,7 @@ public class GriefPrevention extends JavaPlugin
     public boolean config_claims_lockWoodenDoors;                    //whether wooden doors should be locked by default (require /accesstrust)
     public boolean config_claims_lockTrapDoors;                        //whether trap doors should be locked by default (require /accesstrust)
     public boolean config_claims_lockFenceGates;                    //whether fence gates should be locked by default (require /accesstrust)
+    public boolean config_claims_preventNonPlayerCreatedPortals;    // whether portals where we cannot determine the creating player should be prevented from creation in claims
     public boolean config_claims_enderPearlsRequireAccessTrust;        //whether teleporting into a claim with a pearl requires access trust
     public boolean config_claims_raidTriggersRequireBuildTrust;      //whether raids are triggered by a player that doesn't have build permission in that claim
     public int config_claims_maxClaimsPerPlayer;                    //maximum number of claims per player
@@ -369,7 +376,7 @@ public class GriefPrevention extends JavaPlugin
         PluginManager pluginManager = this.getServer().getPluginManager();
 
         //player events
-        PlayerEventHandler playerEventHandler = new PlayerEventHandler(this.dataStore, this);
+        playerEventHandler = new PlayerEventHandler(this.dataStore, this);
         pluginManager.registerEvents(playerEventHandler, this);
 
         //block events
@@ -379,6 +386,10 @@ public class GriefPrevention extends JavaPlugin
         //entity events
         entityEventHandler = new EntityEventHandler(this.dataStore, this);
         pluginManager.registerEvents(entityEventHandler, this);
+
+        //combat/damage-specific entity events
+        entityDamageHandler = new EntityDamageHandler(this.dataStore, this);
+        pluginManager.registerEvents(entityDamageHandler, this);
 
         //siege events
         SiegeEventHandler siegeEventHandler = new SiegeEventHandler();
@@ -421,6 +432,7 @@ public class GriefPrevention extends JavaPlugin
         outConfig.options().header("Default values are perfect for most servers.  If you want to customize and have a question, look for the answer here first: http://dev.bukkit.org/bukkit-plugins/grief-prevention/pages/setup-and-configuration/");
 
         //read configuration settings (note defaults)
+        int configVersion = config.getInt("GriefPrevention.ConfigVersion", 0);
 
         //get (deprecated node) claims world names from the config file
         List<World> worlds = this.getServer().getWorlds();
@@ -554,6 +566,7 @@ public class GriefPrevention extends JavaPlugin
         this.config_claims_lockWoodenDoors = config.getBoolean("GriefPrevention.Claims.LockWoodenDoors", false);
         this.config_claims_lockTrapDoors = config.getBoolean("GriefPrevention.Claims.LockTrapDoors", false);
         this.config_claims_lockFenceGates = config.getBoolean("GriefPrevention.Claims.LockFenceGates", true);
+        this.config_claims_preventNonPlayerCreatedPortals = config.getBoolean("GriefPrevention.Claims.PreventNonPlayerCreatedPortals", false);
         this.config_claims_enderPearlsRequireAccessTrust = config.getBoolean("GriefPrevention.Claims.EnderPearlsRequireAccessTrust", true);
         this.config_claims_raidTriggersRequireBuildTrust = config.getBoolean("GriefPrevention.Claims.RaidTriggersRequireBuildTrust", true);
         this.config_claims_initialBlocks = config.getInt("GriefPrevention.Claims.InitialBlocks", 100);
@@ -572,6 +585,12 @@ public class GriefPrevention extends JavaPlugin
         this.config_claims_minWidth = config.getInt("GriefPrevention.Claims.MinimumWidth", 5);
         this.config_claims_minArea = config.getInt("GriefPrevention.Claims.MinimumArea", 100);
         this.config_claims_maxDepth = config.getInt("GriefPrevention.Claims.MaximumDepth", Integer.MIN_VALUE);
+        if (configVersion < 1 && this.config_claims_maxDepth == 0)
+        {
+            // If MaximumDepth is untouched in an older configuration, correct it.
+            this.config_claims_maxDepth = Integer.MIN_VALUE;
+            AddLogEntry("Updated default value for GriefPrevention.Claims.MaximumDepth to " + Integer.MIN_VALUE);
+        }
         this.config_claims_chestClaimExpirationDays = config.getInt("GriefPrevention.Claims.Expiration.ChestClaimDays", 7);
         this.config_claims_unusedClaimExpirationDays = config.getInt("GriefPrevention.Claims.Expiration.UnusedClaimDays", 14);
         this.config_claims_expirationDays = config.getInt("GriefPrevention.Claims.Expiration.AllClaims.DaysInactive", 60);
@@ -928,6 +947,7 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.Abridged Logs.Included Entry Types.Administrative Activity", this.config_logs_adminEnabled);
         outConfig.set("GriefPrevention.Abridged Logs.Included Entry Types.Debug", this.config_logs_debugEnabled);
         outConfig.set("GriefPrevention.Abridged Logs.Included Entry Types.Muted Chat Messages", this.config_logs_mutedChatEnabled);
+        outConfig.set("GriefPrevention.ConfigVersion", 1);
 
         try
         {
@@ -1096,7 +1116,7 @@ public class GriefPrevention extends JavaPlugin
                     gc.getWorld().getHighestBlockYAt(gc) - GriefPrevention.instance.config_claims_claimsExtendIntoGroundDistance - 1,
                     lc.getBlockZ(), gc.getBlockZ(),
                     player.getUniqueId(), null, null, player);
-            if (!result.succeeded)
+            if (!result.succeeded || result.claim == null)
             {
                 if (result.claim != null)
                 {
@@ -1507,7 +1527,7 @@ public class GriefPrevention extends JavaPlugin
             ArrayList<String> managers = new ArrayList<>();
             claim.getPermissions(builders, containers, accessors, managers);
 
-            GriefPrevention.sendMessage(player, TextMode.Info, Messages.TrustListHeader);
+            GriefPrevention.sendMessage(player, TextMode.Info, Messages.TrustListHeader, claim.getOwnerName());
 
             StringBuilder permissions = new StringBuilder();
             permissions.append(ChatColor.GOLD).append('>');
@@ -1872,7 +1892,7 @@ public class GriefPrevention extends JavaPlugin
                 double totalCost = blockCount * GriefPrevention.instance.config_economy_claimBlocksPurchaseCost;
                 if (totalCost > balance)
                 {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.InsufficientFunds, String.valueOf(totalCost), String.valueOf(balance));
+                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.InsufficientFunds, economy.format(totalCost), economy.format(balance));
                 }
 
                 //otherwise carry out transaction
@@ -1896,7 +1916,7 @@ public class GriefPrevention extends JavaPlugin
                     this.dataStore.savePlayerData(player.getUniqueId(), playerData);
 
                     //inform player
-                    GriefPrevention.sendMessage(player, TextMode.Success, Messages.PurchaseConfirmation, String.valueOf(totalCost), String.valueOf(playerData.getRemainingClaimBlocks()));
+                    GriefPrevention.sendMessage(player, TextMode.Success, Messages.PurchaseConfirmation, economy.format(totalCost), String.valueOf(playerData.getRemainingClaimBlocks()));
                 }
 
                 return true;
@@ -1972,7 +1992,7 @@ public class GriefPrevention extends JavaPlugin
                 this.dataStore.savePlayerData(player.getUniqueId(), playerData);
 
                 //inform player
-                GriefPrevention.sendMessage(player, TextMode.Success, Messages.BlockSaleConfirmation, String.valueOf(totalValue), String.valueOf(playerData.getRemainingClaimBlocks()));
+                GriefPrevention.sendMessage(player, TextMode.Success, Messages.BlockSaleConfirmation, economyWrapper.getEconomy().format(totalValue), String.valueOf(playerData.getRemainingClaimBlocks()));
             }
 
             return true;
@@ -2365,17 +2385,7 @@ public class GriefPrevention extends JavaPlugin
             }
 
             //otherwise, find the specified player
-            OfflinePlayer targetPlayer;
-            try
-            {
-                UUID playerID = UUID.fromString(args[0]);
-                targetPlayer = this.getServer().getOfflinePlayer(playerID);
-
-            }
-            catch (IllegalArgumentException e)
-            {
-                targetPlayer = this.resolvePlayerByName(args[0]);
-            }
+            OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
 
             if (targetPlayer == null)
             {
@@ -2686,6 +2696,8 @@ public class GriefPrevention extends JavaPlugin
         else if (cmd.getName().equalsIgnoreCase("gpreload"))
         {
             this.loadConfig();
+            this.dataStore.loadMessages();
+            playerEventHandler.resetPattern();
             if (player != null)
             {
                 GriefPrevention.sendMessage(player, TextMode.Success, "Configuration updated.  If you have updated your Grief Prevention JAR, you still need to /reload or reboot your server.");
@@ -2716,7 +2728,9 @@ public class GriefPrevention extends JavaPlugin
 
             //find the specified player
             OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
-            if (targetPlayer == null)
+            if (targetPlayer == null
+                    || !targetPlayer.isOnline() && !targetPlayer.hasPlayedBefore()
+                    || targetPlayer.getName() == null)
             {
                 GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerNotFound2);
                 return true;
@@ -3323,28 +3337,43 @@ public class GriefPrevention extends JavaPlugin
         }
         if (bestMatchID == null)
         {
-            return null;
+            try
+            {
+                // Try to parse UUID from string.
+                bestMatchID = UUID.fromString(name);
+            }
+            catch (IllegalArgumentException ignored)
+            {
+                // Not a valid UUID string either.
+                return null;
+            }
         }
 
         return this.getServer().getOfflinePlayer(bestMatchID);
     }
 
     //helper method to resolve a player name from the player's UUID
-    static String lookupPlayerName(UUID playerID)
+    static @NotNull String lookupPlayerName(@Nullable UUID playerID)
     {
         //parameter validation
-        if (playerID == null) return "somebody";
+        if (playerID == null) return "someone";
 
         //check the cache
         OfflinePlayer player = GriefPrevention.instance.getServer().getOfflinePlayer(playerID);
-        if (player.hasPlayedBefore() || player.isOnline())
+        return lookupPlayerName(player);
+    }
+
+    static @NotNull String lookupPlayerName(@NotNull AnimalTamer tamer)
+    {
+        // If the tamer is not a player or has played, prefer their name if it exists.
+        if (!(tamer instanceof OfflinePlayer player) || player.hasPlayedBefore() || player.isOnline())
         {
-            return player.getName();
+            String name = tamer.getName();
+            if (name != null) return name;
         }
-        else
-        {
-            return "someone(" + playerID.toString() + ")";
-        }
+
+        // Fall back to tamer's UUID.
+        return "someone(" + tamer.getUniqueId() + ")";
     }
 
     //cache for player name lookups, to save searches of all offline players

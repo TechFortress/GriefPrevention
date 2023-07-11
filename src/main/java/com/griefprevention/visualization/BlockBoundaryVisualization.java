@@ -1,6 +1,7 @@
 package com.griefprevention.visualization;
 
 import com.griefprevention.util.IntVector;
+import me.ryanhamshire.GriefPrevention.PlayerData;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -55,6 +56,12 @@ public abstract class BlockBoundaryVisualization extends BoundaryVisualization
     }
 
     @Override
+    protected void apply(@NotNull Player player, @NotNull PlayerData playerData) {
+        super.apply(player, playerData);
+        elements.forEach(element -> element.draw(player, world));
+    }
+
+    @Override
     protected void draw(@NotNull Player player, @NotNull Boundary boundary)
     {
         BoundingBox area = boundary.bounds();
@@ -102,8 +109,6 @@ public abstract class BlockBoundaryVisualization extends BoundaryVisualization
         addDisplayed(displayZone, new IntVector(area.getMaxX(), height, area.getMaxZ()), addCorner);
         addDisplayed(displayZone, new IntVector(area.getMinX(), height, area.getMinZ()), addCorner);
         addDisplayed(displayZone, new IntVector(area.getMaxX(), height, area.getMinZ()), addCorner);
-
-        elements.forEach(element -> element.draw(player, world));
     }
 
     /**
