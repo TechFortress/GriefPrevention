@@ -43,7 +43,7 @@ public class ClaimExtendEvent extends ClaimChangeEvent
      * @return the resulting {@code Claim}
      * @deprecated Use {@link #getTo() getTo} instead.
      */
-    @Deprecated(forRemoval = true, since = "16.18")
+    @Deprecated
     public @NotNull Claim getClaim()
     {
         return getTo();

@@ -2,7 +2,6 @@ package me.ryanhamshire.GriefPrevention.events;
 
 
 import me.ryanhamshire.GriefPrevention.Claim;
-import org.bukkit.Warning;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.Event;
 import org.jetbrains.annotations.NotNull;
@@ -17,10 +16,11 @@ import org.jetbrains.annotations.Nullable;
  *
  * @author Narimm on 5/08/2018.
  */
-@Deprecated(forRemoval = true, since = "16.18")
-@Warning(value = true, reason = "ClaimModifiedEvent will be removed in favor of ClaimResizeEvent")
-public class ClaimModifiedEvent extends ClaimResizeEvent
+@Deprecated
+public class ClaimModifiedEvent extends ClaimChangeEvent
 {
+
+    private final @Nullable CommandSender modifier;
 
     /**
      * Construct a new {@code ClaimModifiedEvent}.
@@ -33,6 +33,29 @@ public class ClaimModifiedEvent extends ClaimResizeEvent
      */
     public ClaimModifiedEvent(@NotNull Claim from, @NotNull Claim to, @Nullable CommandSender modifier)
     {
-        super(from, to, modifier);
+        super(from, to);
+        this.modifier = modifier;
+    }
+
+    /**
+     * Get the resulting {@link Claim} after modification.
+     *
+     * @return the resulting {@code Claim}
+     * @deprecated Use {@link #getTo()} instead.
+     */
+    @Deprecated
+    public @NotNull Claim getClaim()
+    {
+        return getTo();
+    }
+
+    /**
+     * Get the {@link CommandSender} modifying the {@link Claim}. May be {@code null} if caused by a plugin.
+     *
+     * @return the actor causing creation
+     */
+    public @Nullable CommandSender getModifier()
+    {
+        return modifier;
     }
 }

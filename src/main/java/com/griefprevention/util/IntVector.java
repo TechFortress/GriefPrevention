@@ -46,7 +46,7 @@ public record IntVector(int x, int y, int z)
     }
 
     /**
-     * Get a {@link Block} representing the {@code IntVector} in the specified {@link World}.
+     * Get ae {@link Block} representing the {@code IntVector} in the specified {@link World}.
      *
      * @param world the {@code World}
      * @return the corresponding {@code Block}
@@ -103,20 +103,6 @@ public record IntVector(int x, int y, int z)
     public @NotNull IntVector add(@NotNull IntVector other)
     {
         return new IntVector(x() + other.x(), y() + other.y(), z() + other.z());
-    }
-
-    /**
-     * Calculate the squared distance to another {@code IntVector}.
-     *
-     * @param other the other {@code IntVector}
-     * @return the squared distance
-     */
-    public int distanceSquared(@NotNull IntVector other)
-    {
-        int dX = x() - other.x();
-        int dY = y() - other.y();
-        int dZ = z() - other.z();
-        return dX * dX + dY * dY + dZ * dZ;
     }
 
     /**

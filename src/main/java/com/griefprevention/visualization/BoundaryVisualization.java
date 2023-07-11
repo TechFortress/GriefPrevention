@@ -1,7 +1,6 @@
 package com.griefprevention.visualization;
 
 import me.ryanhamshire.GriefPrevention.Claim;
-import me.ryanhamshire.GriefPrevention.CustomLogEntryTypes;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import me.ryanhamshire.GriefPrevention.PlayerData;
 import com.griefprevention.events.BoundaryVisualizationEvent;
@@ -19,12 +18,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
  * A representation of a system for displaying rectangular {@link Boundary Boundaries} to {@link Player Players}.
+ *
  * This is used to display claim areas, visualize affected area during nature restoration, and more.
  */
 public abstract class BoundaryVisualization
@@ -66,7 +65,7 @@ public abstract class BoundaryVisualization
      * @param player the visualization target
      * @param playerData the {@link PlayerData} of the visualization target
      */
-    protected void apply(@NotNull Player player, @NotNull PlayerData playerData)
+    private void apply(@NotNull Player player, @NotNull PlayerData playerData)
     {
         // Remember the visualization so it can be reverted.
         playerData.setVisibleBoundaries(this);
@@ -101,7 +100,7 @@ public abstract class BoundaryVisualization
                 GriefPrevention.instance,
                 () -> {
                     // Only revert if this is the active visualization.
-                    if (playerData.getVisibleBoundaries() == this) playerData.setVisibleBoundaries(null);
+                    if (playerData.getVisibleBoundaries() == this) revert(player);
                 },
                 20L * 60);
     }
@@ -207,8 +206,6 @@ public abstract class BoundaryVisualization
      */
     private static Collection<Boundary> defineBoundaries(Claim claim, VisualizationType type)
     {
-        if (claim == null) return Set.of();
-
         // For single claims, always visualize parent and children.
         if (claim.parent != null) claim = claim.parent;
 
@@ -254,22 +251,10 @@ public abstract class BoundaryVisualization
         Bukkit.getPluginManager().callEvent(event);
 
         Player player = event.getPlayer();
-        PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
-        BoundaryVisualization currentVisualization = playerData.getVisibleBoundaries();
-
-        Collection<Boundary> boundaries = event.getBoundaries();
-        boundaries.removeIf(Objects::isNull);
-
-        if (currentVisualization != null
-                && currentVisualization.elements.equals(boundaries)
-                && currentVisualization.visualizeFrom.distanceSquared(event.getCenter()) < 165)
-        {
-            // Ignore visualizations with duplicate boundaries if the viewer has moved fewer than 15 blocks.
-            return;
-        }
-
         BoundaryVisualization visualization = event.getProvider().create(player.getWorld(), event.getCenter(), event.getHeight());
-        visualization.elements.addAll(boundaries);
+        event.getBoundaries().stream().filter(Objects::nonNull).forEach(visualization.elements::add);
+
+        PlayerData playerData = GriefPrevention.instance.dataStore.getPlayerData(player.getUniqueId());
 
         // If they have a visualization active, clear it first.
         playerData.setVisibleBoundaries(null);
@@ -279,55 +264,9 @@ public abstract class BoundaryVisualization
         {
             GriefPrevention.instance.getServer().getScheduler().scheduleSyncDelayedTask(
                     GriefPrevention.instance,
-                    new DelayedVisualizationTask(visualization, playerData, event),
+                    () -> visualization.apply(player, playerData),
                     1L);
         }
-    }
-
-    private record DelayedVisualizationTask(
-            @NotNull BoundaryVisualization visualization,
-            @NotNull PlayerData playerData,
-            @NotNull BoundaryVisualizationEvent event)
-            implements Runnable
-    {
-
-        @Override
-        public void run()
-        {
-            try
-            {
-                visualization.apply(event.getPlayer(), playerData);
-            }
-            catch (Exception exception)
-            {
-                if (event.getProvider() == BoundaryVisualizationEvent.DEFAULT_PROVIDER)
-                {
-                    // If the provider is our own, log normally.
-                    GriefPrevention.instance.getLogger().log(Level.WARNING, "Exception visualizing claim", exception);
-                    return;
-                }
-
-                // Otherwise, add an extra hint that the problem is not with GP.
-                GriefPrevention.AddLogEntry(
-                        String.format(
-                                "External visualization provider %s caused %s: %s",
-                                event.getProvider().getClass().getName(),
-                                exception.getClass().getName(),
-                                exception.getCause()),
-                        CustomLogEntryTypes.Exception);
-                GriefPrevention.instance.getLogger().log(
-                        Level.WARNING,
-                        "Exception visualizing claim using external provider",
-                        exception);
-
-                // Fall through to default provider.
-                BoundaryVisualization fallback = BoundaryVisualizationEvent.DEFAULT_PROVIDER
-                        .create(event.getPlayer().getWorld(), event.getCenter(), event.getHeight());
-                event.getBoundaries().stream().filter(Objects::nonNull).forEach(fallback.elements::add);
-                fallback.apply(event.getPlayer(), playerData);
-            }
-        }
-
     }
 
 }

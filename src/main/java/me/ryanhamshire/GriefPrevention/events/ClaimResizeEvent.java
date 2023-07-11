@@ -8,10 +8,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * An {@link org.bukkit.event.Event Event} called when a {@link Claim} is resized.
  */
-public class ClaimResizeEvent extends ClaimChangeEvent
+public class ClaimResizeEvent extends ClaimModifiedEvent
 {
-
-    private final @Nullable CommandSender modifier;
 
     /**
      * Construct a new {@code ClaimResizeEvent}.
@@ -24,29 +22,7 @@ public class ClaimResizeEvent extends ClaimChangeEvent
      */
     public ClaimResizeEvent(@NotNull Claim from, @NotNull Claim to, @Nullable CommandSender modifier)
     {
-        super(from, to);
-        this.modifier = modifier;
+        super(from, to, modifier);
     }
 
-    /**
-     * Get the {@link CommandSender} modifying the {@link Claim}. May be {@code null} if caused by a plugin.
-     *
-     * @return the actor causing creation
-     */
-    public @Nullable CommandSender getModifier()
-    {
-        return modifier;
-    }
-
-    /**
-     * Get the resulting {@link Claim} after modification.
-     *
-     * @return the resulting {@code Claim}
-     * @deprecated Use {@link #getTo()} instead.
-     */
-    @Deprecated(forRemoval = true, since = "16.18")
-    public @NotNull Claim getClaim()
-    {
-        return getTo();
-    }
 }
