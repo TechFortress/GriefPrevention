@@ -18,13 +18,9 @@
 
 package me.ryanhamshire.GriefPrevention;
 
-import com.conaxgames.ClaimEntryProvider;
-import com.conaxgames.libraries.menu.menus.ConfirmMenu;
-import com.conaxgames.libraries.message.FormatUtil;
+import com.conaxgames.ConaxGP;
 import com.conaxgames.libraries.util.CC;
 import com.conaxgames.menu.GPConfirmMenu;
-import com.conaxgames.util.StuckUtil;
-import com.google.common.base.Preconditions;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
@@ -55,7 +51,6 @@ import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -95,7 +90,7 @@ public class GriefPrevention extends JavaPlugin
     public DataStore dataStore;
 
     //this handles the denial of entry for players moving between claims.
-    public ClaimEntryProvider entryProvider;
+    public ConaxGP conaxGP;
 
     // Event handlers with common functionality
     EntityEventHandler entityEventHandler;
@@ -405,7 +400,7 @@ public class GriefPrevention extends JavaPlugin
         namesThread.setPriority(Thread.MIN_PRIORITY);
         namesThread.start();
 
-        this.entryProvider = new ClaimEntryProvider();
+        this.conaxGP = new ConaxGP();
 
         //load ignore lists for any already-online players
         @SuppressWarnings("unchecked")
@@ -2899,109 +2894,19 @@ public class GriefPrevention extends JavaPlugin
         // claimban
         else if (cmd.getName().equals("claimban"))
         {
-            if (sender instanceof Player)
-            {
-                // requires a player name
-                if (args.length < 1) return false;
-
-                //validate target players
-                OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
-                if (targetPlayer == null)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerNotFound2);
-                    return true;
-                }
-
-                if (targetPlayer.getUniqueId().equals(player.getUniqueId())) {
-                    sender.sendMessage(CC.RED + "You can't claim ban yourself!");
-                    return true;
-                }
-
-                List<String> bans = this.entryProvider.list(player.getUniqueId());
-                if (bans.contains(targetPlayer.getUniqueId().toString())) {
-                    sender.sendMessage(CC.RED + "You've already claim banned " + targetPlayer.getName());
-                    return true;
-                }
-
-                Player onlineTarget = Bukkit.getPlayer(targetPlayer.getUniqueId());
-                if (onlineTarget != null) {
-                    Location targetLocation = onlineTarget.getLocation();
-
-                    Claim claim = this.dataStore.getClaimAt(targetLocation, false, null);
-                    if (claim != null) {
-                        if (claim.getOwnerID().equals(player.getUniqueId())) {
-                            Location outOfClaim = StuckUtil.getSafeNearbyTeleportLocation(player);
-                            if (outOfClaim != null) {
-                                onlineTarget.teleport(outOfClaim, PlayerTeleportEvent.TeleportCause.PLUGIN);
-                                onlineTarget.sendMessage(CC.RED + "You have been banned from " +
-                                        FormatUtil.possessiveString(player.getName()) + " claims!");
-                            }
-                        }
-                    }
-                }
-
-                sender.sendMessage(CC.GREEN + "You've claim banned " + targetPlayer.getName() + "!");
-                this.entryProvider.block(player.getUniqueId(), targetPlayer.getUniqueId());
-                return true;
-            } else {
-                sender.sendMessage("Player only command!");
-            }
+            return conaxGP.claimban(sender, args[0]);
         }
 
         // claimunban
         else if (cmd.getName().equals("claimunban"))
         {
-            if (sender instanceof Player)
-            {
-                // requires a player name
-                if (args.length < 1) return false;
-
-                //validate target players
-                OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
-                if (targetPlayer == null)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerNotFound2);
-                    return true;
-                }
-
-                if (targetPlayer.getUniqueId().equals(player.getUniqueId())) {
-                    sender.sendMessage(CC.RED + "You can't claim unban yourself!");
-                    return true;
-                }
-
-                List<String> bans = this.entryProvider.list(player.getUniqueId());
-                if (!bans.contains(targetPlayer.getUniqueId().toString())) {
-                    sender.sendMessage(CC.RED + targetPlayer.getName() + " isn't currently claim banned!");
-                    return true;
-                }
-
-                sender.sendMessage(CC.GREEN + "You've claim un-banned " + targetPlayer.getName());
-                this.entryProvider.unblock(player.getUniqueId(), targetPlayer.getUniqueId());
-                return true;
-            } else {
-                sender.sendMessage("Player only command!");
-            }
+            return conaxGP.claimunban(sender, args[0]);
         }
 
-        // claimunban
+        // claimban list
         else if (cmd.getName().equals("claimbanlist"))
         {
-            if (sender instanceof Player)
-            {
-                List<String> bans = this.entryProvider.list(player.getUniqueId());
-                if (bans != null) {
-                    sender.sendMessage(ChatColor.RED + "Claim Bans:");
-                    bans.forEach(ban -> {
-                        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(UUID.fromString(ban));
-                        sender.sendMessage(CC.YELLOW + "- " + CC.RED + offlinePlayer.getName());
-                    });
-                } else {
-                    sender.sendMessage(CC.RED + "You don't have anybody claim banned!");
-                }
-                return true;
-            } else {
-                sender.sendMessage("Player only command!");
-            }
+            return conaxGP.claimbanlist(sender);
         }
 
         return false;
@@ -3317,7 +3222,6 @@ public class GriefPrevention extends JavaPlugin
             }
         }
     }
-
 
     public OfflinePlayer resolvePlayerByName(String name)
     {

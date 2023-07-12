@@ -1,4 +1,4 @@
-package com.conaxgames;
+package com.conaxgames.claim;
 
 import com.conaxgames.util.Config;
 import me.ryanhamshire.GriefPrevention.GriefPrevention;

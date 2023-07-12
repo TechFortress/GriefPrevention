@@ -1,4 +1,4 @@
-package me.ryanhamshire.GriefPrevention.events;
+package com.conaxgames.events;
 
 import me.ryanhamshire.GriefPrevention.Claim;
 import org.bukkit.entity.Player;
