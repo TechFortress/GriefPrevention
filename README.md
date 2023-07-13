@@ -1,6 +1,6 @@
 <p>
-<img align="left" width="auto" height="100vh" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
-<img align="right" width="auto" height="100vh" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
+<img align="left" width="auto" height="100%" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
+<img align="right" width="auto" height="100%" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
 </p>
 
 <h1 align="center">GriefPrevention</h1>
