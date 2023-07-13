@@ -9,6 +9,7 @@ Stop responding to grief and prevent it instead.
 - Wilderness protection and rollback - Mob griefing, firespread and more!
 - Fully customizable - Yes __EVERYTHING__ is customizable! View the [Manual](https://docs.griefprevention.com/)
 
+[Watch this video](https://youtu.be/I3FLCFam5LI) for a tutorial!
 
 
 #### Supported Minecraft Versions: 1.17 - __1.20.1__
