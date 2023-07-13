@@ -1,5 +1,5 @@
 # <p align="center">GriefPrevention
-### <p>The best anti-griefing plugin since 2011.
+### <p align="center">The best anti-griefing plugin since 2011.
 
 <p align="center">[Wiki](https://docs.griefprevention.com/) | [Chat](https://griefprevention.com/chat/) | [Discord](https://r.griefprevention.com/dumcord) | [Bug Tracker](https://github.com/TechFortress/GriefPrevention/issues) | [Downloads](https://github.com/TechFortress/GriefPrevention/releases/)
 
