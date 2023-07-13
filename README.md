@@ -7,7 +7,8 @@
 
 <h2 align="center">The best anti-griefing plugin since 2011
 <h3 align="center"><a href="https://docs.griefprevention.com/">Wiki</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://griefprevention.com/chat/">IRC Chat</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://r.griefprevention.com/dumcord/">Discord</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://github.com/TechFortress/GriefPrevention/issues">Bug Tracker</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://github.com/TechFortress/GriefPrevention/releases/">Downloads</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://github.com/TechFortress/GriefPrevention/discussions/categories/addons">Addons</a></h3>
-<br>
+
+
 Stop responding to grief and prevent it instead. 
 - Player and Admin claims - Impossible to grief!
 - Protects Entites - Mobs, pets, death loot, and more!
