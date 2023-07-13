@@ -16,6 +16,7 @@ Stop responding to grief and prevent it instead.
 
 
 [Watch this video](https://youtu.be/I3FLCFam5LI) for a tutorial!
+---
 
 
 #### Supported Minecraft Versions: 1.17 - __1.20.1__
@@ -29,9 +30,10 @@ Stop responding to grief and prevent it instead.
 ###### Be sure to check if your issue already exists before posting
 #### [IRC Chat](https://griefprevention.com/chat/) - You might be able to catch me/others here or in the [discord](https://r.griefprevention.com/dumcord/)
 ###### Please state your question and exercise patience if you use this option
-
+---
 ## Addons
 #### You can find addons for GriefPrevention in the [GitHub Discussions](https://github.com/TechFortress/GriefPrevention/discussions/categories/addons) page
 ###### Use them at your own risk as they are not affiliated with GriefPrevention
+---
 
 [![Weird flex but ok](https://bstats.org/signatures/bukkit/GriefPrevention-legacy.svg)](https://bstats.org/plugin/bukkit/GriefPrevention-legacy)
