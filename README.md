@@ -1,11 +1,10 @@
-<h1 align="center">GriefPrevention</h1>
+<img align="center" width=100% height=auto src=https://repository-images.githubusercontent.com/68339667/9b3f7c00-ce61-11ea-82d1-208eaa0606e8>
 
 <h2 align="center">The best anti-griefing plugin since 2011</h2>
 
-[<img align="center" alt="Get Help" src="https://img.shields.io/badge/Get%20Help-yellow?logo=amazoncloudwatch&logoColor=white" height="60px">](#Support)
-[<img align="center" alt="Docs" src="https://img.shields.io/badge/Docs-gray?logo=readthedocs&logoColor=white" height="60px">](https://docs.griefprevention.com/)
-[<img align="center" alt="Discord" src="https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white" height="60px">](https://r.griefprevention.com/dumcord/)
-[<img align="center" alt="Downloads" src="https://img.shields.io/badge/Downloads-green" height="60px">](https://github.com/TechFortress/GriefPrevention/releases/)
+[<img alt="Get Help" src="https://img.shields.io/badge/Get%20Help-yellow?logo=amazoncloudwatch&logoColor=white" height="70px">](#Support)
+[<img alt="Docs" src="https://img.shields.io/badge/Docs-gray?logo=readthedocs&logoColor=white" height="70px">](https://docs.griefprevention.com/)
+[<img alt="Downloads" src="https://img.shields.io/badge/Downloads-green" height="70px">](https://github.com/TechFortress/GriefPrevention/releases/)
   
 Stop responding to grief and prevent it instead. 
 - Player and Admin claims - Impossible to grief!
