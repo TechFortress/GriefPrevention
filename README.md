@@ -1,5 +1,5 @@
 <p>
-<img align="right" width="auto" height="170px" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
+<img align="right" width="auto" height="170px" href="https://griefprevention.com/" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
 <img align="left" width="auto" height="170px" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
 </p>
 
