@@ -20,7 +20,7 @@ Stop responding to grief and prevent it instead.
 [![GriefPrevention Youtube Tutorial](https://img.youtube.com/vi/I3FLCFam5LI/0.jpg)](https://www.youtube.com/watch?v=I3FLCFam5LI)
 ---
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/I3FLCFam5LI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+<iframe alt="GriefPrevention Youtube Tutorial" width="560" height="315" src="https://www.youtube.com/embed/I3FLCFam5LI" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
 ---
 
