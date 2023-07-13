@@ -2,10 +2,10 @@
 
 <h2 align="center">The best anti-griefing plugin since 2011</h2>
 
-[<img alt="Get Help" src="https://img.shields.io/badge/Get%20Help-yellow?logo=amazoncloudwatch&logoColor=white" height="60px">](#Support)
-[<img alt="Docs" src="https://img.shields.io/badge/Docs-gray?logo=readthedocs&logoColor=white" height="60px">](https://docs.griefprevention.com/)
-[<img alt="Discord" src="https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white" height="60px">](https://r.griefprevention.com/dumcord/)
-[<img alt="Downloads" src="https://img.shields.io/badge/Downloads-green" height="60px">](https://github.com/TechFortress/GriefPrevention/releases/)
+[<img align="center" alt="Get Help" src="https://img.shields.io/badge/Get%20Help-yellow?logo=amazoncloudwatch&logoColor=white" height="60px">](#Support)
+[<img align="center" alt="Docs" src="https://img.shields.io/badge/Docs-gray?logo=readthedocs&logoColor=white" height="60px">](https://docs.griefprevention.com/)
+[<img align="center" alt="Discord" src="https://img.shields.io/badge/Discord-5865F2?logo=discord&logoColor=white" height="60px">](https://r.griefprevention.com/dumcord/)
+[<img align="center" alt="Downloads" src="https://img.shields.io/badge/Downloads-green" height="60px">](https://github.com/TechFortress/GriefPrevention/releases/)
   
 Stop responding to grief and prevent it instead. 
 - Player and Admin claims - Impossible to grief!
@@ -28,7 +28,7 @@ Stop responding to grief and prevent it instead.
 #### [Issue Tracker](https://github.com/TechFortress/GriefPrevention/issues) - Got a problem or bug you can reliably reproduce? Or a feature request? Report it
 ###### Be sure to check if your issue already exists before posting
 #### [IRC Chat](https://griefprevention.com/chat/) - You might be able to catch me/others here or in the [discord](https://r.griefprevention.com/dumcord/)
-###### *Please state your question and exercise patience if you use this option
+###### Please state your question and exercise patience if you use this option
 
 ## Addons
 #### You can find addons for GriefPrevention in the [GitHub Discussions](https://github.com/TechFortress/GriefPrevention/discussions/categories/addons) page
