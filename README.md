@@ -1,7 +1,8 @@
 # GriefPrevention
 ### The best anti-griefing plugin since 2011.
 
-<p align="center"> [Wiki](https://docs.griefprevention.com/) - Bug Tracker - Chat - Discord - Downloads - Tutorials<p>
+[Wiki](https://docs.griefprevention.com/)
+
 
 Stop responding to grief and prevent it instead. 
 - Land claiming - Impossible to grief!
