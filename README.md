@@ -11,7 +11,7 @@ Stop responding to grief and prevent it instead.
 
 
 
-#### Supported Versions: 1.17 - __1.20.1__
+#### Supported Minecraft Versions: 1.17 - __1.20.1__
 ###### *Older versions can be found on the [BukkitDev](https://dev.bukkit.org/projects/grief-prevention/files) page, support might be limited
 #### Supported Platforms: Spigot, Paper, Purpur, and any server implementing the Bukkit API
 ###### *Any forge hybrids such as Mohist and Magma are unstable and support might be limited
