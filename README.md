@@ -19,7 +19,7 @@ Stop responding to grief and prevent it instead.
 
 
 #### Supported Minecraft Versions: 1.17 - __1.20.1__
-###### *Older versions can be found on the [BukkitDev](https://dev.bukkit.org/projects/grief-prevention/files) page, support might be limited
+###### Older versions can be found on the [BukkitDev](https://dev.bukkit.org/projects/grief-prevention/files) page, support might be limited
 #### Supported Platforms: Spigot, Paper, Purpur, and any server implementing the Bukkit API
 ###### *Any forge hybrids such as Mohist and Magma are unstable and support might be limited
 ---
@@ -27,7 +27,11 @@ Stop responding to grief and prevent it instead.
 ## Support
 #### [Issue Tracker](https://github.com/TechFortress/GriefPrevention/issues) - Got a problem or bug you can reliably reproduce? Or a feature request? Report it
 ###### *Be sure to check if your issue already exists before posting
-#### [IRC Chat](https://griefprevention.com/chat/) - You might be able to catch me/other here
+#### [IRC Chat](https://griefprevention.com/chat/) - You might be able to catch me/others here
 ###### *Please state your question and exercise patience if you use this option
-#### [Discord](https://r.griefprevention.com/dumcord/)
+
+## Addons
+#### You can find addons for GriefPrevention in the [GitHub Discussions](https://github.com/TechFortress/GriefPrevention/discussions/categories/addons) page
+###### Use them at your own risk as they are not affiliated with GriefPrevention
+
 [![Weird flex but ok](https://bstats.org/signatures/bukkit/GriefPrevention-legacy.svg)](https://bstats.org/plugin/bukkit/GriefPrevention-legacy)
