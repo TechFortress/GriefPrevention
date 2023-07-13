@@ -1,4 +1,7 @@
+<p>
 <img align="right" width="auto" height="180px" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
+<img align="left" width="auto" height="180px" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
+</p>
 
 <h1 align="center">GriefPrevention</h1>
 
