@@ -1,7 +1,7 @@
-<img align="right" width="auto" height="200px" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
-<img align="left" width="auto" height="200px" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
+<img align="right" width="auto" height="150px" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
+<img align="left" width="auto" height="150px" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
 <h1 align="center">GriefPrevention</h1>
----
+
 <h2 align="center">The best anti-griefing plugin since 2011
 <h3 align="center"><a href="https://docs.griefprevention.com/">Wiki</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://griefprevention.com/chat/">IRC Chat</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://r.griefprevention.com/dumcord/">Discord</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://github.com/TechFortress/GriefPrevention/issues">Bug Tracker</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://github.com/TechFortress/GriefPrevention/releases/">Downloads</a>&nbsp;&nbsp;|&nbsp;&nbsp;<a href="https://github.com/TechFortress/GriefPrevention/discussions/categories/addons">Addons</a></h3>
 
