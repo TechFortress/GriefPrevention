@@ -1,7 +1,7 @@
 # GriefPrevention
 ### The best anti-griefing plugin since 2011.
 
-[Wiki](https://docs.griefprevention.com/)
+[Wiki](https://docs.griefprevention.com/) | [Chat](https://griefprevention.com/chat/) | [Discord](https://r.griefprevention.com/dumcord) | [Bug Tracker](https://github.com/TechFortress/GriefPrevention/issues)
 
 
 Stop responding to grief and prevent it instead. 
