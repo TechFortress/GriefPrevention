@@ -8,6 +8,9 @@ Stop responding to grief and prevent it instead.
 - Anti-spam protection - Warns, softmuting, filters, commands and more!
 - Wilderness protection and rollback - Mob griefing, firespread and more!
 - Fully customizable - EVERYTHING is customizable!
+
+Supported Versions: [1.17-1.20.1]
+Support Platforms: Bukkit/Spigot, Paper, Purpur, or any server implementing the Bukkit API
 ---
 
 [![Weird flex but ok](https://bstats.org/signatures/bukkit/GriefPrevention-legacy.svg)](https://bstats.org/plugin/bukkit/GriefPrevention-legacy)
