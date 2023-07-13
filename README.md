@@ -1,7 +1,7 @@
-<p>
+<!-- <p>
 <img align="left" width="auto" height="100%" src="/gp logo 170x170.png">
 <img align="right" width="auto" height="100%" src="/gp logo 170x170.png">
-</p>
+</p> -->
 
 <h1 align="center">GriefPrevention</h1>
 
