@@ -16,19 +16,16 @@ Stop responding to grief and prevent it instead.
 - Fully customizable - Yes __<ins>EVERYTHING<ins>__ is customizable! View the [Docs](https://docs.griefprevention.com/)
 
 ---
-
 #### Supported Minecraft Versions: 1.17 - <ins>1.20.1<ins>
 ###### Older versions can be found on the [BukkitDev](https://dev.bukkit.org/projects/grief-prevention/files) page, support might be limited
 #### Supported Platforms: Spigot, Paper, Purpur, and any server implementing the Bukkit API
 ###### Any forge hybrids such as Mohist and Magma are unstable and support might be limited
 ---
-
 ## Tutorial
 
 ##### [Watch this video](https://www.youtube.com/watch?v=I3FLCFam5LI) to learn how to use GriefPrevention in game.
 [![GriefPrevention Youtube Tutorial](https://img.youtube.com/vi/I3FLCFam5LI/0.jpg)](https://www.youtube.com/watch?v=I3FLCFam5LI)
 ---
-
 ## Support
 #### [Issue Tracker](https://github.com/TechFortress/GriefPrevention/issues) - Got a problem or bug you can reliably reproduce? Or a feature request? Report it
 ###### Be sure to check if your issue already exists before posting
