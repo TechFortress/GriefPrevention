@@ -14,10 +14,12 @@ Stop responding to grief and prevent it instead.
 - Anti-spam protection - Warns, softmuting, filters, commands and more!
 - Wilderness protection and rollback - Prevent mob griefing, firespread and more!
 - Fully customizable - Yes __<ins>EVERYTHING<ins>__ is customizable! View the [Docs](https://docs.griefprevention.com/)
+
 ---
 
 ## Tutorial
-[Watch this video](https://www.youtube.com/watch?v=I3FLCFam5LI) to learn how to use GriefPrevention in game.
+
+##### [Watch this video](https://www.youtube.com/watch?v=I3FLCFam5LI) to learn how to use GriefPrevention in game.
 [![GriefPrevention Youtube Tutorial](https://img.youtube.com/vi/I3FLCFam5LI/0.jpg)](https://www.youtube.com/watch?v=I3FLCFam5LI)
 ---
 
