@@ -1,6 +1,6 @@
-
 <img align="left" width="auto" height="100px" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
-<img align="right" width="auto" height="100px" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
+
+[//]<img align="right" width="auto" height="100px" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
 <h1 align="center">GriefPrevention</h1>
 
 <h2 align="center">The best anti-griefing plugin since 2011
