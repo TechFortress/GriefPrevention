@@ -13,7 +13,8 @@ Stop responding to grief and prevent it instead.
 
 #### Supported Versions: 1.17 - 1.20.1
 ###### *Older versions can be found on the [BukkitDev](https://dev.bukkit.org/projects/grief-prevention/files) page, support might be limited
-#### Supported Platforms: Bukkit/Spigot, Paper, Purpur, or any server implementing the Bukkit API
+#### Supported Platforms: Spigot, Paper, Purpur, and any server implementing the Bukkit API
+###### *Any forge hybrids such as Mohist and Magma are unstable and support might be limited
 ---
 
 [![Weird flex but ok](https://bstats.org/signatures/bukkit/GriefPrevention-legacy.svg)](https://bstats.org/plugin/bukkit/GriefPrevention-legacy)
