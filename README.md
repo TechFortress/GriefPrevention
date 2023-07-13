@@ -1,6 +1,6 @@
-<img align="center" width=100% height=auto src=https://repository-images.githubusercontent.com/68339667/9b3f7c00-ce61-11ea-82d1-208eaa0606e8>
+<img alt="GriefPrevention" align="center" width=100% height=auto src=https://repository-images.githubusercontent.com/68339667/9b3f7c00-ce61-11ea-82d1-208eaa0606e8>
 
-<h2 align="center">The best anti-griefing plugin since 2011</h2>
+<h1 align="center">The best anti-griefing plugin since 2011</h1>
 
 [<img alt="Get Help" src="https://img.shields.io/badge/Get%20Help-yellow?logo=amazoncloudwatch&logoColor=white" height="70px">](#Support)
 [<img alt="Docs" src="https://img.shields.io/badge/Docs-gray?logo=readthedocs&logoColor=white" height="70px">](https://docs.griefprevention.com/)
