@@ -13,5 +13,3 @@ Stop responding to grief and prevent it instead.
 ---
 
 [![Weird flex but ok](https://bstats.org/signatures/bukkit/GriefPrevention-legacy.svg)](https://bstats.org/plugin/bukkit/GriefPrevention-legacy)
-</html>
-
