@@ -2,9 +2,11 @@
 
 <h1 align="center">The best anti-griefing plugin since 2011</h1>
 
-[<img alt="Get Help" src="https://img.shields.io/badge/Get%20Help-yellow?logo=amazoncloudwatch&logoColor=white" height="70px">](#Support)
-[<img alt="Docs" src="https://img.shields.io/badge/Docs-gray?logo=readthedocs&logoColor=white" height="70px">](https://docs.griefprevention.com/)
-[<img alt="Downloads" src="https://img.shields.io/badge/Downloads-green" height="70px">](https://github.com/TechFortress/GriefPrevention/releases/)
+<p align="center">
+<a href="#Support"><img alt="Get Help" src="https://img.shields.io/badge/Get%20Help-yellow?logo=amazoncloudwatch&logoColor=white" height="70px"></a>
+<a href="https://docs.griefprevention.com/"><img alt="Docs" src="https://img.shields.io/badge/Docs-gray?logo=readthedocs&logoColor=white" height="70px"></a>
+<a href="https://github.com/TechFortress/GriefPrevention/releases/"><img alt="Downloads" src="https://img.shields.io/badge/Downloads-green" height="70px"></a>
+</p>
   
 Stop responding to grief and prevent it instead. 
 - Player and Admin claims - Impossible to grief!
