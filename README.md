@@ -7,11 +7,11 @@ Stop responding to grief and prevent it instead.
 - Protects Entites - Mobs, pets, death loot, and more!
 - Anti-spam protection - Warns, softmuting, filters, commands and more!
 - Wilderness protection and rollback - Mob griefing, firespread and more!
-- Fully customizable - __EVERYTHING__ is customizable! Check the [Docs](https://docs.griefprevention.com/)
+- Fully customizable - Yes __EVERYTHING__ is customizable! View the [Manual](https://docs.griefprevention.com/)
 
 
 
-#### Supported Versions: 1.17 - __**1.20.1**__
+#### Supported Versions: 1.17 - __1.20.1__
 ###### *Older versions can be found on the [BukkitDev](https://dev.bukkit.org/projects/grief-prevention/files) page, support might be limited
 #### Supported Platforms: Spigot, Paper, Purpur, and any server implementing the Bukkit API
 ###### *Any forge hybrids such as Mohist and Magma are unstable and support might be limited
