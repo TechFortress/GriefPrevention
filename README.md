@@ -9,6 +9,8 @@ Stop responding to grief and prevent it instead.
 - Wilderness protection and rollback - Mob griefing, firespread and more!
 - Fully customizable - Yes __<ins>EVERYTHING<ins>__ is customizable! View the [Manual](https://docs.griefprevention.com/)
 
+<img align="right" src="https://media.forgecdn.net/avatars/73/181/636163527796328705.png">
+
 [Watch this video](https://youtu.be/I3FLCFam5LI) for a tutorial!
 
 
