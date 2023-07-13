@@ -12,7 +12,7 @@ Stop responding to grief and prevent it instead.
 - Player and Admin claims - Impossible to grief!
 - Protects Entites - Mobs, pets, death loot, and more!
 - Anti-spam protection - Warns, softmuting, filters, commands and more!
-- Wilderness protection and rollback - Mob griefing, firespread and more!
+- Wilderness protection and rollback - Prevent Mob griefing, firespread and more!
 - Fully customizable - Yes __<ins>EVERYTHING<ins>__ is customizable! View the [Manual](https://docs.griefprevention.com/)
 
 
