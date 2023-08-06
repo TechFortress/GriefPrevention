@@ -335,11 +335,11 @@ public class EntityEventHandler implements Listener
     //Don't let people drop in TNT through end portals
     //Necessarily this shouldn't be an issue anyways since the platform is obsidian...
     @EventHandler(ignoreCancelled = true)
-    void onTNTExitPortal(EntityPortalExitEvent event)
+    void onTNTExitPortal(EntityPortalEnterEvent event)
     {
         if (event.getEntityType() != EntityType.PRIMED_TNT)
             return;
-        if (event.getTo().getWorld().getEnvironment() != Environment.THE_END)
+        if (event.getLocation().getBlock().getType() == Material.END_PORTAL)
             return;
         event.getEntity().remove();
     }
