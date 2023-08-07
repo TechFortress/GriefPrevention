@@ -61,8 +61,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -710,7 +710,7 @@ public class GriefPrevention extends JavaPlugin
         }
 
         //default siege blocks
-        this.config_siege_blocks = EnumSet.noneOf(Material.class);
+        this.config_siege_blocks = new HashSet<>();
         this.config_siege_blocks.add(Material.DIRT);
         this.config_siege_blocks.add(Material.GRASS_BLOCK);
         this.config_siege_blocks.add(Material.GRASS);
@@ -3595,7 +3595,7 @@ public class GriefPrevention extends JavaPlugin
 
     private Set<Material> parseMaterialListFromConfig(List<String> stringsToParse)
     {
-        Set<Material> materials = EnumSet.noneOf(Material.class);
+        Set<Material> materials = new HashSet<>();
 
         //for each string in the list
         for (int i = 0; i < stringsToParse.size(); i++)

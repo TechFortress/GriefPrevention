@@ -18,8 +18,8 @@
 
 package me.ryanhamshire.GriefPrevention;
 
-import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import me.ryanhamshire.GriefPrevention.events.ClaimPermissionCheckEvent;
+import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
@@ -42,7 +42,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -331,7 +330,7 @@ public class Claim
         return supplier != null ? supplier.get() : null;
     }
 
-    private static final Set<Material> PLACEABLE_FARMING_BLOCKS = EnumSet.of(
+    private static final Set<Material> PLACEABLE_FARMING_BLOCKS = Set.of(
             Material.PUMPKIN_STEM,
             Material.WHEAT,
             Material.MELON_STEM,
