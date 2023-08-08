@@ -483,9 +483,25 @@ public class EntityDamageHandler implements Listener
         // Wolves are exempt from pet protections in PVP worlds due to their offensive nature.
         if (event.getEntity().getType() == EntityType.WOLF) return true;
 
-        if (!instance.config_pvp_protectPets) return false;
+        Claim claim;
+        // Note: Internal name is not descriptive. Actual node is "GriefPrevention.PVP.ProtectPetsOutsideLandClaims"
+        if (!instance.config_pvp_protectPets)
+        {
+            claim = dataStore.getClaimAt(event.getEntity().getLocation(), false, attackerData.lastClaim);
+            if (claim == null)
+            {
+                // Pet is not in a claim, allow attack.
+                return true;
+            }
+            attackerData.lastClaim = claim;
+        }
+        else
+        {
+            // Create a dummy claim to signify blanket pet protection.
+            claim = new Claim(event.getEntity().getLocation(), event.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null);
+        }
 
-        PreventPvPEvent pvpEvent = new PreventPvPEvent(new Claim(event.getEntity().getLocation(), event.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null), attacker, pet);
+        PreventPvPEvent pvpEvent = new PreventPvPEvent(claim, attacker, pet);
         Bukkit.getPluginManager().callEvent(pvpEvent);
         if (!pvpEvent.isCancelled())
         {
