@@ -480,24 +480,23 @@ public class EntityDamageHandler implements Listener
             return true;
         }
 
-        if (instance.config_pvp_protectPets)
-        {
-            // Wolves are exempt from pet protections in PVP worlds due to their offensive nature.
-            if (event.getEntity().getType() == EntityType.WOLF) return true;
+        // Wolves are exempt from pet protections in PVP worlds due to their offensive nature.
+        if (event.getEntity().getType() == EntityType.WOLF) return true;
 
-            PreventPvPEvent pvpEvent = new PreventPvPEvent(new Claim(event.getEntity().getLocation(), event.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null), attacker, pet);
-            Bukkit.getPluginManager().callEvent(pvpEvent);
-            if (!pvpEvent.isCancelled())
+        if (!instance.config_pvp_protectPets) return false;
+
+        PreventPvPEvent pvpEvent = new PreventPvPEvent(new Claim(event.getEntity().getLocation(), event.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null), attacker, pet);
+        Bukkit.getPluginManager().callEvent(pvpEvent);
+        if (!pvpEvent.isCancelled())
+        {
+            event.setCancelled(true);
+            if (sendMessages)
             {
-                event.setCancelled(true);
-                if (sendMessages)
-                {
-                    String ownerName = GriefPrevention.lookupPlayerName(owner);
-                    String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
-                    if (attacker.hasPermission("griefprevention.ignoreclaims"))
-                        message += "  " + dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
-                    GriefPrevention.sendMessage(attacker, TextMode.Err, message);
-                }
+                String ownerName = GriefPrevention.lookupPlayerName(owner);
+                String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
+                if (attacker.hasPermission("griefprevention.ignoreclaims"))
+                    message += "  " + dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                GriefPrevention.sendMessage(attacker, TextMode.Err, message);
             }
         }
         return true;
