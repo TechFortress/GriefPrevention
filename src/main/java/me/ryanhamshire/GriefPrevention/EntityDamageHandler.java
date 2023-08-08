@@ -713,10 +713,18 @@ public class EntityDamageHandler implements Listener
             @Nullable Player attacker,
             boolean sendMessages)
     {
-        if (!(event.getEntity() instanceof Tameable tameable) || !tameable.isTamed()) return false;
+        if (!(event.getEntity() instanceof Tameable tameable) || !tameable.isTamed())
+        {
+            // If the animal is not owned, specifically allow attacks only if the animal is a wolf.
+            return event.getEntityType() == EntityType.WOLF;
+        }
 
         AnimalTamer owner = tameable.getOwner();
-        if (owner == null) return false;
+        if (owner == null)
+        {
+            // Treat invalid state of tamed with no owner identically to untamed.
+            return tameable.getType() == EntityType.WOLF;
+        }
 
         //limit attacks by players to owners and admins in ignore claims mode
         if (attacker == null) return false;
