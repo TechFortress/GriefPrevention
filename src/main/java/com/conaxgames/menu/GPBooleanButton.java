@@ -36,7 +36,7 @@ public class GPBooleanButton extends Button
                 description.addAll(FormatUtil.wordWrap(line));
             });
         } else {
-            description.add(CC.GRAY + "Aborts this process.");
+            description.add(CC.GRAY + "Cancels this process.");
         }
 
         return description;

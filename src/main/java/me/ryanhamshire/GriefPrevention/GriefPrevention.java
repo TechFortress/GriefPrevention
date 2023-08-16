@@ -28,6 +28,7 @@ import me.ryanhamshire.GriefPrevention.events.PreventBlockBreakEvent;
 import me.ryanhamshire.GriefPrevention.events.SaveTrappedPlayerEvent;
 import me.ryanhamshire.GriefPrevention.events.TrustChangedEvent;
 import me.ryanhamshire.GriefPrevention.metrics.MetricsHandler;
+import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.BanList;
 import org.bukkit.BanList.Type;
@@ -72,6 +73,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -2256,6 +2258,7 @@ public class GriefPrevention extends JavaPlugin
                     String.valueOf((playerData.getAccruedClaimBlocks() + playerData.getBonusClaimBlocks() + this.dataStore.getGroupBonusBlocks(otherPlayer.getUniqueId()))));
             if (claims.size() > 0)
             {
+                GriefPrevention.sendMessage(player, TextMode.Info, " ");
                 GriefPrevention.sendMessage(player, TextMode.Instr, Messages.ClaimsListHeader);
                 for (int i = 0; i < playerData.getClaims().size(); i++)
                 {
@@ -2977,32 +2980,50 @@ public class GriefPrevention extends JavaPlugin
         }
         else
         {
-            //delete it
-            claim.removeSurfaceFluids(null);
-            this.dataStore.deleteClaim(claim, true, false);
 
-            //if in a creative mode world, restore the claim area
-            if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()))
-            {
-                GriefPrevention.AddLogEntry(player.getName() + " abandoned a claim @ " + GriefPrevention.getfriendlyLocationString(claim.getLesserBoundaryCorner()));
-                GriefPrevention.sendMessage(player, TextMode.Warn, Messages.UnclaimCleanupWarning);
-                GriefPrevention.instance.restoreClaim(claim, 20L * 60 * 2);
-            }
+            // start conaxgames
+            List<String> description = new ArrayList<>();
+            description.add(CC.GRAY + "Are you sure you want to un-claim this?");
+            description.add(" ");
+            description.add(CC.RED + "We can't refund your claim!");
+            description.add(" ");
+            description.add(CC.B_YELLOW + "ARE YOU SURE?");
 
-            //adjust claim blocks when abandoning a top level claim
-            if (this.config_claims_abandonReturnRatio != 1.0D && claim.parent == null && claim.ownerID.equals(playerData.playerID))
-            {
-                playerData.setAccruedClaimBlocks(playerData.getAccruedClaimBlocks() - (int) Math.ceil((claim.getArea() * (1 - this.config_claims_abandonReturnRatio))));
-            }
+            new GPConfirmMenu("Are you sure?", response -> {
+                if (response)
+                {
+                    //delete it
+                    claim.removeSurfaceFluids(null);
+                    this.dataStore.deleteClaim(claim, true, false);
 
-            //tell the player how many claim blocks he has left
-            int remainingBlocks = playerData.getRemainingClaimBlocks();
-            GriefPrevention.sendMessage(player, TextMode.Success, Messages.AbandonSuccess, String.valueOf(remainingBlocks));
+                    //if in a creative mode world, restore the claim area
+                    if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()))
+                    {
+                        GriefPrevention.AddLogEntry(player.getName() + " abandoned a claim @ " + GriefPrevention.getfriendlyLocationString(claim.getLesserBoundaryCorner()));
+                        GriefPrevention.sendMessage(player, TextMode.Warn, Messages.UnclaimCleanupWarning);
+                        GriefPrevention.instance.restoreClaim(claim, 20L * 60 * 2);
+                    }
 
-            //revert any current visualization
-            playerData.setVisibleBoundaries(null);
+                    //adjust claim blocks when abandoning a top level claim
+                    if (this.config_claims_abandonReturnRatio != 1.0D && claim.parent == null && claim.ownerID.equals(playerData.playerID))
+                    {
+                        playerData.setAccruedClaimBlocks(playerData.getAccruedClaimBlocks() - (int) Math.ceil((claim.getArea() * (1 - this.config_claims_abandonReturnRatio))));
+                    }
 
-            playerData.warnedAboutMajorDeletion = false;
+                    //tell the player how many claim blocks he has left
+                    int remainingBlocks = playerData.getRemainingClaimBlocks();
+                    GriefPrevention.sendMessage(player, TextMode.Success, Messages.AbandonSuccess, String.valueOf(remainingBlocks));
+
+                    //revert any current visualization
+                    playerData.setVisibleBoundaries(null);
+
+                    playerData.warnedAboutMajorDeletion = false;
+                } else {
+                    player.sendMessage(ChatColor.YELLOW + "Your claim has not changed...");
+                }
+            }, description).openMenu(player);
+            // end conaxgames
+
         }
 
         return true;
