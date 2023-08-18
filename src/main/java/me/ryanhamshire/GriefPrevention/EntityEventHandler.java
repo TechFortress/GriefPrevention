@@ -337,6 +337,8 @@ public class EntityEventHandler implements Listener
     @EventHandler(ignoreCancelled = true)
     void onTNTExitPortal(EntityPortalEnterEvent event)
     {
+        if(!GriefPrevention.instance.config_BlockTNTTeleport)
+            return;
         if (event.getEntityType() != EntityType.PRIMED_TNT)
             return;
         if (event.getLocation().getBlock().getType() == Material.END_PORTAL)

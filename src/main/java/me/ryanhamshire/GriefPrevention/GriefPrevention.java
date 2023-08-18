@@ -215,6 +215,7 @@ public class GriefPrevention extends JavaPlugin
     public boolean config_creaturesTrampleCrops;                    //whether or not non-player entities may trample crops
     public boolean config_rabbitsEatCrops;                          //whether or not rabbits may eat crops
     public boolean config_zombiesBreakDoors;                        //whether or not hard-mode zombies may break down wooden doors
+    public boolean config_BlockTNTTeleport;                         //whether or not TNT is blocked from teleport against END_PORTAL blocks
 
     public int config_ipLimit;                                      //how many players can share an IP address
 
@@ -653,6 +654,7 @@ public class GriefPrevention extends JavaPlugin
         this.config_creaturesTrampleCrops = config.getBoolean("GriefPrevention.CreaturesTrampleCrops", false);
         this.config_rabbitsEatCrops = config.getBoolean("GriefPrevention.RabbitsEatCrops", true);
         this.config_zombiesBreakDoors = config.getBoolean("GriefPrevention.HardModeZombiesBreakDoors", false);
+        this.config_BlockTNTTeleport = config.getBoolean("GriefPrevention.BlockTNTTeleport", false);
         this.config_ban_useCommand = config.getBoolean("GriefPrevention.UseBanCommand", false);
         this.config_ban_commandFormat = config.getString("GriefPrevention.BanCommandPattern", "ban %name% %reason%");
 
@@ -911,6 +913,7 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.CreaturesTrampleCrops", this.config_creaturesTrampleCrops);
         outConfig.set("GriefPrevention.RabbitsEatCrops", this.config_rabbitsEatCrops);
         outConfig.set("GriefPrevention.HardModeZombiesBreakDoors", this.config_zombiesBreakDoors);
+        outConfig.set("GriefPrevention.BlockTNTTeleport", this.config_BlockTNTTeleport);
 
         outConfig.set("GriefPrevention.Database.URL", this.databaseUrl);
         outConfig.set("GriefPrevention.Database.UserName", this.databaseUserName);
