@@ -136,9 +136,11 @@ public class EntityEventHandler implements Listener
         else if (event.getEntityType() == EntityType.WITHER)
         {
             Claim claim = this.dataStore.getClaimAt(event.getBlock().getLocation(), false, null);
-            if (claim == null || !claim.areExplosivesAllowed || !GriefPrevention.instance.config_blockClaimExplosions)
-            {
-                event.setCancelled(true);
+            if(claim != null) {
+                if (!claim.areExplosivesAllowed || !GriefPrevention.instance.config_blockClaimExplosions)
+                {
+                    event.setCancelled(true);
+                }
             }
         }
 
