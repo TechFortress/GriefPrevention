@@ -1159,7 +1159,7 @@ class PlayerEventHandler implements Listener
     }
 
     //when a player interacts with a specific part of entity...
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent event)
     {
         //treat it the same as interacting with an entity in general
@@ -1170,7 +1170,7 @@ class PlayerEventHandler implements Listener
     }
 
     //when a player interacts with an entity...
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event)
     {
         Player player = event.getPlayer();
@@ -1610,7 +1610,7 @@ class PlayerEventHandler implements Listener
     }
 
     //when a player interacts with the world
-    @EventHandler(priority = EventPriority.LOWEST)
+    @EventHandler(priority = EventPriority.LOW)
     void onPlayerInteract(PlayerInteractEvent event)
     {
         //not interested in left-click-on-air actions
