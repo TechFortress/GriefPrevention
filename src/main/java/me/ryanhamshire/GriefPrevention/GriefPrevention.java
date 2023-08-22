@@ -61,6 +61,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -3697,7 +3698,7 @@ public class GriefPrevention extends JavaPlugin
         else
         {
             BanList bans = Bukkit.getServer().getBanList(Type.NAME);
-            bans.addBan(player.getName(), reason, null, source);
+            bans.addBan(player.getName(), reason, (Date) null, source);
 
             //kick
             if (player.isOnline())

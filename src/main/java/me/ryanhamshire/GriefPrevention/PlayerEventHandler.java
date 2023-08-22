@@ -35,7 +35,6 @@ import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.Sign;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.block.data.Waterlogged;
@@ -81,6 +80,7 @@ import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerSignOpenEvent;
 import org.bukkit.event.player.PlayerTakeLecternBookEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
@@ -92,6 +92,7 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.BlockIterator;
+import org.jetbrains.annotations.NotNull;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -1586,6 +1587,28 @@ class PlayerEventHandler implements Listener
         }
     }
 
+    @EventHandler(priority = EventPriority.LOW)
+    void onPlayerSignOpen(@NotNull PlayerSignOpenEvent event)
+    {
+        if (event.getCause() != PlayerSignOpenEvent.Cause.INTERACT || event.getSign().getBlock().getType() != event.getSign().getType())
+        {
+            // If the sign is not opened by interaction or the corresponding block is no longer a sign,
+            // it is either the initial sign placement or another plugin is at work. Do not interfere.
+            return;
+        }
+
+        Player player = event.getPlayer();
+        String denial = instance.allowBuild(player, event.getSign().getLocation(), event.getSign().getType());
+
+        // If user is allowed to build, do nothing.
+        if (denial == null)
+            return;
+
+        // If user is not allowed to build, prevent sign UI opening and send message.
+        GriefPrevention.sendMessage(player, TextMode.Err, denial);
+        event.setCancelled(true);
+    }
+
     //when a player interacts with the world
     @EventHandler(priority = EventPriority.LOWEST)
     void onPlayerInteract(PlayerInteractEvent event)
@@ -1811,10 +1834,7 @@ class PlayerEventHandler implements Listener
                                 clickedBlockType == Material.COMPARATOR ||
                                 clickedBlockType == Material.REDSTONE_WIRE ||
                                 Tag.FLOWER_POTS.isTagged(clickedBlockType) ||
-                                Tag.CANDLES.isTagged(clickedBlockType) ||
-                                // Only block interaction with un-editable signs to allow command signs to function.
-                                // TODO: When we are required to update Spigot API to 1.20 to support a change, swap to Sign#isWaxed
-                                Tag.SIGNS.isTagged(clickedBlockType) && clickedBlock.getState() instanceof Sign sign && sign.isEditable()
+                                Tag.CANDLES.isTagged(clickedBlockType)
                 ))
         {
             if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
