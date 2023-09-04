@@ -297,10 +297,27 @@ permissions:
     griefprevention.lava:
         description: Grants permission to place lava near the surface and outside of claims.
         default: op
-    griefprevention.eavesdrop:
+    griefprevention.eavesdrop.*:
+        description: Allows a player to see signs, whispered chat messages (/tell) and softmuted messages.
+        default: op
+        children:
+            griefprevention.eavesdrop.messages.public: true
+            griefprevention.eavesdrop.messages.private: true
+            griefprevention.eavesdrop.signs: true
+            griefprevention.eavesdrop.immune: false
+    griefprevention.eavesdrop.messages.*:
         description: Allows a player to see whispered chat messages (/tell) and softmuted messages.
         default: op
-    griefprevention.eavesdropsigns:
+        children:
+            griefprevention.eavesdrop.messages.public: true
+            griefprevention.eavesdrop.messages.private: true
+    griefprevention.eavesdrop.messages.public:
+        description: Allows a player to see softmuted messages.
+        default: op
+    griefprevention.eavesdrop.messages.private:
+        description: Allows a player to see whispered chat messages (/tell)
+        default: op
+    griefprevention.eavesdrop.signs:
         description: Allows a player to see sign placements as chat messages.
         default: op
     griefprevention.restorenatureaggressive:
@@ -348,7 +365,7 @@ permissions:
     griefprevention.seeinactivity:
         description: Players with this permission can see how long a claim owner has been offline.
         default: op
-    griefprevention.eavesdropimmune:
+    griefprevention.eavesdrop.immune:
         description: Players with this permission can't have their private messages eavesdropped.
         default: op
     griefprevention.siegeteleport:
