@@ -210,6 +210,7 @@ public class GriefPrevention extends JavaPlugin
     public boolean config_smartBan;                                    //whether to ban accounts which very likely owned by a banned player
 
     public boolean config_endermenMoveBlocks;                        //whether or not endermen may move blocks around
+    public boolean config_endPortalTNTProtection;                    //whether or not tnt can go through the end portal 
     public boolean config_claims_ravagersBreakBlocks;                //whether or not ravagers may break blocks in claims
     public boolean config_silverfishBreakBlocks;                    //whether silverfish may break blocks
     public boolean config_creaturesTrampleCrops;                    //whether or not non-player entities may trample crops
@@ -230,6 +231,7 @@ public class GriefPrevention extends JavaPlugin
     public boolean config_advanced_fixNegativeClaimblockAmounts;    //whether to attempt to fix negative claim block amounts (some addons cause/assume players can go into negative amounts)
     public int config_advanced_claim_expiration_check_rate;            //How often GP should check for expired claims, amount in seconds
     public int config_advanced_offlineplayer_cache_days;            //Cache players who have logged in within the last x number of days
+
 
     //custom log settings
     public int config_logs_daysToKeep;
@@ -649,6 +651,7 @@ public class GriefPrevention extends JavaPlugin
         this.config_silenceBans = config.getBoolean("GriefPrevention.SilenceBans", true);
 
         this.config_endermenMoveBlocks = config.getBoolean("GriefPrevention.EndermenMoveBlocks", false);
+        this.config_endPortalTNTProtection = config.getBoolean("GriefPrevention.EndPortalTNTProtection", true);
         this.config_silverfishBreakBlocks = config.getBoolean("GriefPrevention.SilverfishBreakBlocks", false);
         this.config_creaturesTrampleCrops = config.getBoolean("GriefPrevention.CreaturesTrampleCrops", false);
         this.config_rabbitsEatCrops = config.getBoolean("GriefPrevention.RabbitsEatCrops", true);
@@ -907,6 +910,7 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.Siege.DoorsOpenDelayInSeconds", this.config_siege_doorsOpenSeconds);
         outConfig.set("GriefPrevention.Siege.CooldownEndInMinutes", this.config_siege_cooldownEndInMinutes);
         outConfig.set("GriefPrevention.EndermenMoveBlocks", this.config_endermenMoveBlocks);
+        outConfig.set("GriefPrevention.EndPortalTNTProtection", this.config_endPortalTNTProtection);
         outConfig.set("GriefPrevention.SilverfishBreakBlocks", this.config_silverfishBreakBlocks);
         outConfig.set("GriefPrevention.CreaturesTrampleCrops", this.config_creaturesTrampleCrops);
         outConfig.set("GriefPrevention.RabbitsEatCrops", this.config_rabbitsEatCrops);
