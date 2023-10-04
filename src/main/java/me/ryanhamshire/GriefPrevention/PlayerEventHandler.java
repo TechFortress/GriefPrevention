@@ -35,7 +35,6 @@ import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.Sign;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.block.data.Waterlogged;
@@ -81,6 +80,7 @@ import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerSignOpenEvent;
 import org.bukkit.event.player.PlayerTakeLecternBookEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
@@ -92,13 +92,13 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.BlockIterator;
+import org.jetbrains.annotations.NotNull;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -130,6 +130,9 @@ class PlayerEventHandler implements Listener
 
     //spam tracker
     SpamDetector spamDetector = new SpamDetector();
+    // Definitions for specific material groups that do not have a tag
+    private final Set<Material> spawnEggs;
+    private final Set<Material> dyes;
 
     //typical constructor, yawn
     PlayerEventHandler(DataStore dataStore, GriefPrevention plugin)
@@ -137,6 +140,16 @@ class PlayerEventHandler implements Listener
         this.dataStore = dataStore;
         this.instance = plugin;
         bannedWordFinder = new WordFinder(instance.dataStore.loadBannedWords());
+
+        spawnEggs = new HashSet<>();
+        dyes = new HashSet<>();
+        for (Material material : Material.values())
+        {
+            if (material.name().endsWith("_SPAWN_EGG"))
+                spawnEggs.add(material);
+            else if (material.name().endsWith("_DYE"))
+                dyes.add(material);
+        }
     }
 
     protected void resetPattern()
@@ -1159,7 +1172,7 @@ class PlayerEventHandler implements Listener
     }
 
     //when a player interacts with a specific part of entity...
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent event)
     {
         //treat it the same as interacting with an entity in general
@@ -1170,7 +1183,7 @@ class PlayerEventHandler implements Listener
     }
 
     //when a player interacts with an entity...
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event)
     {
         Player player = event.getPlayer();
@@ -1445,8 +1458,8 @@ class PlayerEventHandler implements Listener
     }
 
     //block use of buckets within other players' claims
-    private final Set<Material> commonAdjacentBlocks_water = EnumSet.of(Material.WATER, Material.FARMLAND, Material.DIRT, Material.STONE);
-    private final Set<Material> commonAdjacentBlocks_lava = EnumSet.of(Material.LAVA, Material.DIRT, Material.STONE);
+    private final Set<Material> commonAdjacentBlocks_water = Set.of(Material.WATER, Material.FARMLAND, Material.DIRT, Material.STONE);
+    private final Set<Material> commonAdjacentBlocks_lava = Set.of(Material.LAVA, Material.DIRT, Material.STONE);
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onPlayerBucketEmpty(PlayerBucketEmptyEvent bucketEvent)
@@ -1587,8 +1600,30 @@ class PlayerEventHandler implements Listener
         }
     }
 
+    @EventHandler(priority = EventPriority.LOW)
+    void onPlayerSignOpen(@NotNull PlayerSignOpenEvent event)
+    {
+        if (event.getCause() != PlayerSignOpenEvent.Cause.INTERACT || event.getSign().getBlock().getType() != event.getSign().getType())
+        {
+            // If the sign is not opened by interaction or the corresponding block is no longer a sign,
+            // it is either the initial sign placement or another plugin is at work. Do not interfere.
+            return;
+        }
+
+        Player player = event.getPlayer();
+        String denial = instance.allowBuild(player, event.getSign().getLocation(), event.getSign().getType());
+
+        // If user is allowed to build, do nothing.
+        if (denial == null)
+            return;
+
+        // If user is not allowed to build, prevent sign UI opening and send message.
+        GriefPrevention.sendMessage(player, TextMode.Err, denial);
+        event.setCancelled(true);
+    }
+
     //when a player interacts with the world
-    @EventHandler(priority = EventPriority.LOWEST)
+    @EventHandler(priority = EventPriority.LOW)
     void onPlayerInteract(PlayerInteractEvent event)
     {
         //not interested in left-click-on-air actions
@@ -1812,10 +1847,7 @@ class PlayerEventHandler implements Listener
                                 clickedBlockType == Material.COMPARATOR ||
                                 clickedBlockType == Material.REDSTONE_WIRE ||
                                 Tag.FLOWER_POTS.isTagged(clickedBlockType) ||
-                                Tag.CANDLES.isTagged(clickedBlockType) ||
-                                // Only block interaction with un-editable signs to allow command signs to function.
-                                // TODO: When we are required to update Spigot API to 1.20 to support a change, swap to Sign#isWaxed
-                                Tag.SIGNS.isTagged(clickedBlockType) && clickedBlock.getState() instanceof Sign sign && sign.isEditable()
+                                Tag.CANDLES.isTagged(clickedBlockType)
                 ))
         {
             if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
@@ -1843,22 +1875,10 @@ class PlayerEventHandler implements Listener
             ItemStack itemInHand = instance.getItemInHand(player, hand);
             Material materialInHand = itemInHand.getType();
 
-            Set<Material> spawn_eggs = new HashSet<>();
-            Set<Material> dyes = new HashSet<>();
-
-            for (Material material : Material.values())
-            {
-                if (material.isLegacy()) continue;
-                if (material.name().endsWith("_SPAWN_EGG"))
-                    spawn_eggs.add(material);
-                else if (material.name().endsWith("_DYE"))
-                    dyes.add(material);
-            }
-
             // Require build permission for items that may have an effect on the world when used.
             if (clickedBlock != null && (materialInHand == Material.BONE_MEAL
                     || materialInHand == Material.ARMOR_STAND
-                    || (spawn_eggs.contains(materialInHand) && GriefPrevention.instance.config_claims_preventGlobalMonsterEggs)
+                    || (spawnEggs.contains(materialInHand) && GriefPrevention.instance.config_claims_preventGlobalMonsterEggs)
                     || materialInHand == Material.END_CRYSTAL
                     || materialInHand == Material.FLINT_AND_STEEL
                     || materialInHand == Material.INK_SAC
@@ -1927,7 +1947,7 @@ class PlayerEventHandler implements Listener
                     materialInHand == Material.ARMOR_STAND ||
                     materialInHand == Material.ITEM_FRAME ||
                     materialInHand == Material.GLOW_ITEM_FRAME ||
-                    spawn_eggs.contains(materialInHand) ||
+                    spawnEggs.contains(materialInHand) ||
                     materialInHand == Material.INFESTED_STONE ||
                     materialInHand == Material.INFESTED_COBBLESTONE ||
                     materialInHand == Material.INFESTED_STONE_BRICKS ||

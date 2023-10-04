@@ -71,10 +71,10 @@ import org.bukkit.projectiles.ProjectileSource;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
@@ -85,7 +85,7 @@ public class BlockEventHandler implements Listener
     //convenience reference to singleton datastore
     private final DataStore dataStore;
 
-    private final EnumSet<Material> trashBlocks;
+    private final Set<Material> trashBlocks;
 
     //constructor
     public BlockEventHandler(DataStore dataStore)
@@ -93,7 +93,7 @@ public class BlockEventHandler implements Listener
         this.dataStore = dataStore;
 
         //create the list of blocks which will not trigger a warning when they're placed outside of land claims
-        this.trashBlocks = EnumSet.noneOf(Material.class);
+        this.trashBlocks = new HashSet<>();
         this.trashBlocks.add(Material.COBBLESTONE);
         this.trashBlocks.add(Material.TORCH);
         this.trashBlocks.add(Material.DIRT);
@@ -333,7 +333,7 @@ public class BlockEventHandler implements Listener
             int radius = GriefPrevention.instance.config_claims_automaticClaimsForNewPlayersRadius;
 
             //if the player doesn't have any claims yet, automatically create a claim centered at the chest
-            if (playerData.getClaims().size() == 0)
+            if (playerData.getClaims().size() == 0 && player.getGameMode() == GameMode.SURVIVAL)
             {
                 //radius == 0 means protect ONLY the chest
                 if (GriefPrevention.instance.config_claims_automaticClaimsForNewPlayersRadius == 0)

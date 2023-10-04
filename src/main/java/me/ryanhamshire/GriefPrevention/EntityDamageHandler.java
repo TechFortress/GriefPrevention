@@ -480,24 +480,39 @@ public class EntityDamageHandler implements Listener
             return true;
         }
 
-        if (instance.config_pvp_protectPets)
-        {
-            // Wolves are exempt from pet protections in PVP worlds due to their offensive nature.
-            if (event.getEntity().getType() == EntityType.WOLF) return true;
+        // Wolves are exempt from pet protections in PVP worlds due to their offensive nature.
+        if (event.getEntity().getType() == EntityType.WOLF) return true;
 
-            PreventPvPEvent pvpEvent = new PreventPvPEvent(new Claim(event.getEntity().getLocation(), event.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null), attacker, pet);
-            Bukkit.getPluginManager().callEvent(pvpEvent);
-            if (!pvpEvent.isCancelled())
+        Claim claim;
+        // Note: Internal name is not descriptive. Actual node is "GriefPrevention.PVP.ProtectPetsOutsideLandClaims"
+        if (!instance.config_pvp_protectPets)
+        {
+            claim = dataStore.getClaimAt(event.getEntity().getLocation(), false, attackerData.lastClaim);
+            if (claim == null)
             {
-                event.setCancelled(true);
-                if (sendMessages)
-                {
-                    String ownerName = GriefPrevention.lookupPlayerName(owner);
-                    String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
-                    if (attacker.hasPermission("griefprevention.ignoreclaims"))
-                        message += "  " + dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
-                    GriefPrevention.sendMessage(attacker, TextMode.Err, message);
-                }
+                // Pet is not in a claim, allow attack.
+                return true;
+            }
+            attackerData.lastClaim = claim;
+        }
+        else
+        {
+            // Create a dummy claim to signify blanket pet protection.
+            claim = new Claim(event.getEntity().getLocation(), event.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null);
+        }
+
+        PreventPvPEvent pvpEvent = new PreventPvPEvent(claim, attacker, pet);
+        Bukkit.getPluginManager().callEvent(pvpEvent);
+        if (!pvpEvent.isCancelled())
+        {
+            event.setCancelled(true);
+            if (sendMessages)
+            {
+                String ownerName = GriefPrevention.lookupPlayerName(owner);
+                String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
+                if (attacker.hasPermission("griefprevention.ignoreclaims"))
+                    message += "  " + dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                GriefPrevention.sendMessage(attacker, TextMode.Err, message);
             }
         }
         return true;
@@ -714,10 +729,18 @@ public class EntityDamageHandler implements Listener
             @Nullable Player attacker,
             boolean sendMessages)
     {
-        if (!(event.getEntity() instanceof Tameable tameable) || !tameable.isTamed()) return false;
+        if (!(event.getEntity() instanceof Tameable tameable) || !tameable.isTamed())
+        {
+            // If the animal is not owned, specifically allow attacks only if the animal is a wolf.
+            return event.getEntityType() == EntityType.WOLF;
+        }
 
         AnimalTamer owner = tameable.getOwner();
-        if (owner == null) return false;
+        if (owner == null)
+        {
+            // Treat invalid state of tamed with no owner identically to untamed.
+            return tameable.getType() == EntityType.WOLF;
+        }
 
         //limit attacks by players to owners and admins in ignore claims mode
         if (attacker == null) return false;
