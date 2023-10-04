@@ -332,18 +332,6 @@ public class EntityEventHandler implements Listener
         event.getEntity().removeMetadata("GP_FALLINGBLOCK", instance);
     }
 
-    //Don't let people drop in TNT through end portals
-    //Necessarily this shouldn't be an issue anyways since the platform is obsidian...
-    @EventHandler(ignoreCancelled = true)
-    void onTNTExitPortal(EntityPortalExitEvent event)
-    {
-        if (event.getEntityType() != EntityType.PRIMED_TNT)
-            return;
-        if (event.getTo().getWorld().getEnvironment() != Environment.THE_END)
-            return;
-        event.getEntity().remove();
-    }
-
     //don't allow zombies to break down doors
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onZombieBreakDoor(EntityBreakDoorEvent event)
