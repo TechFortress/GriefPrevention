@@ -98,7 +98,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -130,6 +129,9 @@ class PlayerEventHandler implements Listener
 
     //spam tracker
     SpamDetector spamDetector = new SpamDetector();
+    // Definitions for specific material groups that do not have a tag
+    private final Set<Material> spawnEggs;
+    private final Set<Material> dyes;
 
     //typical constructor, yawn
     PlayerEventHandler(DataStore dataStore, GriefPrevention plugin)
@@ -137,6 +139,16 @@ class PlayerEventHandler implements Listener
         this.dataStore = dataStore;
         this.instance = plugin;
         bannedWordFinder = new WordFinder(instance.dataStore.loadBannedWords());
+
+        spawnEggs = new HashSet<>();
+        dyes = new HashSet<>();
+        for (Material material : Material.values())
+        {
+            if (material.name().endsWith("_SPAWN_EGG"))
+                spawnEggs.add(material);
+            else if (material.name().endsWith("_DYE"))
+                dyes.add(material);
+        }
     }
 
     protected void resetPattern()
@@ -1445,8 +1457,8 @@ class PlayerEventHandler implements Listener
     }
 
     //block use of buckets within other players' claims
-    private final Set<Material> commonAdjacentBlocks_water = EnumSet.of(Material.WATER, Material.FARMLAND, Material.DIRT, Material.STONE);
-    private final Set<Material> commonAdjacentBlocks_lava = EnumSet.of(Material.LAVA, Material.DIRT, Material.STONE);
+    private final Set<Material> commonAdjacentBlocks_water = Set.of(Material.WATER, Material.FARMLAND, Material.DIRT, Material.STONE);
+    private final Set<Material> commonAdjacentBlocks_lava = Set.of(Material.LAVA, Material.DIRT, Material.STONE);
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onPlayerBucketEmpty(PlayerBucketEmptyEvent bucketEvent)
@@ -1843,22 +1855,10 @@ class PlayerEventHandler implements Listener
             ItemStack itemInHand = instance.getItemInHand(player, hand);
             Material materialInHand = itemInHand.getType();
 
-            Set<Material> spawn_eggs = new HashSet<>();
-            Set<Material> dyes = new HashSet<>();
-
-            for (Material material : Material.values())
-            {
-                if (material.isLegacy()) continue;
-                if (material.name().endsWith("_SPAWN_EGG"))
-                    spawn_eggs.add(material);
-                else if (material.name().endsWith("_DYE"))
-                    dyes.add(material);
-            }
-
             // Require build permission for items that may have an effect on the world when used.
             if (clickedBlock != null && (materialInHand == Material.BONE_MEAL
                     || materialInHand == Material.ARMOR_STAND
-                    || (spawn_eggs.contains(materialInHand) && GriefPrevention.instance.config_claims_preventGlobalMonsterEggs)
+                    || (spawnEggs.contains(materialInHand) && GriefPrevention.instance.config_claims_preventGlobalMonsterEggs)
                     || materialInHand == Material.END_CRYSTAL
                     || materialInHand == Material.FLINT_AND_STEEL
                     || materialInHand == Material.INK_SAC
@@ -1927,7 +1927,7 @@ class PlayerEventHandler implements Listener
                     materialInHand == Material.ARMOR_STAND ||
                     materialInHand == Material.ITEM_FRAME ||
                     materialInHand == Material.GLOW_ITEM_FRAME ||
-                    spawn_eggs.contains(materialInHand) ||
+                    spawnEggs.contains(materialInHand) ||
                     materialInHand == Material.INFESTED_STONE ||
                     materialInHand == Material.INFESTED_COBBLESTONE ||
                     materialInHand == Material.INFESTED_STONE_BRICKS ||
