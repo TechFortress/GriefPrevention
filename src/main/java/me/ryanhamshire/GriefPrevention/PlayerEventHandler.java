@@ -1941,6 +1941,30 @@ class PlayerEventHandler implements Listener
                 return;
             }
 
+            //if player is brushing, deny brushing of suspicious blocks without build trust
+            else if (clickedBlock != null && materialInHand == Material.BRUSH)
+            {
+                switch (clickedBlockType)
+                {
+                    case SUSPICIOUS_GRAVEL: //TODO: change to instanceof BrushableBlock?
+                    case SUSPICIOUS_SAND:
+                    {
+                        if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
+                        Claim claim = this.dataStore.getClaimAt(clickedBlock.getLocation(), false, playerData.lastClaim);
+                        if (claim != null)
+                        {
+                            Supplier<String> reason = claim.checkPermission(player, ClaimPermission.Build, event);
+                            if (reason != null)
+                            {
+                                GriefPrevention.sendMessage(player, TextMode.Err, reason.get());
+                                event.setCancelled(true);
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+
             //if it's a spawn egg, minecart, or boat, and this is a creative world, apply special rules
             else if (clickedBlock != null && (materialInHand == Material.MINECART ||
                     materialInHand == Material.FURNACE_MINECART ||
