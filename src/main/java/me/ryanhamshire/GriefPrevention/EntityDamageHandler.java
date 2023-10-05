@@ -242,7 +242,13 @@ public class EntityDamageHandler implements Listener
             return true;
 
         if (entity instanceof Slime slime)
+        {
+            // Size 0 "baby" slimes cannot deal damage and are often kept as pets.
+            // This is really inconvenient for players who are trying to harvest slimeballs in areas with claims;
+            // the full-sized slimes are considered dangerous, but the ones that actually drop the slimeballs are not.
+            // To make this protection less obnoxious, only protect baby slimes that have lived for a minute or more.
             return slime.getSize() > 0 || slime.getTicksLived() < 1200;
+        }
 
         if (entity instanceof Rabbit rabbit)
             return rabbit.getRabbitType() == Rabbit.Type.THE_KILLER_BUNNY;
