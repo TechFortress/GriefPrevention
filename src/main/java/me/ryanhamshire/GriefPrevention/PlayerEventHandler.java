@@ -1898,6 +1898,8 @@ class PlayerEventHandler implements Listener
 
                 return;
             }
+
+            //Deny boat placement in claims without container trust
             else if (clickedBlock != null && Tag.ITEMS_BOATS.isTagged(materialInHand))
             {
                 if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
