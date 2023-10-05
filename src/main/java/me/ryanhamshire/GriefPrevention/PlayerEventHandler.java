@@ -35,6 +35,7 @@ import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.BrushableBlock;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.block.data.Waterlogged;
@@ -1944,21 +1945,17 @@ class PlayerEventHandler implements Listener
             //if player is brushing, deny brushing of suspicious blocks without build trust
             else if (clickedBlock != null && materialInHand == Material.BRUSH)
             {
-                switch (clickedBlockType)
+                if (clickedBlock.getState() instanceof BrushableBlock)
                 {
-                    case SUSPICIOUS_GRAVEL: //TODO: change to instanceof BrushableBlock?
-                    case SUSPICIOUS_SAND:
+                    if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
+                    Claim claim = this.dataStore.getClaimAt(clickedBlock.getLocation(), false, playerData.lastClaim);
+                    if (claim != null)
                     {
-                        if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
-                        Claim claim = this.dataStore.getClaimAt(clickedBlock.getLocation(), false, playerData.lastClaim);
-                        if (claim != null)
+                        Supplier<String> reason = claim.checkPermission(player, ClaimPermission.Build, event);
+                        if (reason != null)
                         {
-                            Supplier<String> reason = claim.checkPermission(player, ClaimPermission.Build, event);
-                            if (reason != null)
-                            {
-                                GriefPrevention.sendMessage(player, TextMode.Err, reason.get());
-                                event.setCancelled(true);
-                            }
+                            GriefPrevention.sendMessage(player, TextMode.Err, reason.get());
+                            event.setCancelled(true);
                         }
                     }
                 }
