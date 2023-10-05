@@ -278,6 +278,10 @@ public class EntityEventHandler implements Listener
         if (isBlockSourceInClaim(shooter, claim))
             return;
 
+        // Allow change if the config value is set, to enable things like TNT music disc farms on claims.
+        if (GriefPrevention.instance.config_mobProjectilesChangeBlocks && shooter instanceof Mob)
+            return;
+
         // Prevent change in all other cases.
         event.setCancelled(true);
     }
@@ -330,18 +334,6 @@ public class EntityEventHandler implements Listener
         if (event.getEntityType() != EntityType.FALLING_BLOCK)
             return;
         event.getEntity().removeMetadata("GP_FALLINGBLOCK", instance);
-    }
-
-    //Don't let people drop in TNT through end portals
-    //Necessarily this shouldn't be an issue anyways since the platform is obsidian...
-    @EventHandler(ignoreCancelled = true)
-    void onTNTExitPortal(EntityPortalExitEvent event)
-    {
-        if (event.getEntityType() != EntityType.PRIMED_TNT)
-            return;
-        if (event.getTo().getWorld().getEnvironment() != Environment.THE_END)
-            return;
-        event.getEntity().remove();
     }
 
     //don't allow zombies to break down doors
