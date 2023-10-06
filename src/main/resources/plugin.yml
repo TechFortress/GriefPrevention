@@ -297,14 +297,6 @@ permissions:
     griefprevention.lava:
         description: Grants permission to place lava near the surface and outside of claims.
         default: op
-    griefprevention.eavesdrop.*:
-        description: Allows a player to see signs, whispered chat messages (/tell) and softmuted messages.
-        default: op
-        children:
-            griefprevention.eavesdrop.messages.public: true
-            griefprevention.eavesdrop.messages.private: true
-            griefprevention.eavesdrop.signs: true
-            griefprevention.eavesdrop.immune: false
     griefprevention.eavesdrop.messages.*:
         description: Allows a player to see whispered chat messages (/tell) and softmuted messages.
         default: op
