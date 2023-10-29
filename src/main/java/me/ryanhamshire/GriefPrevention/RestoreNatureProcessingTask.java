@@ -30,7 +30,7 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Set;
 
 //non-main-thread task which processes world data to repair the unnatural
@@ -93,7 +93,7 @@ class RestoreNatureProcessingTask implements Runnable
         this.player = player;
         this.creativeMode = creativeMode;
 
-        this.notAllowedToHang = EnumSet.noneOf(Material.class);
+        this.notAllowedToHang = new HashSet<>();
         this.notAllowedToHang.add(Material.DIRT);
         this.notAllowedToHang.add(Material.GRASS);
         this.notAllowedToHang.add(Material.SNOW);
@@ -110,7 +110,7 @@ class RestoreNatureProcessingTask implements Runnable
             this.notAllowedToHang.add(Material.STONE);
         }
 
-        this.playerBlocks = EnumSet.noneOf(Material.class);
+        this.playerBlocks = new HashSet<>();
         this.playerBlocks.addAll(RestoreNatureProcessingTask.getPlayerBlocks(this.environment, this.biome));
 
         //in aggressive or creative world mode, also treat these blocks as user placed, to be removed
@@ -671,7 +671,7 @@ class RestoreNatureProcessingTask implements Runnable
         //NOTE on this list.  why not make a list of natural blocks?
         //answer: better to leave a few player blocks than to remove too many natural blocks.  remember we're "restoring nature"
         //a few extra player blocks can be manually removed, but it will be impossible to guess exactly which natural materials to use in manual repair of an overzealous block removal
-        Set<Material> playerBlocks = EnumSet.noneOf(Material.class);
+        Set<Material> playerBlocks = new HashSet<>();
         playerBlocks.addAll(Tag.ANVIL.getValues());
         playerBlocks.addAll(Tag.BANNERS.getValues());
         playerBlocks.addAll(Tag.BEACON_BASE_BLOCKS.getValues());

@@ -101,7 +101,7 @@ public abstract class BoundaryVisualization
                 GriefPrevention.instance,
                 () -> {
                     // Only revert if this is the active visualization.
-                    if (playerData.getVisibleBoundaries() == this) revert(player);
+                    if (playerData.getVisibleBoundaries() == this) playerData.setVisibleBoundaries(null);
                 },
                 20L * 60);
     }
@@ -260,9 +260,11 @@ public abstract class BoundaryVisualization
         Collection<Boundary> boundaries = event.getBoundaries();
         boundaries.removeIf(Objects::isNull);
 
-        if (currentVisualization != null && currentVisualization.elements.equals(boundaries))
+        if (currentVisualization != null
+                && currentVisualization.elements.equals(boundaries)
+                && currentVisualization.visualizeFrom.distanceSquared(event.getCenter()) < 165)
         {
-            // Ignore visualization with duplicate boundaries.
+            // Ignore visualizations with duplicate boundaries if the viewer has moved fewer than 15 blocks.
             return;
         }
 

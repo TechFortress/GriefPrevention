@@ -47,7 +47,6 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fish;
 import org.bukkit.entity.Hanging;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Llama;
 import org.bukkit.entity.Mule;
 import org.bukkit.entity.Player;
@@ -78,10 +77,10 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 import org.bukkit.event.player.PlayerLoginEvent.Result;
-import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerSignOpenEvent;
 import org.bukkit.event.player.PlayerTakeLecternBookEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
@@ -89,18 +88,17 @@ import org.bukkit.event.raid.RaidTriggerEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.BlockIterator;
+import org.jetbrains.annotations.NotNull;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -132,6 +130,9 @@ class PlayerEventHandler implements Listener
 
     //spam tracker
     SpamDetector spamDetector = new SpamDetector();
+    // Definitions for specific material groups that do not have a tag
+    private final Set<Material> spawnEggs;
+    private final Set<Material> dyes;
 
     //typical constructor, yawn
     PlayerEventHandler(DataStore dataStore, GriefPrevention plugin)
@@ -139,6 +140,21 @@ class PlayerEventHandler implements Listener
         this.dataStore = dataStore;
         this.instance = plugin;
         bannedWordFinder = new WordFinder(instance.dataStore.loadBannedWords());
+
+        spawnEggs = new HashSet<>();
+        dyes = new HashSet<>();
+        for (Material material : Material.values())
+        {
+            if (material.name().endsWith("_SPAWN_EGG"))
+                spawnEggs.add(material);
+            else if (material.name().endsWith("_DYE"))
+                dyes.add(material);
+        }
+    }
+
+    protected void resetPattern()
+    {
+        this.howToClaimPattern = null;
     }
 
     //when a player chats, monitor for spam
@@ -1156,7 +1172,7 @@ class PlayerEventHandler implements Listener
     }
 
     //when a player interacts with a specific part of entity...
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerInteractAtEntity(PlayerInteractAtEntityEvent event)
     {
         //treat it the same as interacting with an entity in general
@@ -1167,7 +1183,7 @@ class PlayerEventHandler implements Listener
     }
 
     //when a player interacts with an entity...
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOW)
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event)
     {
         Player player = event.getPlayer();
@@ -1351,7 +1367,7 @@ class PlayerEventHandler implements Listener
         if (itemInHand.getType() == Material.NAME_TAG)
         {
             EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(player, entity, EntityDamageEvent.DamageCause.CUSTOM, 0);
-            instance.entityEventHandler.onEntityDamage(damageEvent);
+            instance.entityDamageHandler.onEntityDamage(damageEvent);
             if (damageEvent.isCancelled())
             {
                 event.setCancelled(true);
@@ -1421,72 +1437,6 @@ class PlayerEventHandler implements Listener
         }
     }
 
-    //when a player picks up an item...
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
-    public void onPlayerPickupItem(PlayerPickupItemEvent event)
-    {
-        Player player = event.getPlayer();
-
-        //FEATURE: lock dropped items to player who dropped them
-
-        //who owns this stack?
-        Item item = event.getItem();
-        List<MetadataValue> data = item.getMetadata("GP_ITEMOWNER");
-        if (data != null && data.size() > 0)
-        {
-            UUID ownerID = (UUID) data.get(0).value();
-
-            //has that player unlocked his drops?
-            OfflinePlayer owner = instance.getServer().getOfflinePlayer(ownerID);
-            String ownerName = GriefPrevention.lookupPlayerName(ownerID);
-            if (owner.isOnline() && !player.equals(owner))
-            {
-                PlayerData playerData = this.dataStore.getPlayerData(ownerID);
-
-                //if locked, don't allow pickup
-                if (!playerData.dropsAreUnlocked)
-                {
-                    event.setCancelled(true);
-
-                    //if hasn't been instructed how to unlock, send explanatory messages
-                    if (!playerData.receivedDropUnlockAdvertisement)
-                    {
-                        GriefPrevention.sendMessage(owner.getPlayer(), TextMode.Instr, Messages.DropUnlockAdvertisement);
-                        GriefPrevention.sendMessage(player, TextMode.Err, Messages.PickupBlockedExplanation, ownerName);
-                        playerData.receivedDropUnlockAdvertisement = true;
-                    }
-
-                    return;
-                }
-            }
-        }
-
-        //the rest of this code is specific to pvp worlds
-        if (!instance.pvpRulesApply(player.getWorld())) return;
-
-        //if we're preventing spawn camping and the player was previously empty handed...
-        if (instance.config_pvp_protectFreshSpawns && (instance.getItemInHand(player, EquipmentSlot.HAND).getType() == Material.AIR))
-        {
-            //if that player is currently immune to pvp
-            PlayerData playerData = this.dataStore.getPlayerData(event.getPlayer().getUniqueId());
-            if (playerData.pvpImmune)
-            {
-                //if it's been less than 10 seconds since the last time he spawned, don't pick up the item
-                long now = Calendar.getInstance().getTimeInMillis();
-                long elapsedSinceLastSpawn = now - playerData.lastSpawn;
-                if (elapsedSinceLastSpawn < 10000)
-                {
-                    event.setCancelled(true);
-                    return;
-                }
-
-                //otherwise take away his immunity. he may be armed now.  at least, he's worth killing for some loot
-                playerData.pvpImmune = false;
-                GriefPrevention.sendMessage(player, TextMode.Warn, Messages.PvPImmunityEnd);
-            }
-        }
-    }
-
     //when a player switches in-hand items
     @EventHandler(ignoreCancelled = true)
     public void onItemHeldChange(PlayerItemHeldEvent event)
@@ -1508,8 +1458,8 @@ class PlayerEventHandler implements Listener
     }
 
     //block use of buckets within other players' claims
-    private final Set<Material> commonAdjacentBlocks_water = EnumSet.of(Material.WATER, Material.FARMLAND, Material.DIRT, Material.STONE);
-    private final Set<Material> commonAdjacentBlocks_lava = EnumSet.of(Material.LAVA, Material.DIRT, Material.STONE);
+    private final Set<Material> commonAdjacentBlocks_water = Set.of(Material.WATER, Material.FARMLAND, Material.DIRT, Material.STONE);
+    private final Set<Material> commonAdjacentBlocks_lava = Set.of(Material.LAVA, Material.DIRT, Material.STONE);
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onPlayerBucketEmpty(PlayerBucketEmptyEvent bucketEvent)
@@ -1650,8 +1600,30 @@ class PlayerEventHandler implements Listener
         }
     }
 
+    @EventHandler(priority = EventPriority.LOW)
+    void onPlayerSignOpen(@NotNull PlayerSignOpenEvent event)
+    {
+        if (event.getCause() != PlayerSignOpenEvent.Cause.INTERACT || event.getSign().getBlock().getType() != event.getSign().getType())
+        {
+            // If the sign is not opened by interaction or the corresponding block is no longer a sign,
+            // it is either the initial sign placement or another plugin is at work. Do not interfere.
+            return;
+        }
+
+        Player player = event.getPlayer();
+        String denial = instance.allowBuild(player, event.getSign().getLocation(), event.getSign().getType());
+
+        // If user is allowed to build, do nothing.
+        if (denial == null)
+            return;
+
+        // If user is not allowed to build, prevent sign UI opening and send message.
+        GriefPrevention.sendMessage(player, TextMode.Err, denial);
+        event.setCancelled(true);
+    }
+
     //when a player interacts with the world
-    @EventHandler(priority = EventPriority.LOWEST)
+    @EventHandler(priority = EventPriority.LOW)
     void onPlayerInteract(PlayerInteractEvent event)
     {
         //not interested in left-click-on-air actions
@@ -1801,11 +1773,11 @@ class PlayerEventHandler implements Listener
         //otherwise apply rules for doors and beds, if configured that way
         else if (clickedBlock != null &&
 
-                (instance.config_claims_lockWoodenDoors && Tag.WOODEN_DOORS.isTagged(clickedBlockType) ||
+                (instance.config_claims_lockWoodenDoors && Tag.DOORS.isTagged(clickedBlockType) ||
 
                 instance.config_claims_preventButtonsSwitches && Tag.BEDS.isTagged(clickedBlockType) ||
 
-                instance.config_claims_lockTrapDoors && Tag.WOODEN_TRAPDOORS.isTagged(clickedBlockType) ||
+                instance.config_claims_lockTrapDoors && Tag.TRAPDOORS.isTagged(clickedBlockType) ||
 
                 instance.config_claims_lecternReadingRequiresAccessTrust && clickedBlockType == Material.LECTERN ||
 
@@ -1903,27 +1875,15 @@ class PlayerEventHandler implements Listener
             ItemStack itemInHand = instance.getItemInHand(player, hand);
             Material materialInHand = itemInHand.getType();
 
-            Set<Material> spawn_eggs = new HashSet<>();
-            Set<Material> dyes = new HashSet<>();
-
-            for (Material material : Material.values())
-            {
-                if (material.isLegacy()) continue;
-                if (material.name().endsWith("_SPAWN_EGG"))
-                    spawn_eggs.add(material);
-                else if (material.name().endsWith("_DYE"))
-                    dyes.add(material);
-            }
-
-            //if it's bonemeal, armor stand, spawn egg, etc - check for build permission //RoboMWM: also check flint and steel to stop TNT ignition
-            //add glowing ink sac and ink sac, due to their usage on signs
+            // Require build permission for items that may have an effect on the world when used.
             if (clickedBlock != null && (materialInHand == Material.BONE_MEAL
                     || materialInHand == Material.ARMOR_STAND
-                    || (spawn_eggs.contains(materialInHand) && GriefPrevention.instance.config_claims_preventGlobalMonsterEggs)
+                    || (spawnEggs.contains(materialInHand) && GriefPrevention.instance.config_claims_preventGlobalMonsterEggs)
                     || materialInHand == Material.END_CRYSTAL
                     || materialInHand == Material.FLINT_AND_STEEL
                     || materialInHand == Material.INK_SAC
                     || materialInHand == Material.GLOW_INK_SAC
+                    || materialInHand == Material.HONEYCOMB
                     || dyes.contains(materialInHand)))
             {
                 String noBuildReason = instance
@@ -1987,7 +1947,7 @@ class PlayerEventHandler implements Listener
                     materialInHand == Material.ARMOR_STAND ||
                     materialInHand == Material.ITEM_FRAME ||
                     materialInHand == Material.GLOW_ITEM_FRAME ||
-                    spawn_eggs.contains(materialInHand) ||
+                    spawnEggs.contains(materialInHand) ||
                     materialInHand == Material.INFESTED_STONE ||
                     materialInHand == Material.INFESTED_COBBLESTONE ||
                     materialInHand == Material.INFESTED_STONE_BRICKS ||

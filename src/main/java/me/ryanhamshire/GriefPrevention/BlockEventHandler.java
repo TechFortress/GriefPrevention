@@ -21,18 +21,17 @@ package me.ryanhamshire.GriefPrevention;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
-import org.bukkit.block.Hopper;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Lightable;
@@ -40,10 +39,8 @@ import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.Dispenser;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Fireball;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
-import org.bukkit.entity.minecart.HopperMinecart;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
@@ -68,9 +65,9 @@ import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.hanging.HangingBreakEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.world.PortalCreateEvent;
 import org.bukkit.event.world.StructureGrowEvent;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.projectiles.BlockProjectileSource;
@@ -79,7 +76,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -95,7 +91,7 @@ public class BlockEventHandler implements Listener
     //convenience reference to singleton datastore
     private final DataStore dataStore;
 
-    private final EnumSet<Material> trashBlocks;
+    private final Set<Material> trashBlocks;
 
     //constructor
     public BlockEventHandler(DataStore dataStore)
@@ -103,7 +99,7 @@ public class BlockEventHandler implements Listener
         this.dataStore = dataStore;
 
         //create the list of blocks which will not trigger a warning when they're placed outside of land claims
-        this.trashBlocks = EnumSet.noneOf(Material.class);
+        this.trashBlocks = new HashSet<>();
         this.trashBlocks.add(Material.COBBLESTONE);
         this.trashBlocks.add(Material.TORCH);
         this.trashBlocks.add(Material.DIRT);
@@ -343,7 +339,7 @@ public class BlockEventHandler implements Listener
             int radius = GriefPrevention.instance.config_claims_automaticClaimsForNewPlayersRadius;
 
             //if the player doesn't have any claims yet, automatically create a claim centered at the chest
-            if (playerData.getClaims().size() == 0)
+            if (playerData.getClaims().isEmpty() && player.getGameMode() == GameMode.SURVIVAL)
             {
                 //radius == 0 means protect ONLY the chest
                 if (GriefPrevention.instance.config_claims_automaticClaimsForNewPlayersRadius == 0)
@@ -799,6 +795,17 @@ public class BlockEventHandler implements Listener
         // Arrow ignition.
         if (igniteEvent.getCause() == IgniteCause.ARROW && igniteEvent.getIgnitingEntity() != null)
         {
+            // Arrows shot by players may return the shooter, not the arrow.
+            if (igniteEvent.getIgnitingEntity() instanceof Player player)
+            {
+                BlockBreakEvent breakEvent = new BlockBreakEvent(igniteEvent.getBlock(), player);
+                onBlockBreak(breakEvent);
+                if (breakEvent.isCancelled())
+                {
+                    igniteEvent.setCancelled(true);
+                }
+                return;
+            }
             // Flammable lightable blocks do not fire EntityChangeBlockEvent when igniting.
             BlockData blockData = igniteEvent.getBlock().getBlockData();
             if (blockData instanceof Lightable lightable)
@@ -1030,7 +1037,8 @@ public class BlockEventHandler implements Listener
     }
 
     //ensures fluids don't flow into land claims from outside
-    private Claim lastSpreadClaim = null;
+    private Claim lastSpreadFromClaim = null;
+    private Claim lastSpreadToClaim = null;
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onBlockFromTo(BlockFromToEvent spreadEvent)
@@ -1041,30 +1049,84 @@ public class BlockEventHandler implements Listener
         //don't track in worlds where claims are not enabled
         if (!GriefPrevention.instance.claimsEnabledForWorld(spreadEvent.getBlock().getWorld())) return;
 
-        //where to?
-        Block toBlock = spreadEvent.getToBlock();
-        Location toLocation = toBlock.getLocation();
-        Claim toClaim = this.dataStore.getClaimAt(toLocation, false, lastSpreadClaim);
+        //where from and where to?
+        Location fromLocation = spreadEvent.getBlock().getLocation();
+        Location toLocation = spreadEvent.getToBlock().getLocation();
+        boolean isInCreativeRulesWorld = GriefPrevention.instance.creativeRulesApply(toLocation);
+        Claim fromClaim = this.dataStore.getClaimAt(fromLocation, false, lastSpreadFromClaim);
+        Claim toClaim = this.dataStore.getClaimAt(toLocation, false, lastSpreadToClaim);
 
-        //if into a land claim, it must be from the same land claim
-        if (toClaim != null)
-        {
-            this.lastSpreadClaim = toClaim;
-            if (!toClaim.contains(spreadEvent.getBlock().getLocation(), false, true))
-            {
-                //exception: from parent into subdivision
-                if (toClaim.parent == null || !toClaim.parent.contains(spreadEvent.getBlock().getLocation(), false, false))
-                {
-                    spreadEvent.setCancelled(true);
-                }
-            }
-        }
+        //due to the nature of what causes this event (fluid flow/spread),
+        //we'll probably run similar checks for the same pair of claims again,
+        //so we cache them to use in claim lookup later
+        this.lastSpreadFromClaim = fromClaim;
+        this.lastSpreadToClaim = toClaim;
 
-        //otherwise if creative mode world, don't flow
-        else if (GriefPrevention.instance.creativeRulesApply(toLocation))
+        if (!isFluidFlowAllowed(fromClaim, toClaim, isInCreativeRulesWorld))
         {
             spreadEvent.setCancelled(true);
         }
+    }
+
+    /**
+     * Determines whether fluid flow is allowed between two claims.
+     *
+     * @param from The claim at the source location of the fluid flow, or null if it's wilderness.
+     * @param to The claim at the destination location of the fluid flow, or null if it's wilderness.
+     * @param creativeRulesApply Whether creative rules apply to the world where claims are located.
+     * @return `true` if fluid flow is allowed, `false` otherwise.
+     */
+    private boolean isFluidFlowAllowed(Claim from, Claim to, boolean creativeRulesApply)
+    {
+        // Special case: if in a world with creative rules,
+        // don't allow fluids to flow into wilderness.
+        if (creativeRulesApply && to == null) return false;
+
+        // The fluid flow should be allowed or denied based on the specific combination
+        // of source and destination claim types. The following matrix outlines these
+        // combinations and indicates whether fluid flow should be permitted:
+        //
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | From \ To    | Wild | Claim A1 | Sub A1_1 | Sub A1_2 | Sub A1_3 (R) | Claim A2 | Claim B |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Wild         | Yes  | -        | -        | -        | -            | -        | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Claim A1     | Yes  | Yes      | Yes      | Yes      | -            | Yes      | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Sub A1_1     | Yes  | -        | Yes      | -        | -            | -        | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Sub A1_2     | Yes  | -        | -        | Yes      | -            | -        | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Sub A1_3 (R) | Yes  | -        | -        | -        | Yes          | -        | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Claim A2     | Yes  | Yes      | -        | -        | -            | Yes      | -       |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //   | Claim B      | Yes  | -        | -        | -        | -            | -        | Yes     |
+        //   +--------------+------+----------+----------+----------+--------------+----------+---------+
+        //
+        //   Legend:
+        //     Wild = wilderness
+        //     Claim A* = claim owned by player A
+        //     Sub A*_* = subdivision of Claim A*
+        //     (R) = Restricted subdivision
+        //     Claim B = claim owned by player B
+        //     Yes = fluid flow allowed
+        //     - = fluid flow not allowed
+
+        boolean fromWilderness = from == null;
+        boolean toWilderness = to == null;
+        boolean sameClaim = from != null && to != null && Objects.equals(from.getID(), to.getID());
+        boolean sameOwner = from != null && to != null && Objects.equals(from.getOwnerID(), to.getOwnerID());
+        boolean isToSubdivision = to != null && to.parent != null;
+        boolean isToRestrictedSubdivision = isToSubdivision && to.getSubclaimRestrictions();
+        boolean isFromSubdivision = from != null && from.parent != null;
+
+        if (toWilderness) return true;
+        if (fromWilderness) return false;
+        if (sameClaim) return true;
+        if (isFromSubdivision) return false;
+        if (isToSubdivision) return !isToRestrictedSubdivision;
+        return sameOwner;
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
@@ -1165,30 +1227,29 @@ public class BlockEventHandler implements Listener
     @EventHandler(ignoreCancelled = true)
     public void onInventoryPickupItem(InventoryPickupItemEvent event)
     {
-        //prevent hoppers from picking-up items dropped by players on death
-
-        InventoryHolder holder = event.getInventory().getHolder();
-        if (holder instanceof HopperMinecart || holder instanceof Hopper)
+        // Prevent hoppers from taking items dropped by players upon death.
+        if (event.getInventory().getType() != InventoryType.HOPPER)
         {
-            Item item = event.getItem();
-            List<MetadataValue> data = item.getMetadata("GP_ITEMOWNER");
-            //if this is marked as belonging to a player
-            if (data != null && data.size() > 0)
+            return;
+        }
+
+        List<MetadataValue> meta = event.getItem().getMetadata("GP_ITEMOWNER");
+        // We only care about an item if it has been flagged as belonging to a player.
+        if (meta.isEmpty())
+        {
+            return;
+        }
+
+        UUID itemOwnerId = (UUID) meta.get(0).value();
+        // Determine if the owner has unlocked their dropped items.
+        // This first requires that the player is logged in.
+        if (Bukkit.getServer().getPlayer(itemOwnerId) != null)
+        {
+            PlayerData itemOwner = dataStore.getPlayerData(itemOwnerId);
+            // If locked, don't allow pickup
+            if (!itemOwner.dropsAreUnlocked)
             {
-                UUID ownerID = (UUID) data.get(0).value();
-
-                //has that player unlocked his drops?
-                OfflinePlayer owner = GriefPrevention.instance.getServer().getOfflinePlayer(ownerID);
-                if (owner.isOnline())
-                {
-                    PlayerData playerData = this.dataStore.getPlayerData(ownerID);
-
-                    //if locked, don't allow pickup
-                    if (!playerData.dropsAreUnlocked)
-                    {
-                        event.setCancelled(true);
-                    }
-                }
+                event.setCancelled(true);
             }
         }
     }

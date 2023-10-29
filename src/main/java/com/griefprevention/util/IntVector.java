@@ -106,6 +106,20 @@ public record IntVector(int x, int y, int z)
     }
 
     /**
+     * Calculate the squared distance to another {@code IntVector}.
+     *
+     * @param other the other {@code IntVector}
+     * @return the squared distance
+     */
+    public int distanceSquared(@NotNull IntVector other)
+    {
+        int dX = x() - other.x();
+        int dY = y() - other.y();
+        int dZ = z() - other.z();
+        return dX * dX + dY * dY + dZ * dZ;
+    }
+
+    /**
      * Check if the {@link org.bukkit.Chunk Chunk} containing the {@link Block} at the {@code IntVector's} coordinates
      * is loaded.
      *
