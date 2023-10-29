@@ -19,7 +19,6 @@ import org.bukkit.entity.Llama;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Monster;
 import org.bukkit.entity.Mule;
-import org.bukkit.entity.Panda;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Rabbit;
@@ -88,6 +87,12 @@ public class EntityDamageHandler implements Listener
             PotionEffectType.SPEED,
             PotionEffectType.WATER_BREATHING
     );
+    private static final Set<EntityType> TEMPTABLE_SEMI_HOSTILES = Set.of(
+            EntityType.HOGLIN,
+            EntityType.POLAR_BEAR,
+            EntityType.PANDA
+    );
+
     private final @NotNull DataStore dataStore;
     private final @NotNull GriefPrevention instance;
     private final @NotNull NamespacedKey luredByPlayer;
@@ -103,10 +108,10 @@ public class EntityDamageHandler implements Listener
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     public void onEntityTarget(@NotNull EntityTargetEvent event)
     {
-        if (!instance.claimsEnabledForWorld(event.getEntity().getWorld())) return;
+        if (!instance.claimsEnabledForWorld(event.getEntity().getWorld()))
+            return;
 
-        EntityType entityType = event.getEntityType();
-        if (entityType != EntityType.HOGLIN && entityType != EntityType.POLAR_BEAR)
+        if (!TEMPTABLE_SEMI_HOSTILES.contains(event.getEntityType()))
             return;
 
         if (event.getReason() == EntityTargetEvent.TargetReason.TEMPT)
@@ -236,13 +241,19 @@ public class EntityDamageHandler implements Listener
         if (type == EntityType.GHAST || type == EntityType.MAGMA_CUBE || type == EntityType.SHULKER)
             return true;
 
-        if (entity instanceof Slime slime) return slime.getSize() > 0;
+        if (entity instanceof Slime slime)
+        {
+            // Size 0 "baby" slimes cannot deal damage and are often kept as pets.
+            // This is really inconvenient for players who are trying to harvest slimeballs in areas with claims;
+            // the full-sized slimes are considered dangerous, but the ones that actually drop the slimeballs are not.
+            // To make this protection less obnoxious, only protect baby slimes that have lived for a minute or more.
+            return slime.getSize() > 0 || slime.getTicksLived() < 1200;
+        }
 
-        if (entity instanceof Rabbit rabbit) return rabbit.getRabbitType() == Rabbit.Type.THE_KILLER_BUNNY;
+        if (entity instanceof Rabbit rabbit)
+            return rabbit.getRabbitType() == Rabbit.Type.THE_KILLER_BUNNY;
 
-        if (entity instanceof Panda panda) return panda.getMainGene() == Panda.Gene.AGGRESSIVE;
-
-        if ((type == EntityType.HOGLIN || type == EntityType.POLAR_BEAR) && entity instanceof Mob mob)
+        if ((TEMPTABLE_SEMI_HOSTILES.contains(type)) && entity instanceof Mob mob)
             return !entity.getPersistentDataContainer().has(luredByPlayer, PersistentDataType.BYTE) && mob.getTarget() != null;
 
         return false;
@@ -480,24 +491,39 @@ public class EntityDamageHandler implements Listener
             return true;
         }
 
-        if (instance.config_pvp_protectPets)
-        {
-            // Wolves are exempt from pet protections in PVP worlds due to their offensive nature.
-            if (event.getEntity().getType() == EntityType.WOLF) return true;
+        // Wolves are exempt from pet protections in PVP worlds due to their offensive nature.
+        if (event.getEntity().getType() == EntityType.WOLF) return true;
 
-            PreventPvPEvent pvpEvent = new PreventPvPEvent(new Claim(event.getEntity().getLocation(), event.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null), attacker, pet);
-            Bukkit.getPluginManager().callEvent(pvpEvent);
-            if (!pvpEvent.isCancelled())
+        Claim claim;
+        // Note: Internal name is not descriptive. Actual node is "GriefPrevention.PVP.ProtectPetsOutsideLandClaims"
+        if (!instance.config_pvp_protectPets)
+        {
+            claim = dataStore.getClaimAt(event.getEntity().getLocation(), false, attackerData.lastClaim);
+            if (claim == null)
             {
-                event.setCancelled(true);
-                if (sendMessages)
-                {
-                    String ownerName = GriefPrevention.lookupPlayerName(owner);
-                    String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
-                    if (attacker.hasPermission("griefprevention.ignoreclaims"))
-                        message += "  " + dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
-                    GriefPrevention.sendMessage(attacker, TextMode.Err, message);
-                }
+                // Pet is not in a claim, allow attack.
+                return true;
+            }
+            attackerData.lastClaim = claim;
+        }
+        else
+        {
+            // Create a dummy claim to signify blanket pet protection.
+            claim = new Claim(event.getEntity().getLocation(), event.getEntity().getLocation(), null, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null);
+        }
+
+        PreventPvPEvent pvpEvent = new PreventPvPEvent(claim, attacker, pet);
+        Bukkit.getPluginManager().callEvent(pvpEvent);
+        if (!pvpEvent.isCancelled())
+        {
+            event.setCancelled(true);
+            if (sendMessages)
+            {
+                String ownerName = GriefPrevention.lookupPlayerName(owner);
+                String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, ownerName);
+                if (attacker.hasPermission("griefprevention.ignoreclaims"))
+                    message += "  " + dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                GriefPrevention.sendMessage(attacker, TextMode.Err, message);
             }
         }
         return true;
@@ -714,10 +740,18 @@ public class EntityDamageHandler implements Listener
             @Nullable Player attacker,
             boolean sendMessages)
     {
-        if (!(event.getEntity() instanceof Tameable tameable) || !tameable.isTamed()) return false;
+        if (!(event.getEntity() instanceof Tameable tameable) || !tameable.isTamed())
+        {
+            // If the animal is not owned, specifically allow attacks only if the animal is a wolf.
+            return event.getEntityType() == EntityType.WOLF;
+        }
 
         AnimalTamer owner = tameable.getOwner();
-        if (owner == null) return false;
+        if (owner == null)
+        {
+            // Treat invalid state of tamed with no owner identically to untamed.
+            return tameable.getType() == EntityType.WOLF;
+        }
 
         //limit attacks by players to owners and admins in ignore claims mode
         if (attacker == null) return false;
