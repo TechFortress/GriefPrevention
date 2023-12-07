@@ -985,7 +985,7 @@ public class BlockEventHandler implements Listener
         Block block = event.getHitBlock();
 
         // Ensure projectile affects block.
-        if (block == null || block.getType() != Material.CHORUS_FLOWER)
+        if (block == null || (block.getType() != Material.CHORUS_FLOWER  && block.getType() != Material.DECORATED_POT))
             return;
 
         Claim claim = dataStore.getClaimAt(block.getLocation(), false, null);

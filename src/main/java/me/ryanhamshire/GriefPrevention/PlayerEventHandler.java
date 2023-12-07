@@ -1725,7 +1725,8 @@ class PlayerEventHandler implements Listener
                                 clickedBlockType == Material.RESPAWN_ANCHOR ||
                                 clickedBlockType == Material.ROOTED_DIRT ||
                                 clickedBlockType == Material.STONECUTTER ||
-                                clickedBlockType == Material.SWEET_BERRY_BUSH
+                                clickedBlockType == Material.SWEET_BERRY_BUSH ||
+                                clickedBlockType == Material.DECORATED_POT
                         )))
         {
             if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
