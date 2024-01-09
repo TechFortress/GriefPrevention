@@ -491,7 +491,7 @@ public class EntityDamageHandler implements Listener
             return true;
         }
 
-        // Wolves are exempt from pet protections in PVP worlds when their targeting the attacker
+        // Wolves are exempt from pet protections in PVP worlds when their target is the attacker
         if (event.getEntity().getType() == EntityType.WOLF && pet.getTarget() == attacker) return true;
 
         Claim claim;
