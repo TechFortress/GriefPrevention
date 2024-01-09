@@ -1,6 +1,5 @@
-<p align="center">
-<img alt="GriefPrevention" width=100% height=auto src="https://repository-images.githubusercontent.com/68339667/9b3f7c00-ce61-11ea-82d1-208eaa0606e8">
-</p>
+
+![GriefPrevention Logo](https://repository-images.githubusercontent.com/68339667/9b3f7c00-ce61-11ea-82d1-208eaa0606e8)
 
 <h1 align="center">The self-service anti-griefing plugin for Minecraft servers since 2011</h1>
 
