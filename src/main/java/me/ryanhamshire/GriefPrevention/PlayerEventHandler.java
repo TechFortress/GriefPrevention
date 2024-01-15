@@ -1062,7 +1062,7 @@ class PlayerEventHandler implements Listener
         //them or give them away to other players before they are defeated
 
         //if in combat, don't let him drop it
-        if (!instance.config_pvp_allowCombatItemDrop && playerData.inPvpCombat())
+        if (!instance.config_pvp_allowCombatItemDrop && playerData.inPvpCombat() && !player.isDead())
         {
             GriefPrevention.sendMessage(player, TextMode.Err, Messages.PvPNoDrop);
             event.setCancelled(true);
@@ -1725,7 +1725,8 @@ class PlayerEventHandler implements Listener
                                 clickedBlockType == Material.RESPAWN_ANCHOR ||
                                 clickedBlockType == Material.ROOTED_DIRT ||
                                 clickedBlockType == Material.STONECUTTER ||
-                                clickedBlockType == Material.SWEET_BERRY_BUSH
+                                clickedBlockType == Material.SWEET_BERRY_BUSH ||
+                                clickedBlockType == Material.DECORATED_POT
                         )))
         {
             if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());

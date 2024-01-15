@@ -118,9 +118,6 @@ public abstract class DataStore
     //list of UUIDs which are soft-muted
     ConcurrentHashMap<UUID, Boolean> softMuteMap = new ConcurrentHashMap<>();
 
-    //world guard reference, if available
-    private WorldGuardWrapper worldGuard = null;
-
     protected int getSchemaVersion()
     {
         if (this.currentSchemaVersion >= 0)
@@ -199,14 +196,6 @@ public abstract class DataStore
         //make a note of the data store schema version
         this.setSchemaVersion(latestSchemaVersion);
 
-        //try to hook into world guard
-        try
-        {
-            this.worldGuard = new WorldGuardWrapper();
-            GriefPrevention.AddLogEntry("Successfully hooked into WorldGuard.");
-        }
-        //if failed, world guard compat features will just be disabled.
-        catch (IllegalStateException | IllegalArgumentException | ClassCastException | NoClassDefFoundError ignored) { }
     }
 
     private void loadSoftMutes()
@@ -1010,16 +999,6 @@ public abstract class DataStore
             }
         }
 
-        //if worldguard is installed, also prevent claims from overlapping any worldguard regions
-        if (GriefPrevention.instance.config_claims_respectWorldGuard && this.worldGuard != null && creatingPlayer != null)
-        {
-            if (!this.worldGuard.canBuild(newClaim.lesserBoundaryCorner, newClaim.greaterBoundaryCorner, creatingPlayer))
-            {
-                result.succeeded = false;
-                result.claim = null;
-                return result;
-            }
-        }
         if (dryRun)
         {
             // since this is a dry run, just return the unsaved claim as is.
