@@ -12,7 +12,8 @@ public class PlayerSignOpenHandler implements Listener
 
     private final GriefPrevention instance;
 
-    PlayerSignOpenHandler(@NotNull GriefPrevention plugin) {
+    PlayerSignOpenHandler(@NotNull GriefPrevention plugin)
+    {
         this.instance = plugin;
     }
 

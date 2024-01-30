@@ -368,10 +368,13 @@ public class GriefPrevention extends JavaPlugin
         //player events
         playerEventHandler = new PlayerEventHandler(this.dataStore, this);
         pluginManager.registerEvents(playerEventHandler, this);
-        try {
+        try
+        {
             Class.forName("org.bukkit.event.player.PlayerSignOpenEvent");
             pluginManager.registerEvents(new PlayerSignOpenHandler(this), this);
-        } catch (ClassNotFoundException ignored) {
+        }
+        catch (ClassNotFoundException ignored)
+        {
             // Event is not present in this version, don't attempt to register events and cause a log warning.
         }
 
