@@ -134,7 +134,7 @@ public class EntityDamageHandler implements Listener
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onEntityCombustByEntity(@NotNull EntityCombustByEntityEvent event)
     {
-        this.handleEntityDamageEvent(event, true);
+        this.handleEntityDamageEvent(event, false);
     }
 
     private void handleEntityDamageEvent(@NotNull EntityCombustByEntityEvent event, boolean sendMessages)
