@@ -49,9 +49,12 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fish;
 import org.bukkit.entity.Hanging;
+import org.bukkit.entity.Horse;
+import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.Llama;
 import org.bukkit.entity.Mule;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.minecart.PoweredMinecart;
@@ -1368,17 +1371,34 @@ class PlayerEventHandler implements Listener
         // Name tags may only be used on entities that the player is allowed to kill.
         if (itemInHand.getType() == Material.NAME_TAG)
         {
-//            EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(player, entity, EntityDamageEvent.DamageCause.CUSTOM, 0);
-            EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(player, entity, EntityDamageEvent.DamageCause.CUSTOM, DamageSource.builder(DamageType.GENERIC).build(), 0);
-            instance.entityDamageHandler.onEntityDamage(damageEvent);
-            if (damageEvent.isCancelled())
+            //don't track in worlds where claims are not enabled
+            if (!instance.claimsEnabledForWorld(entity.getWorld())) return;
+
+            Claim cachedClaim = playerData.lastClaim;;
+            Claim claim = this.dataStore.getClaimAt(entity.getLocation(), false, cachedClaim);
+
+            // Require a claim to handle.
+            if (claim == null) return;
+
+            Supplier<String> override = () ->
             {
-                event.setCancelled(true);
-                // Don't print message - damage event handler should have handled it.
-                return;
-            }
+                String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, claim.getOwnerName());
+                if (player.hasPermission("griefprevention.ignoreclaims"))
+                    message += "  " + dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                return message;
+            };
+
+            // Check for permission to access containers.
+            Supplier<String> noContainersReason = claim.checkPermission(player, ClaimPermission.Inventory, event, override);
+
+            // If player has permission, action is allowed.
+            if (noContainersReason == null) return;
+            event.setCancelled(true);
+            GriefPrevention.sendMessage(player, TextMode.Err, noContainersReason.get());
         }
     }
+
+
 
     //when a player throws an egg
     @EventHandler(priority = EventPriority.LOWEST)
