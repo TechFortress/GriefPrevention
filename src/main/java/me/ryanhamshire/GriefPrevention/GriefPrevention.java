@@ -18,6 +18,8 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
@@ -70,6 +72,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -3202,28 +3205,77 @@ public class GriefPrevention extends JavaPlugin
         return this.getServer().getOfflinePlayer(bestMatchID);
     }
 
+    private static final Cache<UUID, String> PLAYER_NAME_CACHE = CacheBuilder.newBuilder().expireAfterAccess(5, TimeUnit.MINUTES).build();
     //helper method to resolve a player name from the player's UUID
     static @NotNull String lookupPlayerName(@Nullable UUID playerID)
     {
         //parameter validation
-        if (playerID == null) return "someone";
+        if (playerID == null) return getDefaultName(null);
 
         //check the cache
+        String cached = PLAYER_NAME_CACHE.getIfPresent(playerID);
+        if (cached != null) return cached;
+
+        // If name is not cached, fetch player.
         OfflinePlayer player = GriefPrevention.instance.getServer().getOfflinePlayer(playerID);
         return lookupPlayerName(player);
     }
 
     static @NotNull String lookupPlayerName(@NotNull AnimalTamer tamer)
     {
-        // If the tamer is not a player or has played, prefer their name if it exists.
-        if (!(tamer instanceof OfflinePlayer player) || player.hasPlayedBefore() || player.isOnline())
+        // If the tamer is not a player, fetch their name directly.
+        if (!(tamer instanceof OfflinePlayer player))
         {
             String name = tamer.getName();
             if (name != null) return name;
+            // Fall back to tamer's UUID.
+            return getDefaultName(tamer.getUniqueId());
         }
 
-        // Fall back to tamer's UUID.
-        return "someone(" + tamer.getUniqueId() + ")";
+        // If the player is online, their name is available immediately.
+        if (player instanceof Player online)
+        {
+            String name = online.getName();
+            PLAYER_NAME_CACHE.put(player.getUniqueId(), name);
+            return name;
+        }
+
+        // Use cached name if available.
+        String name = PLAYER_NAME_CACHE.getIfPresent(player.getUniqueId());
+
+        if (name == null)
+        {
+            // If they're an existing player, they likely have a name. Load from disk.
+            if (player.hasPlayedBefore())
+            {
+                name = player.getName();
+            }
+
+            // If no name is available, fall through to default.
+            if (name == null)
+            {
+                name = getDefaultName(player.getUniqueId());
+            }
+
+            // Store name in cache.
+            PLAYER_NAME_CACHE.put(player.getUniqueId(), name);
+        }
+
+        return name;
+    }
+
+    private static String getDefaultName(@Nullable UUID playerId)
+    {
+        String someone = instance.dataStore.getMessage(Messages.UnknownPlayerName);
+
+        if (someone == null || someone.isBlank())
+        {
+            someone = "someone";
+        }
+
+        if (playerId == null) return someone;
+
+        return someone + " (" + playerId + ")";
     }
 
     //cache for player name lookups, to save searches of all offline players

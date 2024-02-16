@@ -159,6 +159,7 @@ public enum Messages
     NoContainersSiege,
     NoContainersPermission,
     OwnerNameForAdminClaims,
+    UnknownPlayerName,
     ClaimTooSmallForEntities,
     TooManyEntitiesInClaim,
     YouHaveNoClaims,
