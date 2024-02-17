@@ -725,7 +725,15 @@ public class GriefPrevention extends JavaPlugin
         this.config_siege_blocks = new HashSet<>();
         this.config_siege_blocks.add(Material.DIRT);
         this.config_siege_blocks.add(Material.GRASS_BLOCK);
-        this.config_siege_blocks.add(Material.GRASS);
+
+        // in Minecraft 1.20.3 GRASS was renamed to SHORT_GRASS
+        // This will support both before/after the change
+        try{
+            this.config_siege_blocks.add(Material.valueOf("GRASS"));
+        } catch(IllegalArgumentException e){
+            this.config_siege_blocks.add(Material.valueOf("SHORT_GRASS"));
+        }
+
         this.config_siege_blocks.add(Material.FERN);
         this.config_siege_blocks.add(Material.DEAD_BUSH);
         this.config_siege_blocks.add(Material.COBBLESTONE);

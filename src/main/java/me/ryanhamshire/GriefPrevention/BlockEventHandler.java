@@ -410,7 +410,18 @@ public class BlockEventHandler implements Listener
         else if (Tag.SAPLINGS.isTagged(block.getType()) && GriefPrevention.instance.config_blockSkyTrees && GriefPrevention.instance.claimsEnabledForWorld(player.getWorld()))
         {
             Block earthBlock = placeEvent.getBlockAgainst();
-            if (earthBlock.getType() != Material.GRASS)
+
+
+            // in Minecraft 1.20.3 GRASS was renamed to SHORT_GRASS
+            // This will support both before/after the change
+            Material grassMaterial;
+            try{
+                grassMaterial = Material.valueOf("GRASS");
+            } catch(IllegalArgumentException e){
+                grassMaterial = Material.valueOf("SHORT_GRASS");
+            }
+
+            if (earthBlock.getType() != grassMaterial)
             {
                 if (earthBlock.getRelative(BlockFace.DOWN).getType() == Material.AIR ||
                         earthBlock.getRelative(BlockFace.DOWN).getRelative(BlockFace.DOWN).getType() == Material.AIR)

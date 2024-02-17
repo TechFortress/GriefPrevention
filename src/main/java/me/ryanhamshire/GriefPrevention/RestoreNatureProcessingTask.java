@@ -95,7 +95,15 @@ class RestoreNatureProcessingTask implements Runnable
 
         this.notAllowedToHang = new HashSet<>();
         this.notAllowedToHang.add(Material.DIRT);
-        this.notAllowedToHang.add(Material.GRASS);
+
+//        in Minecraft 1.20.3 GRASS was renamed to SHORT_GRASS
+//        This will support both before/after the change
+        try{
+            this.notAllowedToHang.add(Material.valueOf("GRASS"));
+        } catch(IllegalArgumentException e){
+            this.notAllowedToHang.add(Material.valueOf("SHORT_GRASS"));
+        }
+
         this.notAllowedToHang.add(Material.SNOW);
         this.notAllowedToHang.add(Material.OAK_LOG);
         this.notAllowedToHang.add(Material.SPRUCE_LOG);
@@ -106,7 +114,14 @@ class RestoreNatureProcessingTask implements Runnable
 
         if (this.aggressiveMode)
         {
-            this.notAllowedToHang.add(Material.GRASS);
+            //  in Minecraft 1.20.3 GRASS was renamed to SHORT_GRASS
+            //  This will support both before/after the change
+            try{
+                this.notAllowedToHang.add(Material.valueOf("GRASS"));
+            } catch(IllegalArgumentException e){
+                this.notAllowedToHang.add(Material.valueOf("SHORT_GRASS"));
+            }
+
             this.notAllowedToHang.add(Material.STONE);
         }
 
@@ -395,7 +410,7 @@ class RestoreNatureProcessingTask implements Runnable
         Material[] excludedBlocksArray = new Material[]
                 {
                         Material.CACTUS,
-                        Material.GRASS,
+                        null, // will become grass (see below)
                         Material.RED_MUSHROOM,
                         Material.BROWN_MUSHROOM,
                         Material.DEAD_BUSH,
@@ -414,6 +429,14 @@ class RestoreNatureProcessingTask implements Runnable
                         Material.PUMPKIN,
                         Material.LILY_PAD
                 };
+
+        // in Minecraft 1.20.3 GRASS was renamed to SHORT_GRASS
+        // This will support both before/after the change
+        try{
+            excludedBlocksArray[1] = Material.valueOf("GRASS");
+        } catch(IllegalArgumentException e){
+            excludedBlocksArray[1] = Material.valueOf("SHORT_GRASS");
+        }
 
         ArrayList<Material> excludedBlocks = new ArrayList<>(Arrays.asList(excludedBlocksArray));
 
@@ -483,14 +506,24 @@ class RestoreNatureProcessingTask implements Runnable
         fillableBlocks.add(Material.AIR);
         fillableBlocks.add(Material.WATER);
         fillableBlocks.add(Material.LAVA);
-        fillableBlocks.add(Material.GRASS);
+
+
 
         ArrayList<Material> notSuitableForFillBlocks = new ArrayList<>();
-        notSuitableForFillBlocks.add(Material.GRASS);
         notSuitableForFillBlocks.add(Material.CACTUS);
         notSuitableForFillBlocks.add(Material.WATER);
         notSuitableForFillBlocks.add(Material.LAVA);
         notSuitableForFillBlocks.addAll(Tag.LOGS.getValues());
+
+        // in Minecraft 1.20.3 GRASS was renamed to SHORT_GRASS
+        // This will support both before/after the change
+        try{
+            fillableBlocks.add(Material.valueOf("GRASS"));
+            notSuitableForFillBlocks.add(Material.valueOf("GRASS"));
+        } catch(IllegalArgumentException e){
+            fillableBlocks.add(Material.valueOf("SHORT_GRASS"));
+            notSuitableForFillBlocks.add(Material.valueOf("SHORT_GRASS"));
+        }
 
         boolean changed;
         do
