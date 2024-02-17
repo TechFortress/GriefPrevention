@@ -20,6 +20,9 @@ package me.ryanhamshire.GriefPrevention;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.griefprevention.module.Module;
+import com.griefprevention.module.ModuleManager;
+import com.griefprevention.module.WelcomeModule;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
@@ -89,6 +92,8 @@ public class GriefPrevention extends JavaPlugin
 
     //this handles data storage, like player and region data
     public DataStore dataStore;
+    // Handles modular behaviors.
+    private ModuleManager moduleManager;
 
     // Event handlers with common functionality
     EntityEventHandler entityEventHandler;
@@ -150,8 +155,6 @@ public class GriefPrevention extends JavaPlugin
     public Material config_claims_modificationTool;                    //which material will be used to create/resize claims with a right click
 
     public ArrayList<String> config_claims_commandsRequiringAccessTrust; //the list of slash commands requiring access trust when in a claim
-    public boolean config_claims_supplyPlayerManual;                //whether to give new players a book with land claim help in it
-    public int config_claims_manualDeliveryDelaySeconds;            //how long to wait before giving a book to a new player
 
     public boolean config_claims_firespreads;                        //whether fire will spread in claims
     public boolean config_claims_firedamages;                        //whether fire will damage in claims
@@ -283,6 +286,7 @@ public class GriefPrevention extends JavaPlugin
     {
         instance = this;
         log = instance.getLogger();
+        moduleManager = new ModuleManager(this);
 
         this.loadConfig();
 
@@ -347,6 +351,8 @@ public class GriefPrevention extends JavaPlugin
 
         String dataMode = (this.dataStore instanceof FlatFileDataStore) ? "(File Mode)" : "(Database Mode)";
         AddLogEntry("Finished loading data " + dataMode + ".");
+
+        moduleManager.updateModules();
 
         //unless claim block accrual is disabled, start the recurring per 10 minute event to give claim blocks to online players
         //20L ~ 1 second
@@ -592,8 +598,6 @@ public class GriefPrevention extends JavaPlugin
         this.config_claims_maxClaimsPerPlayer = config.getInt("GriefPrevention.Claims.MaximumNumberOfClaimsPerPlayer", 0);
         this.config_claims_villagerTradingRequiresTrust = config.getBoolean("GriefPrevention.Claims.VillagerTradingRequiresPermission", true);
         String accessTrustSlashCommands = config.getString("GriefPrevention.Claims.CommandsRequiringAccessTrust", "/sethome");
-        this.config_claims_supplyPlayerManual = config.getBoolean("GriefPrevention.Claims.DeliverManuals", true);
-        this.config_claims_manualDeliveryDelaySeconds = config.getInt("GriefPrevention.Claims.ManualDeliveryDelaySeconds", 30);
         this.config_claims_ravagersBreakBlocks = config.getBoolean("GriefPrevention.Claims.RavagersBreakBlocks", true);
 
         this.config_claims_firespreads = config.getBoolean("GriefPrevention.Claims.FireSpreadsInClaims", false);
@@ -838,8 +842,6 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.Claims.MaximumNumberOfClaimsPerPlayer", this.config_claims_maxClaimsPerPlayer);
         outConfig.set("GriefPrevention.Claims.VillagerTradingRequiresPermission", this.config_claims_villagerTradingRequiresTrust);
         outConfig.set("GriefPrevention.Claims.CommandsRequiringAccessTrust", accessTrustSlashCommands);
-        outConfig.set("GriefPrevention.Claims.DeliverManuals", config_claims_supplyPlayerManual);
-        outConfig.set("GriefPrevention.Claims.ManualDeliveryDelaySeconds", config_claims_manualDeliveryDelaySeconds);
         outConfig.set("GriefPrevention.Claims.RavagersBreakBlocks", config_claims_ravagersBreakBlocks);
 
         outConfig.set("GriefPrevention.Claims.FireSpreadsInClaims", config_claims_firespreads);
@@ -936,6 +938,8 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.Abridged Logs.Included Entry Types.Muted Chat Messages", this.config_logs_mutedChatEnabled);
         outConfig.set("GriefPrevention.ConfigVersion", 1);
 
+        moduleManager.loadConfig(config, outConfig);
+
         try
         {
             outConfig.save(DataStore.configFilePath);
@@ -979,6 +983,11 @@ public class GriefPrevention extends JavaPlugin
         {
             this.config_pvp_blockedCommands.add(command.trim().toLowerCase());
         }
+    }
+
+    public ModuleManager getModuleManager()
+    {
+        return moduleManager;
     }
 
     private ClaimsMode configStringToClaimsMode(String configSetting)
@@ -2172,8 +2181,10 @@ public class GriefPrevention extends JavaPlugin
             }
             else
             {
-                WelcomeTask task = new WelcomeTask(otherPlayer);
-                task.run();
+
+                GriefPrevention.sendMessage(otherPlayer, TextMode.Instr, Messages.AvoidGriefClaimLand);
+                GriefPrevention.sendMessage(otherPlayer, TextMode.Instr, Messages.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
+                otherPlayer.getInventory().addItem(WelcomeModule.getBook());
                 return true;
             }
         }
@@ -3314,6 +3325,8 @@ public class GriefPrevention extends JavaPlugin
             PlayerData playerData = this.dataStore.getPlayerData(playerID);
             this.dataStore.savePlayerDataSync(playerID, playerData);
         }
+
+        this.moduleManager.getModules().forEach(Module::disable);
 
         this.dataStore.close();
 

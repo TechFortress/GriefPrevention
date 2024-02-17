@@ -23,9 +23,9 @@ import org.bukkit.ChatColor;
 //just a few constants for chat color codes
 public class TextMode
 {
-    final static ChatColor Info = ChatColor.AQUA;
-    final static ChatColor Instr = ChatColor.YELLOW;
-    final static ChatColor Warn = ChatColor.GOLD;
-    final static ChatColor Err = ChatColor.RED;
-    final static ChatColor Success = ChatColor.GREEN;
+    public static final ChatColor Info = ChatColor.AQUA;
+    public static final ChatColor Instr = ChatColor.YELLOW;
+    public static final ChatColor Warn = ChatColor.GOLD;
+    public static final ChatColor Err = ChatColor.RED;
+    public static final ChatColor Success = ChatColor.GREEN;
 }

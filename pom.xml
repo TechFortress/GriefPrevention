@@ -111,6 +111,17 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.1.2</version>
+                    <configuration>
+                        <!-- GitHub Actions offers 2 cores for Linux. -->
+                        <forkCount>2</forkCount>
+                        <!--
+                            This is somewhat required for testing Bukkit code due to Bukkit's design.
+                            There are so many static fields so deeply intertwined with each other
+                            that correctly initializing everything is a huge hassle. Compounding that,
+                            test order is not defined, and not all tests need to run every time.
+                         -->
+                        <reuseForks>false</reuseForks>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
