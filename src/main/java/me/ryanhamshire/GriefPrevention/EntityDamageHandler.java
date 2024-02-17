@@ -132,12 +132,75 @@ public class EntityDamageHandler implements Listener
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     public void onEntityCombustByEntity(@NotNull EntityCombustByEntityEvent event)
     {
-        //handle it just like we would an entity damge by entity event, except don't send player messages to avoid double messages
-        //in cases like attacking with a flame sword or flame arrow, which would ALSO trigger the direct damage event handler
+        this.handleEntityDamageEvent(event, false);
+    }
 
-        EntityDamageByEntityEvent eventWrapper = new EntityDamageByEntityEvent(event.getCombuster(), event.getEntity(), EntityDamageEvent.DamageCause.FIRE_TICK, event.getDuration());
-        this.handleEntityDamageEvent(eventWrapper, false);
-        event.setCancelled(eventWrapper.isCancelled());
+    private void handleEntityDamageEvent(@NotNull EntityCombustByEntityEvent event, boolean sendMessages)
+    {
+        //monsters are never protected
+        if (isHostile(event.getEntity())) return;
+
+        //horse protections can be disabled
+        if (event.getEntity() instanceof Horse && !instance.config_claims_protectHorses) return;
+        if (event.getEntity() instanceof Donkey && !instance.config_claims_protectDonkeys) return;
+        if (event.getEntity() instanceof Mule && !instance.config_claims_protectDonkeys) return;
+        if (event.getEntity() instanceof Llama && !instance.config_claims_protectLlamas) return;
+        //protected death loot can't be destroyed, only picked up or despawned due to expiration
+        if (event.getEntityType() == EntityType.DROPPED_ITEM)
+        {
+            if (event.getEntity().hasMetadata("GP_ITEMOWNER"))
+            {
+                event.setCancelled(true);
+            }
+        }
+
+        // Handle environmental damage to tamed animals that could easily be caused maliciously.
+        if (handlePetDamageByEnvironment(event)) return;
+
+        if (event.getCombuster() instanceof LightningStrike && event.getCombuster().hasMetadata("GP_TRIDENT"))
+        {
+            event.setCancelled(true);
+            return;
+        }
+
+        //determine which player is attacking, if any
+        Player attacker = null;
+        Projectile arrow = null;
+        Entity damageSource = event.getCombuster();
+        if (damageSource instanceof Player damager)
+        {
+            attacker = damager;
+        }
+        else if (damageSource instanceof Projectile projectile)
+        {
+            arrow = projectile;
+            if (arrow.getShooter() instanceof Player shooter)
+            {
+                attacker = shooter;
+            }
+        }
+
+        // Specific handling for PVP-enabled situations.
+        if (instance.pvpRulesApply(event.getEntity().getWorld()))
+        {
+            if (event.getEntity() instanceof Player defender)
+            {
+                // Handle regular PVP with an attacker and defender.
+                if (attacker != null && handlePvpDamageByPlayer(event, attacker, defender, sendMessages))
+                {
+                    return;
+                }
+            }
+        }
+
+        //don't track in worlds where claims are not enabled
+        if (!instance.claimsEnabledForWorld(event.getEntity().getWorld())) return;
+
+        //if the damaged entity is a claimed item frame or armor stand, the damager needs to be a player with build trust in the claim
+        if (handleClaimedBuildTrustDamageByEntity(event, attacker, sendMessages)) return;
+
+        //if the entity is a non-monster creature (remember monsters disqualified above), or a vehicle
+        if (handleCreatureDamageByEntity(event, attacker, arrow, sendMessages)) return;
     }
 
     private void handleEntityDamageEvent(@NotNull EntityDamageEvent event, boolean sendMessages)
@@ -297,6 +360,18 @@ public class EntityDamageHandler implements Listener
         }
     }
 
+    private boolean handlePetDamageByEnvironment(@NotNull EntityCombustByEntityEvent event)
+    {
+        // If PVP is enabled, the damaged entity is not a pet, or the pet has no owner, allow.
+        if (instance.pvpRulesApply(event.getEntity().getWorld())
+                || !(event.getEntity() instanceof Tameable tameable)
+                || !tameable.isTamed())
+        {
+            return false;
+        }
+        return true;
+    }
+
     /**
      * Handle entity damage caused by block explosions.
      *
@@ -380,6 +455,50 @@ public class EntityDamageHandler implements Listener
      */
     private boolean handlePvpDamageByPlayer(
             @NotNull EntityDamageByEntityEvent event,
+            @NotNull Player attacker,
+            @NotNull Player defender,
+            boolean sendMessages)
+    {
+        if (attacker == defender) return false;
+
+        PlayerData defenderData = this.dataStore.getPlayerData(defender.getUniqueId());
+        PlayerData attackerData = this.dataStore.getPlayerData(attacker.getUniqueId());
+
+        //FEATURE: prevent pvp in the first minute after spawn and when one or both players have no inventory
+        if (instance.config_pvp_protectFreshSpawns)
+        {
+            if (attackerData.pvpImmune || defenderData.pvpImmune)
+            {
+                event.setCancelled(true);
+                if (sendMessages)
+                    GriefPrevention.sendMessage(
+                            attacker,
+                            TextMode.Err,
+                            attackerData.pvpImmune ? Messages.CantFightWhileImmune : Messages.ThatPlayerPvPImmune);
+                return true;
+            }
+        }
+
+        //FEATURE: prevent players from engaging in PvP combat inside land claims (when it's disabled)
+        // Ignoring claims bypasses this feature.
+        if (attackerData.ignoreClaims
+                || !instance.config_pvp_noCombatInPlayerLandClaims
+                && !instance.config_pvp_noCombatInAdminLandClaims)
+        {
+            return false;
+        }
+        Consumer<Messages> cancelHandler = message ->
+        {
+            event.setCancelled(true);
+            if (sendMessages) GriefPrevention.sendMessage(attacker, TextMode.Err, message);
+        };
+        // Return whether PVP is handled by a claim at the attacker or defender's locations.
+        return handlePvpInClaim(attacker, defender, attacker.getLocation(), attackerData, () -> cancelHandler.accept(Messages.CantFightWhileImmune))
+                || handlePvpInClaim(attacker, defender, defender.getLocation(), defenderData, () -> cancelHandler.accept(Messages.PlayerInPvPSafeZone));
+    }
+
+    private boolean handlePvpDamageByPlayer(
+            @NotNull EntityCombustByEntityEvent event,
             @NotNull Player attacker,
             @NotNull Player defender,
             boolean sendMessages)
@@ -631,6 +750,65 @@ public class EntityDamageHandler implements Listener
         if (sendMessages) GriefPrevention.sendMessage(attacker, TextMode.Err, failureReason.get());
         return true;
     }
+    private boolean handleClaimedBuildTrustDamageByEntity(
+            @NotNull EntityCombustByEntityEvent event,
+            @Nullable Player attacker,
+            boolean sendMessages)
+    {
+        EntityType entityType = event.getEntityType();
+        if (entityType != EntityType.ITEM_FRAME
+                && entityType != EntityType.GLOW_ITEM_FRAME
+                && entityType != EntityType.ARMOR_STAND
+                && entityType != EntityType.VILLAGER
+                && entityType != EntityType.ENDER_CRYSTAL)
+        {
+            return false;
+        }
+
+        if (entityType == EntityType.VILLAGER
+                // Allow disabling villager protections in the config.
+                && (!instance.config_claims_protectCreatures
+                // Always allow zombies and raids to target villagers.
+                //why exception?  so admins can set up a village which can't be CHANGED by players, but must be "protected" by players.
+                || event.getCombuster() instanceof Zombie
+                || event.getCombuster() instanceof Raider
+                || event.getCombuster() instanceof Vex
+                || event.getCombuster() instanceof Projectile projectile && projectile.getShooter() instanceof Raider
+                || event.getCombuster() instanceof EvokerFangs fangs && fangs.getOwner() instanceof Raider))
+        {
+            return true;
+        }
+
+        // Use attacker's cached claim to speed up lookup.
+        Claim cachedClaim = null;
+        if (attacker != null)
+        {
+            PlayerData playerData = this.dataStore.getPlayerData(attacker.getUniqueId());
+            cachedClaim = playerData.lastClaim;
+        }
+
+        Claim claim = this.dataStore.getClaimAt(event.getEntity().getLocation(), false, cachedClaim);
+
+        // If the area is not claimed, do not handle.
+        if (claim == null) return false;
+
+        // If attacker isn't a player, cancel.
+        if (attacker == null)
+        {
+            event.setCancelled(true);
+            return true;
+        }
+
+        Supplier<String> failureReason = claim.checkPermission(attacker, ClaimPermission.Build, event);
+
+        // If player has build trust, fall through to next checks.
+        if (failureReason == null) return false;
+
+        event.setCancelled(true);
+        if (sendMessages) GriefPrevention.sendMessage(attacker, TextMode.Err, failureReason.get());
+        return true;
+    }
+
 
     /**
      * Handle damage to a {@link Creature} by an {@link Entity}. Because monsters are
@@ -655,6 +833,88 @@ public class EntityDamageHandler implements Listener
         if (handlePetDamageByEntity(event, attacker, sendMessages)) return true;
 
         Entity damageSource = event.getDamager();
+        EntityType damageSourceType = damageSource.getType();
+        //if not a player, explosive, or ranged/area of effect attack, allow
+        if (attacker == null
+                && damageSourceType != EntityType.CREEPER
+                && damageSourceType != EntityType.WITHER
+                && damageSourceType != EntityType.ENDER_CRYSTAL
+                && damageSourceType != EntityType.AREA_EFFECT_CLOUD
+                && damageSourceType != EntityType.WITCH
+                && !(damageSource instanceof Projectile)
+                && !(damageSource instanceof Explosive)
+                && !(damageSource instanceof ExplosiveMinecart))
+        {
+            return true;
+        }
+
+        Claim cachedClaim = null;
+        PlayerData playerData = null;
+        if (attacker != null)
+        {
+            playerData = this.dataStore.getPlayerData(attacker.getUniqueId());
+            cachedClaim = playerData.lastClaim;
+        }
+
+        Claim claim = this.dataStore.getClaimAt(event.getEntity().getLocation(), false, cachedClaim);
+
+        // Require a claim to handle.
+        if (claim == null) return false;
+
+        // If damaged by anything other than a player, cancel the event.
+        if (attacker == null)
+        {
+            event.setCancelled(true);
+            // Always remove projectiles shot by non-players.
+            if (arrow != null) arrow.remove();
+            return true;
+        }
+
+        //cache claim for later
+        playerData.lastClaim = claim;
+
+        // Do not message players about fireworks to prevent spam due to multi-hits.
+        sendMessages &= damageSourceType != EntityType.FIREWORK;
+
+        Supplier<String> override = null;
+        if (sendMessages)
+        {
+            final Player finalAttacker = attacker;
+            override = () ->
+            {
+                String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, claim.getOwnerName());
+                if (finalAttacker.hasPermission("griefprevention.ignoreclaims"))
+                    message += "  " + dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                return message;
+            };
+        }
+
+        // Check for permission to access containers.
+        Supplier<String> noContainersReason = claim.checkPermission(attacker, ClaimPermission.Inventory, event, override);
+
+        // If player has permission, action is allowed.
+        if (noContainersReason == null) return true;
+
+        event.setCancelled(true);
+
+        // Prevent projectiles from bouncing infinitely.
+        preventInfiniteBounce(arrow, event.getEntity());
+
+        if (sendMessages) GriefPrevention.sendMessage(attacker, TextMode.Err, noContainersReason.get());
+
+        return true;
+    }
+
+    private boolean handleCreatureDamageByEntity(
+            @NotNull EntityCombustByEntityEvent event,
+            @Nullable Player attacker,
+            @Nullable Projectile arrow,
+            boolean sendMessages)
+    {
+        if (!(event.getEntity() instanceof Creature) || !instance.config_claims_protectCreatures)
+            return false;
+
+        Entity damageSource = event.getCombuster();
         EntityType damageSourceType = damageSource.getType();
         //if not a player, explosive, or ranged/area of effect attack, allow
         if (attacker == null
