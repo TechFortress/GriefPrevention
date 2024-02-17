@@ -20,6 +20,8 @@ package me.ryanhamshire.GriefPrevention;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.griefprevention.module.Module;
+import com.griefprevention.module.ModuleManager;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
@@ -89,6 +91,8 @@ public class GriefPrevention extends JavaPlugin
 
     //this handles data storage, like player and region data
     public DataStore dataStore;
+    // Handles modular behaviors.
+    private ModuleManager moduleManager;
 
     // Event handlers with common functionality
     EntityEventHandler entityEventHandler;
@@ -283,6 +287,7 @@ public class GriefPrevention extends JavaPlugin
     {
         instance = this;
         log = instance.getLogger();
+        moduleManager = new ModuleManager(this);
 
         this.loadConfig();
 
@@ -347,6 +352,8 @@ public class GriefPrevention extends JavaPlugin
 
         String dataMode = (this.dataStore instanceof FlatFileDataStore) ? "(File Mode)" : "(Database Mode)";
         AddLogEntry("Finished loading data " + dataMode + ".");
+
+        moduleManager.updateModules();
 
         //unless claim block accrual is disabled, start the recurring per 10 minute event to give claim blocks to online players
         //20L ~ 1 second
@@ -936,6 +943,8 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.Abridged Logs.Included Entry Types.Muted Chat Messages", this.config_logs_mutedChatEnabled);
         outConfig.set("GriefPrevention.ConfigVersion", 1);
 
+        moduleManager.loadConfig(config, outConfig);
+
         try
         {
             outConfig.save(DataStore.configFilePath);
@@ -979,6 +988,11 @@ public class GriefPrevention extends JavaPlugin
         {
             this.config_pvp_blockedCommands.add(command.trim().toLowerCase());
         }
+    }
+
+    public ModuleManager getModuleManager()
+    {
+        return moduleManager;
     }
 
     private ClaimsMode configStringToClaimsMode(String configSetting)
@@ -3314,6 +3328,8 @@ public class GriefPrevention extends JavaPlugin
             PlayerData playerData = this.dataStore.getPlayerData(playerID);
             this.dataStore.savePlayerDataSync(playerID, playerData);
         }
+
+        this.moduleManager.getModules().forEach(Module::disable);
 
         this.dataStore.close();
 

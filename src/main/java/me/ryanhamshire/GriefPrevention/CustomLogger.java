@@ -81,6 +81,8 @@ class CustomLogger
     private boolean isEnabledType(CustomLogEntryTypes entryType)
     {
         if (entryType == CustomLogEntryTypes.Exception) return true;
+        // Modules check their own debug config before logging.
+        if (entryType == CustomLogEntryTypes.DebugModule) return true;
         if (entryType == CustomLogEntryTypes.SocialActivity && !GriefPrevention.instance.config_logs_socialEnabled)
             return false;
         if (entryType == CustomLogEntryTypes.SuspiciousActivity && !GriefPrevention.instance.config_logs_suspiciousEnabled)
