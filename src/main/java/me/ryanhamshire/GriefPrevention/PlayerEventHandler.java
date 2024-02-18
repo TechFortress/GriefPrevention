@@ -196,7 +196,7 @@ class PlayerEventHandler implements Listener
                 {
                     recipientsToKeep.add(recipient);
                 }
-                else if (recipient.hasPermission("griefprevention.eavesdrop"))
+                else if (recipient.hasPermission("griefprevention.eavesdrop.messages.public"))
                 {
                     recipient.sendMessage(ChatColor.GRAY + notificationMessage);
                 }
@@ -214,7 +214,7 @@ class PlayerEventHandler implements Listener
             String notificationMessage = "(Muted " + player.getName() + "): " + message;
             for (Player recipient : recipients)
             {
-                if (recipient.hasPermission("griefprevention.eavesdrop"))
+                if (recipient.hasPermission("griefprevention.eavesdrop.messages.public"))
                 {
                     recipient.sendMessage(ChatColor.GRAY + notificationMessage);
                 }
@@ -441,10 +441,10 @@ class PlayerEventHandler implements Listener
             }
 
             //if eavesdrop enabled and sender doesn't have the eavesdrop immunity permission, eavesdrop
-            if (instance.config_whisperNotifications && !player.hasPermission("griefprevention.eavesdropimmune"))
+            if (instance.config_whisperNotifications && !player.hasPermission("griefprevention.eavesdrop.immune"))
             {
                 //except for when the recipient has eavesdrop immunity
-                if (targetPlayer == null || !targetPlayer.hasPermission("griefprevention.eavesdropimmune"))
+                if (targetPlayer == null || !targetPlayer.hasPermission("griefprevention.eavesdrop.immune"))
                 {
                     StringBuilder logMessageBuilder = new StringBuilder();
                     logMessageBuilder.append("[[").append(event.getPlayer().getName()).append("]] ");
@@ -460,7 +460,7 @@ class PlayerEventHandler implements Listener
                     Collection<Player> players = (Collection<Player>) instance.getServer().getOnlinePlayers();
                     for (Player onlinePlayer : players)
                     {
-                        if (onlinePlayer.hasPermission("griefprevention.eavesdrop") && !onlinePlayer.equals(targetPlayer) && !onlinePlayer.equals(player))
+                        if (onlinePlayer.hasPermission("griefprevention.eavesdrop.messages.private") && !onlinePlayer.equals(targetPlayer) && !onlinePlayer.equals(player))
                         {
                             onlinePlayer.sendMessage(ChatColor.GRAY + logMessage);
                         }
