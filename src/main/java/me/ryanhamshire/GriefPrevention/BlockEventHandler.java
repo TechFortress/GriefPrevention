@@ -410,7 +410,7 @@ public class BlockEventHandler implements Listener
         else if (Tag.SAPLINGS.isTagged(block.getType()) && GriefPrevention.instance.config_blockSkyTrees && GriefPrevention.instance.claimsEnabledForWorld(player.getWorld()))
         {
             Block earthBlock = placeEvent.getBlockAgainst();
-            if (earthBlock.getType() != Material.GRASS)
+            if (earthBlock.getType() != Material.SHORT_GRASS)
             {
                 if (earthBlock.getRelative(BlockFace.DOWN).getType() == Material.AIR ||
                         earthBlock.getRelative(BlockFace.DOWN).getRelative(BlockFace.DOWN).getType() == Material.AIR)
@@ -985,7 +985,7 @@ public class BlockEventHandler implements Listener
         Block block = event.getHitBlock();
 
         // Ensure projectile affects block.
-        if (block == null || block.getType() != Material.CHORUS_FLOWER)
+        if (block == null || (block.getType() != Material.CHORUS_FLOWER  && block.getType() != Material.DECORATED_POT))
             return;
 
         Claim claim = dataStore.getClaimAt(block.getLocation(), false, null);

@@ -9,6 +9,7 @@ branches:
   only:
     - master
     - dev/v20
+    - legacy/v16
   except:
     - gh-pages
 init:

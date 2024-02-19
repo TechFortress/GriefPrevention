@@ -117,9 +117,6 @@ public abstract class DataStore
     //list of UUIDs which are soft-muted
     ConcurrentHashMap<UUID, Boolean> softMuteMap = new ConcurrentHashMap<>();
 
-    //world guard reference, if available
-    private WorldGuardWrapper worldGuard = null;
-
     protected int getSchemaVersion()
     {
         if (this.currentSchemaVersion >= 0)
@@ -198,14 +195,6 @@ public abstract class DataStore
         //make a note of the data store schema version
         this.setSchemaVersion(latestSchemaVersion);
 
-        //try to hook into world guard
-        try
-        {
-            this.worldGuard = new WorldGuardWrapper();
-            GriefPrevention.AddLogEntry("Successfully hooked into WorldGuard.");
-        }
-        //if failed, world guard compat features will just be disabled.
-        catch (IllegalStateException | IllegalArgumentException | ClassCastException | NoClassDefFoundError ignored) { }
     }
 
     private void loadSoftMutes()
@@ -983,16 +972,6 @@ public abstract class DataStore
             }
         }
 
-        //if worldguard is installed, also prevent claims from overlapping any worldguard regions
-        if (GriefPrevention.instance.config_claims_respectWorldGuard && this.worldGuard != null && creatingPlayer != null)
-        {
-            if (!this.worldGuard.canBuild(newClaim.lesserBoundaryCorner, newClaim.greaterBoundaryCorner, creatingPlayer))
-            {
-                result.succeeded = false;
-                result.claim = null;
-                return result;
-            }
-        }
         if (dryRun)
         {
             // since this is a dry run, just return the unsaved claim as is.
@@ -1725,6 +1704,7 @@ public abstract class DataStore
         this.addDefault(defaults, Messages.NoContainersSiege, "This claim is under siege by {0}.  No one can access containers here right now.", "0: attacker name");
         this.addDefault(defaults, Messages.NoContainersPermission, "You don't have {0}'s permission to use that.", "0: owner's name.  containers also include crafting blocks");
         this.addDefault(defaults, Messages.OwnerNameForAdminClaims, "an administrator", "as in 'You don't have an administrator's permission to build here.'");
+        this.addDefault(defaults, Messages.UnknownPlayerName, "someone", "Name used for unknown players. UUID will be appended if available: \"someone (01234567-0123-0123-0123-0123456789ab)\"");
         this.addDefault(defaults, Messages.ClaimTooSmallForEntities, "This claim isn't big enough for that.  Try enlarging it.", null);
         this.addDefault(defaults, Messages.TooManyEntitiesInClaim, "This claim has too many entities already.  Try enlarging the claim or removing some animals, monsters, paintings, or minecarts.", null);
         this.addDefault(defaults, Messages.YouHaveNoClaims, "You don't have any land claims.", null);
