@@ -39,6 +39,8 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.command.Command;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.damage.DamageType;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.Animals;
 import org.bukkit.entity.Creature;
@@ -47,9 +49,12 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fish;
 import org.bukkit.entity.Hanging;
+import org.bukkit.entity.Horse;
+import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.Llama;
 import org.bukkit.entity.Mule;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.minecart.PoweredMinecart;
@@ -1366,16 +1371,34 @@ class PlayerEventHandler implements Listener
         // Name tags may only be used on entities that the player is allowed to kill.
         if (itemInHand.getType() == Material.NAME_TAG)
         {
-            EntityDamageByEntityEvent damageEvent = new EntityDamageByEntityEvent(player, entity, EntityDamageEvent.DamageCause.CUSTOM, 0);
-            instance.entityDamageHandler.onEntityDamage(damageEvent);
-            if (damageEvent.isCancelled())
+            //don't track in worlds where claims are not enabled
+            if (!instance.claimsEnabledForWorld(entity.getWorld())) return;
+
+            Claim cachedClaim = playerData.lastClaim;;
+            Claim claim = this.dataStore.getClaimAt(entity.getLocation(), false, cachedClaim);
+
+            // Require a claim to handle.
+            if (claim == null) return;
+
+            Supplier<String> override = () ->
             {
-                event.setCancelled(true);
-                // Don't print message - damage event handler should have handled it.
-                return;
-            }
+                String message = dataStore.getMessage(Messages.NoDamageClaimedEntity, claim.getOwnerName());
+                if (player.hasPermission("griefprevention.ignoreclaims"))
+                    message += "  " + dataStore.getMessage(Messages.IgnoreClaimsAdvertisement);
+                return message;
+            };
+
+            // Check for permission to access containers.
+            Supplier<String> noContainersReason = claim.checkPermission(player, ClaimPermission.Inventory, event, override);
+
+            // If player has permission, action is allowed.
+            if (noContainersReason == null) return;
+            event.setCancelled(true);
+            GriefPrevention.sendMessage(player, TextMode.Err, noContainersReason.get());
         }
     }
+
+
 
     //when a player throws an egg
     @EventHandler(priority = EventPriority.LOWEST)
@@ -2174,7 +2197,7 @@ class PlayerEventHandler implements Listener
                 }
                 else
                 {
-                    allowedFillBlocks.add(Material.GRASS);
+                    allowedFillBlocks.add(Material.SHORT_GRASS);
                     allowedFillBlocks.add(Material.DIRT);
                     allowedFillBlocks.add(Material.STONE);
                     allowedFillBlocks.add(Material.SAND);
@@ -2238,7 +2261,7 @@ class PlayerEventHandler implements Listener
                             }
 
                             //only replace air, spilling water, snow, long grass
-                            if (block.getType() == Material.AIR || block.getType() == Material.SNOW || (block.getType() == Material.WATER && ((Levelled) block.getBlockData()).getLevel() != 0) || block.getType() == Material.GRASS)
+                            if (block.getType() == Material.AIR || block.getType() == Material.SNOW || (block.getType() == Material.WATER && ((Levelled) block.getBlockData()).getLevel() != 0) || block.getType() == Material.SHORT_GRASS)
                             {
                                 //if the top level, always use the default filler picked above
                                 if (y == maxHeight)
@@ -2650,7 +2673,7 @@ class PlayerEventHandler implements Listener
             Material type = result.getType();
             if (type != Material.AIR &&
                     (!passThroughWater || type != Material.WATER) &&
-                    type != Material.GRASS &&
+                    type != Material.SHORT_GRASS &&
                     type != Material.SNOW) return result;
         }
 
