@@ -20,7 +20,7 @@ import java.util.Objects;
 import java.util.Set;
 
 //automatically extends a claim downward based on block types detected
-class AutoExtendClaimTask implements Runnable
+public class AutoExtendClaimTask implements Runnable
 {
 
     /**
@@ -28,7 +28,7 @@ class AutoExtendClaimTask implements Runnable
      *
      * @param claim the claim to extend the depth of
      */
-    static void scheduleAsync(Claim claim)
+    public static void scheduleAsync(@NotNull Claim claim)
     {
         Location lesserCorner = claim.getLesserBoundaryCorner();
         Location greaterCorner = claim.getGreaterBoundaryCorner();
