@@ -20,8 +20,7 @@ package me.ryanhamshire.GriefPrevention;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.griefprevention.visualization.BoundaryVisualization;
-import com.griefprevention.visualization.VisualizationType;
+import com.griefprevention.commands.ClaimCommand;
 import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
 import me.ryanhamshire.GriefPrevention.events.PreventBlockBreakEvent;
 import me.ryanhamshire.GriefPrevention.events.SaveTrappedPlayerEvent;
@@ -404,6 +403,8 @@ public class GriefPrevention extends JavaPlugin
         {
             new IgnoreLoaderThread(player.getUniqueId(), this.dataStore.getPlayerData(player.getUniqueId()).ignoredPlayers).start();
         }
+
+        setUpCommands();
 
         AddLogEntry("Boot finished.");
 
@@ -1005,6 +1006,11 @@ public class GriefPrevention extends JavaPlugin
         }
     }
 
+    private void setUpCommands()
+    {
+        new ClaimCommand(this);
+    }
+
     //handles slash commands
     public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args)
     {
@@ -1013,130 +1019,6 @@ public class GriefPrevention extends JavaPlugin
         if (sender instanceof Player)
         {
             player = (Player) sender;
-        }
-
-        //claim
-        if (cmd.getName().equalsIgnoreCase("claim") && player != null)
-        {
-            if (!GriefPrevention.instance.claimsEnabledForWorld(player.getWorld()))
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.ClaimsDisabledWorld);
-                return true;
-            }
-
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-
-            //if he's at the claim count per player limit already and doesn't have permission to bypass, display an error message
-            if (GriefPrevention.instance.config_claims_maxClaimsPerPlayer > 0 &&
-                    !player.hasPermission("griefprevention.overrideclaimcountlimit") &&
-                    playerData.getClaims().size() >= GriefPrevention.instance.config_claims_maxClaimsPerPlayer)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.ClaimCreationFailedOverClaimCountLimit);
-                return true;
-            }
-
-            //default is chest claim radius, unless -1
-            int radius = GriefPrevention.instance.config_claims_automaticClaimsForNewPlayersRadius;
-            if (radius < 0) radius = (int) Math.ceil(Math.sqrt(GriefPrevention.instance.config_claims_minArea) / 2);
-
-            //if player has any claims, respect claim minimum size setting
-            if (playerData.getClaims().size() > 0)
-            {
-                //if player has exactly one land claim, this requires the claim modification tool to be in hand (or creative mode player)
-                if (playerData.getClaims().size() == 1 && player.getGameMode() != GameMode.CREATIVE && player.getItemInHand().getType() != GriefPrevention.instance.config_claims_modificationTool)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.MustHoldModificationToolForThat);
-                    return true;
-                }
-
-                radius = (int) Math.ceil(Math.sqrt(GriefPrevention.instance.config_claims_minArea) / 2);
-            }
-
-            //allow for specifying the radius
-            if (args.length > 0)
-            {
-                if (playerData.getClaims().size() < 2 && player.getGameMode() != GameMode.CREATIVE && player.getItemInHand().getType() != GriefPrevention.instance.config_claims_modificationTool)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.RadiusRequiresGoldenShovel);
-                    return true;
-                }
-
-                int specifiedRadius;
-                try
-                {
-                    specifiedRadius = Integer.parseInt(args[0]);
-                }
-                catch (NumberFormatException e)
-                {
-                    return false;
-                }
-
-                if (specifiedRadius < radius)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.MinimumRadius, String.valueOf(radius));
-                    return true;
-                }
-                else
-                {
-                    radius = specifiedRadius;
-                }
-            }
-
-            if (radius < 0) radius = 0;
-
-            Location lc = player.getLocation().add(-radius, 0, -radius);
-            Location gc = player.getLocation().add(radius, 0, radius);
-
-            //player must have sufficient unused claim blocks
-            int area = Math.abs((gc.getBlockX() - lc.getBlockX() + 1) * (gc.getBlockZ() - lc.getBlockZ() + 1));
-            int remaining = playerData.getRemainingClaimBlocks();
-            if (remaining < area)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimInsufficientBlocks, String.valueOf(area - remaining));
-                GriefPrevention.instance.dataStore.tryAdvertiseAdminAlternatives(player);
-                return true;
-            }
-
-            CreateClaimResult result = this.dataStore.createClaim(lc.getWorld(),
-                    lc.getBlockX(), gc.getBlockX(),
-                    lc.getBlockY() - GriefPrevention.instance.config_claims_claimsExtendIntoGroundDistance - 1,
-                    gc.getWorld().getHighestBlockYAt(gc) - GriefPrevention.instance.config_claims_claimsExtendIntoGroundDistance - 1,
-                    lc.getBlockZ(), gc.getBlockZ(),
-                    player.getUniqueId(), null, null, player);
-            if (!result.succeeded || result.claim == null)
-            {
-                if (result.claim != null)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlapShort);
-
-                    BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE);
-                }
-                else
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlapRegion);
-                }
-            }
-            else
-            {
-                GriefPrevention.sendMessage(player, TextMode.Success, Messages.CreateClaimSuccess);
-
-                //link to a video demo of land claiming, based on world type
-                if (GriefPrevention.instance.creativeRulesApply(player.getLocation()))
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Instr, Messages.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
-                }
-                else if (GriefPrevention.instance.claimsEnabledForWorld(player.getWorld()))
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
-                }
-                BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM);
-                playerData.claimResizing = null;
-                playerData.lastShovelLocation = null;
-
-                AutoExtendClaimTask.scheduleAsync(result.claim);
-            }
-
-            return true;
         }
 
         //extendclaim
@@ -3470,11 +3352,11 @@ public class GriefPrevention extends JavaPlugin
     }
 
     //determines whether creative anti-grief rules apply at a location
-    boolean creativeRulesApply(Location location)
+    public boolean creativeRulesApply(@NotNull Location location)
     {
         if (!this.config_creativeWorldsExist) return false;
 
-        return this.config_claims_worldModes.get((location.getWorld())) == ClaimsMode.Creative;
+        return this.config_claims_worldModes.get(location.getWorld()) == ClaimsMode.Creative;
     }
 
     public String allowBuild(Player player, Location location)
