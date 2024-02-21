@@ -39,6 +39,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Sittable;
 import org.bukkit.entity.Tameable;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -635,7 +636,7 @@ public abstract class DataStore
         //delete any children
         for (int j = 1; (j - 1) < claim.children.size(); j++)
         {
-            this.deleteClaim(claim.children.get(j - 1), true);
+            this.deleteClaim(claim.children.get(j - 1), releasePets);
         }
 
         //subdivisions must also be removed from the parent claim child list
@@ -692,28 +693,18 @@ public abstract class DataStore
                 Entity[] entities = chunk.getEntities();
                 for (Entity entity : entities)
                 {
-                    if (entity instanceof Tameable)
+                    if (entity instanceof Tameable pet && pet.isTamed())
                     {
-                        Tameable pet = (Tameable) entity;
-                        if (pet.isTamed())
+                        AnimalTamer owner = pet.getOwner();
+                        if (owner != null && owner.getUniqueId().equals(claim.ownerID))
                         {
-                            AnimalTamer owner = pet.getOwner();
-                            if (owner != null)
-                            {
-                                UUID ownerID = owner.getUniqueId();
-                                if (ownerID != null)
-                                {
-                                    if (ownerID.equals(claim.ownerID))
-                                    {
-                                        pet.setTamed(false);
-                                        pet.setOwner(null);
-                                        if (pet instanceof InventoryHolder)
-                                        {
-                                            InventoryHolder holder = (InventoryHolder) pet;
-                                            holder.getInventory().clear();
-                                        }
-                                    }
-                                }
+                            pet.setTamed(false);
+                            pet.setOwner(null);
+                            if (pet instanceof InventoryHolder holder) {
+                                holder.getInventory().clear();
+                            }
+                            if (pet instanceof Sittable sittable) {
+                                sittable.setSitting(false);
                             }
                         }
                     }
