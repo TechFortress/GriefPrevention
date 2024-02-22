@@ -3485,7 +3485,7 @@ public class GriefPrevention extends JavaPlugin
         if (claim.isAdminClaim()) return;
 
         //it's too expensive to do this for huge claims
-        if (claim.getArea() > 10000) return;
+        if (claim.getArea() > 10000 || claim.getWidth() > 250 || claim.getHeight() > 250) return;
 
         ArrayList<Chunk> chunks = claim.getChunks();
         for (Chunk chunk : chunks)
