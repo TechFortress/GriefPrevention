@@ -355,10 +355,6 @@ public class GriefPrevention extends JavaPlugin
             this.getServer().getScheduler().scheduleSyncRepeatingTask(this, task, 20L * 60 * 10, 20L * 60 * 10);
         }
 
-        //start the recurring cleanup event for entities in creative worlds
-        EntityCleanupTask task = new EntityCleanupTask(0);
-        this.getServer().getScheduler().scheduleSyncDelayedTask(GriefPrevention.instance, task, 20L * 60 * 2);
-
         //start recurring cleanup scan for unused claims belonging to inactive players
         FindUnusedClaimsTask task2 = new FindUnusedClaimsTask();
         this.getServer().getScheduler().scheduleSyncRepeatingTask(this, task2, 20L * 60, 20L * config_advanced_claim_expiration_check_rate);
@@ -3489,7 +3485,7 @@ public class GriefPrevention extends JavaPlugin
         if (claim.isAdminClaim()) return;
 
         //it's too expensive to do this for huge claims
-        if (claim.getArea() > 10000) return;
+        if (claim.getArea() > 10000 || claim.getWidth() > 250 || claim.getHeight() > 250) return;
 
         ArrayList<Chunk> chunks = claim.getChunks();
         for (Chunk chunk : chunks)
