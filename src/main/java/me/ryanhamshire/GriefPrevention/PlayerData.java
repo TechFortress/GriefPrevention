@@ -96,9 +96,6 @@ public class PlayerData
     //the last claim this player was in, that we know of
     public Claim lastClaim = null;
 
-    //siege
-    public SiegeData siegeData = null;
-
     //pvp
     public long lastPvpTimestamp = 0;
     public String lastPvpPlayer = "";

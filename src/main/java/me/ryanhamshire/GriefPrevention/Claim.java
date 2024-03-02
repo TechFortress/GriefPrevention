@@ -93,9 +93,6 @@ public class Claim
     //note subdivisions themselves never have children
     public ArrayList<Claim> children = new ArrayList<>();
 
-    //information about a siege involving this claim.  null means no siege is impacting this claim
-    public SiegeData siegeData = null;
-
     //following a siege, buttons/levers are unlocked temporarily.  this represents that state
     public boolean doorsOpen = false;
 
@@ -272,7 +269,6 @@ public class Claim
         this.parent = claim.parent;
         this.inheritNothing = claim.inheritNothing;
         this.children = new ArrayList<>(claim.children);
-        this.siegeData = claim.siegeData;
         this.doorsOpen = claim.doorsOpen;
     }
 
