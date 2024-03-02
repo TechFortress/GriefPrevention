@@ -27,8 +27,6 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -826,76 +824,17 @@ public class Claim
         return new BoundingBox(this).intersects(new BoundingBox(otherClaim));
     }
 
-    //whether more entities may be added to a claim
-    public String allowMoreEntities(boolean remove)
+    @Deprecated(since = "17.0.0", forRemoval = true)
+    @Contract("_ -> null")
+    public @Nullable String allowMoreEntities(boolean remove)
     {
-        if (this.parent != null) return this.parent.allowMoreEntities(remove);
-
-        //this rule only applies to creative mode worlds
-        if (!GriefPrevention.instance.creativeRulesApply(this.getLesserBoundaryCorner())) return null;
-
-        //admin claims aren't restricted
-        if (this.isAdminClaim()) return null;
-
-        //don't apply this rule to very large claims
-        if (this.getArea() > 10000) return null;
-
-        //determine maximum allowable entity count, based on claim size
-        int maxEntities = this.getArea() / 50;
-        if (maxEntities == 0) return GriefPrevention.instance.dataStore.getMessage(Messages.ClaimTooSmallForEntities);
-
-        //count current entities (ignoring players)
-        int totalEntities = 0;
-        ArrayList<Chunk> chunks = this.getChunks();
-        for (Chunk chunk : chunks)
-        {
-            Entity[] entities = chunk.getEntities();
-            for (Entity entity : entities)
-            {
-                if (!(entity instanceof Player) && this.contains(entity.getLocation(), false, false))
-                {
-                    totalEntities++;
-                    if (remove && totalEntities > maxEntities) entity.remove();
-                }
-            }
-        }
-
-        if (totalEntities >= maxEntities)
-            return GriefPrevention.instance.dataStore.getMessage(Messages.TooManyEntitiesInClaim);
-
         return null;
     }
 
-    public String allowMoreActiveBlocks()
+    @Deprecated(since = "17.0.0", forRemoval = true)
+    @Contract("-> null")
+    public @Nullable String allowMoreActiveBlocks()
     {
-        if (this.parent != null) return this.parent.allowMoreActiveBlocks();
-
-        //determine maximum allowable entity count, based on claim size
-        int maxActives = this.getArea() / 100;
-        if (maxActives == 0)
-            return GriefPrevention.instance.dataStore.getMessage(Messages.ClaimTooSmallForActiveBlocks);
-
-        //count current actives
-        int totalActives = 0;
-        ArrayList<Chunk> chunks = this.getChunks();
-        for (Chunk chunk : chunks)
-        {
-            BlockState[] actives = chunk.getTileEntities();
-            for (BlockState active : actives)
-            {
-                if (BlockEventHandler.isActiveBlock(active))
-                {
-                    if (this.contains(active.getLocation(), false, false))
-                    {
-                        totalActives++;
-                    }
-                }
-            }
-        }
-
-        if (totalActives >= maxActives)
-            return GriefPrevention.instance.dataStore.getMessage(Messages.TooManyActiveBlocksInClaim);
-
         return null;
     }
 
