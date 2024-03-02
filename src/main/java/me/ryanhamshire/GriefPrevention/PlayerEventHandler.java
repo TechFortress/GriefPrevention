@@ -39,8 +39,6 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.command.Command;
-import org.bukkit.damage.DamageSource;
-import org.bukkit.damage.DamageType;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.Animals;
 import org.bukkit.entity.Creature;
@@ -49,12 +47,9 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fish;
 import org.bukkit.entity.Hanging;
-import org.bukkit.entity.Horse;
-import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.Llama;
 import org.bukkit.entity.Mule;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.minecart.PoweredMinecart;
@@ -63,8 +58,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
@@ -1267,22 +1260,6 @@ class PlayerEventHandler implements Listener
             }
         }
 
-        //limit armor placements when entity count is too high
-        if (entity.getType() == EntityType.ARMOR_STAND && instance.creativeRulesApply(player.getLocation()))
-        {
-            if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
-            Claim claim = this.dataStore.getClaimAt(entity.getLocation(), false, playerData.lastClaim);
-            if (claim == null) return;
-
-            String noEntitiesReason = claim.allowMoreEntities(false);
-            if (noEntitiesReason != null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, noEntitiesReason);
-                event.setCancelled(true);
-                return;
-            }
-        }
-
         //always allow interactions when player is in ignore claims mode
         if (playerData.ignoreClaims) return;
 
@@ -1958,49 +1935,6 @@ class PlayerEventHandler implements Listener
                         GriefPrevention.sendMessage(player, TextMode.Err, reason.get());
                         event.setCancelled(true);
                     }
-                }
-
-                return;
-            }
-
-            //if it's a spawn egg, minecart, or boat, and this is a creative world, apply special rules
-            else if (clickedBlock != null && (materialInHand == Material.MINECART ||
-                    materialInHand == Material.FURNACE_MINECART ||
-                    materialInHand == Material.CHEST_MINECART ||
-                    materialInHand == Material.TNT_MINECART ||
-                    materialInHand == Material.ARMOR_STAND ||
-                    materialInHand == Material.ITEM_FRAME ||
-                    materialInHand == Material.GLOW_ITEM_FRAME ||
-                    spawnEggs.contains(materialInHand) ||
-                    materialInHand == Material.INFESTED_STONE ||
-                    materialInHand == Material.INFESTED_COBBLESTONE ||
-                    materialInHand == Material.INFESTED_STONE_BRICKS ||
-                    materialInHand == Material.INFESTED_MOSSY_STONE_BRICKS ||
-                    materialInHand == Material.INFESTED_CRACKED_STONE_BRICKS ||
-                    materialInHand == Material.INFESTED_CHISELED_STONE_BRICKS ||
-                    materialInHand == Material.HOPPER_MINECART) &&
-                    instance.creativeRulesApply(clickedBlock.getLocation()))
-            {
-                //player needs build permission at this location
-                String noBuildReason = instance.allowBuild(player, clickedBlock.getLocation(), Material.MINECART);
-                if (noBuildReason != null)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, noBuildReason);
-                    event.setCancelled(true);
-                    return;
-                }
-
-                //enforce limit on total number of entities in this claim
-                if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
-                Claim claim = this.dataStore.getClaimAt(clickedBlock.getLocation(), false, playerData.lastClaim);
-                if (claim == null) return;
-
-                String noEntitiesReason = claim.allowMoreEntities(false);
-                if (noEntitiesReason != null)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, noEntitiesReason);
-                    event.setCancelled(true);
-                    return;
                 }
 
                 return;

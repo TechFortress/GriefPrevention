@@ -467,34 +467,6 @@ public class BlockEventHandler implements Listener
         {
             GriefPrevention.sendMessage(player, TextMode.Warn, Messages.NoPistonsOutsideClaims);
         }
-
-        //limit active blocks in creative mode worlds
-        if (!player.hasPermission("griefprevention.adminclaims") && GriefPrevention.instance.creativeRulesApply(block.getLocation()) && isActiveBlock(block))
-        {
-            String noPlaceReason = claim.allowMoreActiveBlocks();
-            if (noPlaceReason != null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, noPlaceReason);
-                placeEvent.setCancelled(true);
-                return;
-            }
-        }
-    }
-
-    static boolean isActiveBlock(Block block)
-    {
-        return isActiveBlock(block.getType());
-    }
-
-    static boolean isActiveBlock(BlockState state)
-    {
-        return isActiveBlock(state.getType());
-    }
-
-    static boolean isActiveBlock(Material type)
-    {
-        if (type == Material.HOPPER || type == Material.BEACON || type == Material.SPAWNER) return true;
-        return false;
     }
 
     private static final BlockFace[] HORIZONTAL_DIRECTIONS = new BlockFace[] {
