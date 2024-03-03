@@ -116,17 +116,6 @@ public class Claim
         this.modifiedDate = Calendar.getInstance().getTime();
     }
 
-    //players may only siege someone when he's not in an admin claim
-    //and when he has some level of permission in the claim
-    public boolean canSiege(Player defender)
-    {
-        if (this.isAdminClaim()) return false;
-
-        if (this.checkPermission(defender, ClaimPermission.Access, null) != null) return false;
-
-        return true;
-    }
-
     //removes any lava above sea level in a claim
     //exclusionClaim is another claim indicating an sub-area to be excluded from this operation
     //it may be null
