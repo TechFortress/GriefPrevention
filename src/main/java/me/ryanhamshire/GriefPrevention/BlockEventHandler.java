@@ -307,7 +307,7 @@ public class BlockEventHandler implements Listener
             playerData.lastClaim = claim;
 
             //warn about TNT not destroying claimed blocks
-            if (block.getType() == Material.TNT && !claim.areExplosivesAllowed && playerData.siegeData == null)
+            if (block.getType() == Material.TNT && !claim.areExplosivesAllowed)
             {
                 GriefPrevention.sendMessage(player, TextMode.Warn, Messages.NoTNTDamageClaims);
                 GriefPrevention.sendMessage(player, TextMode.Instr, Messages.ClaimExplosivesAdvertisement);
@@ -460,8 +460,7 @@ public class BlockEventHandler implements Listener
         if (GriefPrevention.instance.config_blockSurfaceOtherExplosions && block.getType() == Material.TNT &&
                 block.getWorld().getEnvironment() != Environment.NETHER &&
                 block.getY() > GriefPrevention.instance.getSeaLevel(block.getWorld()) - 5 &&
-                claim == null &&
-                playerData.siegeData == null)
+                claim == null)
         {
             GriefPrevention.sendMessage(player, TextMode.Warn, Messages.NoTNTDamageAboveSeaLevel);
         }

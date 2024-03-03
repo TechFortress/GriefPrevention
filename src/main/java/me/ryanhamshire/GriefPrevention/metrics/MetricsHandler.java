@@ -106,7 +106,7 @@ public class MetricsHandler
         addSimplePie("storage_mode", dataMode);
 
         //siege
-        addSimplePie("uses_siege", !plugin.config_siege_enabledWorlds.isEmpty());
+        //addSimplePie("uses_siege", !plugin.config_siege_enabledWorlds.isEmpty());
     }
 
     private void addSimplePie(String id, boolean value)

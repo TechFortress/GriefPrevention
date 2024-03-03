@@ -139,10 +139,6 @@ commands:
       description: Lists permissions for the claim you're standing in.
       usage: /<command>
       permission: griefprevention.claims
-    siege:
-      description: Initiates a siege versus another player.
-      usage: /<command> <playerName>
-      permission: griefprevention.siege
     ignoreclaims:
       description: Toggles ignore claims mode.
       usage: /<command>
@@ -241,7 +237,6 @@ permissions:
             griefprevention.overrideclaimcountlimit: true
             griefprevention.transferclaim: true
             griefprevention.claimslistother: true
-            griefprevention.siegeimmune: true
             griefprevention.separate: true
             griefprevention.eavesdropsigns: true
             griefprevention.claimbook: true
@@ -249,17 +244,10 @@ permissions:
             griefprevention.seeinactivity: true
             griefprevention.eavesdropimmune: true
             griefprevention.deleteclaimsinworld: true
-            griefprevention.siegeteleport: true
             griefprevention.unlockothersdrops: true
             griefprevention.seeclaimsize: true
-    griefprevention.siegeimmune:
-        description: Makes a player immune to /siege.
-        default: op
     griefprevention.givepet:
         description: Grants permission to use /givepet.
-        default: true
-    griefprevention.siege:
-        description: Grants permission to use /siege.
         default: true
     griefprevention.unlockdrops:
         description: Grants permission to use /unlockdrops.
@@ -350,9 +338,6 @@ permissions:
         default: op
     griefprevention.eavesdropimmune:
         description: Players with this permission can't have their private messages eavesdropped.
-        default: op
-    griefprevention.siegeteleport:
-        description: Players with this permission can teleport into and out of besieged areas.
         default: op
     griefprevention.premovementchat:
         description: Players with this permission can chat before moving.

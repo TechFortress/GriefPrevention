@@ -73,9 +73,6 @@ public class PlayerData
     //whether this player was recently warned about building outside land claims
     boolean warnedAboutBuildingOutsideClaims = false;
 
-    //timestamp when last siege ended (where this player was the defender)
-    long lastSiegeEndTimeStamp = 0;
-
     //whether the player was kicked (set and used during logout)
     boolean wasKicked = false;
 
@@ -95,9 +92,6 @@ public class PlayerData
 
     //the last claim this player was in, that we know of
     public Claim lastClaim = null;
-
-    //siege
-    public SiegeData siegeData = null;
 
     //pvp
     public long lastPvpTimestamp = 0;
