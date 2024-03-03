@@ -34,8 +34,4 @@ Updating Other Claim Fields
 
 Uniquely Identifying a Claim
 
-Starting a Siege
-
-Ending a Siege
-
 Getting/Updating Player Data
