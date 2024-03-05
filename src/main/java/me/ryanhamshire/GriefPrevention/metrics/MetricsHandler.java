@@ -5,6 +5,8 @@ import me.ryanhamshire.GriefPrevention.GriefPrevention;
 import org.bukkit.World;
 
 import java.util.concurrent.Callable;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Created on 9/22/2018.
@@ -107,6 +109,14 @@ public class MetricsHandler
 
         //siege
         addSimplePie("uses_siege", !plugin.config_siege_enabledWorlds.isEmpty());
+
+        metrics.addCustomChart(new Metrics.SimpleBarChart(
+                "claim_modes",
+                () -> plugin.config_claims_worldModes.values().stream()
+                        .filter(mode -> mode != null && mode != ClaimsMode.Disabled)
+                        .distinct()
+                        .map(Enum::name)
+                        .collect(Collectors.groupingBy(Function.identity(), Collectors.summingInt(v -> 1)))));
     }
 
     private void addSimplePie(String id, boolean value)
