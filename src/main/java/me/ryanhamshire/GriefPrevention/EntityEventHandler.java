@@ -547,8 +547,11 @@ public class EntityEventHandler implements Listener
         }
 
         //FEATURE: lock dropped items to player who dropped them
+        if (!(entity instanceof Player player))
+        {
+            return;
+        }
 
-        Player player = (Player) entity;
         PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
         World world = entity.getWorld();
 
