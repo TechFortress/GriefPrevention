@@ -30,18 +30,12 @@ import me.ryanhamshire.GriefPrevention.events.ClaimTransferEvent;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.AnimalTamer;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Sittable;
-import org.bukkit.entity.Tameable;
-import org.bukkit.inventory.InventoryHolder;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
@@ -623,18 +617,21 @@ public abstract class DataStore
         this.deleteClaim(claim, true, false);
     }
 
-    //deletes a claim or subdivision
+    /**
+     * @deprecated Releasing pets is no longer a core feature. Use {@link #deleteClaim(Claim)}.
+     */
+    @Deprecated(forRemoval = true, since = "17.0.0")
     synchronized public void deleteClaim(Claim claim, boolean releasePets)
     {
-        this.deleteClaim(claim, true, releasePets);
+        this.deleteClaim(claim, true, false);
     }
 
-    synchronized void deleteClaim(Claim claim, boolean fireEvent, boolean releasePets)
+    synchronized void deleteClaim(Claim claim, boolean fireEvent, boolean ignored)
     {
         //delete any children
         for (int j = 1; (j - 1) < claim.children.size(); j++)
         {
-            this.deleteClaim(claim.children.get(j - 1), releasePets);
+            this.deleteClaim(claim.children.get(j - 1), fireEvent, ignored);
         }
 
         //subdivisions must also be removed from the parent claim child list
@@ -681,33 +678,6 @@ public abstract class DataStore
         {
             ClaimDeletedEvent ev = new ClaimDeletedEvent(claim);
             Bukkit.getPluginManager().callEvent(ev);
-        }
-
-        //optionally set any pets free which belong to the claim owner
-        if (releasePets && claim.ownerID != null && claim.parent == null)
-        {
-            for (Chunk chunk : claim.getChunks())
-            {
-                Entity[] entities = chunk.getEntities();
-                for (Entity entity : entities)
-                {
-                    if (entity instanceof Tameable pet && pet.isTamed())
-                    {
-                        AnimalTamer owner = pet.getOwner();
-                        if (owner != null && owner.getUniqueId().equals(claim.ownerID))
-                        {
-                            pet.setTamed(false);
-                            pet.setOwner(null);
-                            if (pet instanceof InventoryHolder holder) {
-                                holder.getInventory().clear();
-                            }
-                            if (pet instanceof Sittable sittable) {
-                                sittable.setSitting(false);
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -1149,7 +1119,7 @@ public abstract class DataStore
         {
             claim.removeSurfaceFluids(null);
 
-            this.deleteClaim(claim, releasePets);
+            this.deleteClaim(claim);
 
             //if in a creative mode world, delete the claim
             if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()))
