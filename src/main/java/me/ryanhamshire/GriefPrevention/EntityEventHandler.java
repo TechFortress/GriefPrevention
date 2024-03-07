@@ -180,26 +180,25 @@ public class EntityEventHandler implements Listener
         }
 
         //sand cannon fix - when the falling block doesn't fall straight down, take additional anti-grief steps
-        else if (event.getEntityType() == EntityType.FALLING_BLOCK)
+        else if (event.getEntity() instanceof FallingBlock fallingBlock)
         {
-            FallingBlock entity = (FallingBlock) event.getEntity();
-            handleFallingBlockChangeBlock(event, entity);
+            handleFallingBlockChangeBlock(event, fallingBlock);
         }
     }
 
-    private void handleFallingBlockChangeBlock(EntityChangeBlockEvent event, FallingBlock entity)
+    private void handleFallingBlockChangeBlock(EntityChangeBlockEvent event, FallingBlock fallingBlock)
     {
         Block block = event.getBlock();
 
         //if changing a block TO air, this is when the falling block formed.  note its original location
         if (event.getTo() == Material.AIR)
         {
-            entity.setMetadata("GP_FALLINGBLOCK", new FixedMetadataValue(GriefPrevention.instance, block.getLocation()));
+            fallingBlock.setMetadata("GP_FALLINGBLOCK", new FixedMetadataValue(GriefPrevention.instance, block.getLocation()));
         }
         //otherwise, the falling block is forming a block.  compare new location to original source
         else
         {
-            List<MetadataValue> values = entity.getMetadata("GP_FALLINGBLOCK");
+            List<MetadataValue> values = fallingBlock.getMetadata("GP_FALLINGBLOCK");
             //if we're not sure where this entity came from (maybe another plugin didn't follow the standard?), allow the block to form
             //Or if entity fell through an end portal, allow it to form, as the event is erroneously fired twice in this scenario.
             if (values.size() < 1) return;
@@ -214,7 +213,7 @@ public class EntityEventHandler implements Listener
                 if (GriefPrevention.instance.config_claims_worldModes.get(newLocation.getWorld()) == ClaimsMode.Creative)
                 {
                     event.setCancelled(true);
-                    entity.remove();
+                    fallingBlock.remove();
                     return;
                 }
 
@@ -226,16 +225,16 @@ public class EntityEventHandler implements Listener
                     event.setCancelled(true);
 
                     // Just in case, skip already dead entities.
-                    if (entity.isDead())
+                    if (fallingBlock.isDead())
                     {
                         return;
                     }
 
                     // Remove entity so it doesn't continuously spawn drops.
-                    entity.remove();
+                    fallingBlock.remove();
 
-                    ItemStack itemStack = new ItemStack(entity.getBlockData().getMaterial(), 1);
-                    block.getWorld().dropItemNaturally(entity.getLocation(), itemStack);
+                    ItemStack itemStack = new ItemStack(fallingBlock.getBlockData().getMaterial(), 1);
+                    block.getWorld().dropItemNaturally(fallingBlock.getLocation(), itemStack);
                 }
             }
         }
