@@ -189,11 +189,12 @@ public class EntityEventHandler implements Listener
     private void handleFallingBlockChangeBlock(EntityChangeBlockEvent event, FallingBlock fallingBlock)
     {
         Block block = event.getBlock();
+        Location blockLocation = block.getLocation();
 
         //if changing a block TO air, this is when the falling block formed.  note its original location
         if (event.getTo() == Material.AIR)
         {
-            fallingBlock.setMetadata("GP_FALLINGBLOCK", new FixedMetadataValue(GriefPrevention.instance, block.getLocation()));
+            fallingBlock.setMetadata("GP_FALLINGBLOCK", new FixedMetadataValue(GriefPrevention.instance, blockLocation));
             return;
         }
 
@@ -201,19 +202,16 @@ public class EntityEventHandler implements Listener
         List<MetadataValue> values = fallingBlock.getMetadata("GP_FALLINGBLOCK");
         //if we're not sure where this entity came from (maybe another plugin didn't follow the standard?), allow the block to form
         //Or if entity fell through an end portal, allow it to form, as the event is erroneously fired twice in this scenario.
-        if (values.size() < 1) return;
-
-        Location originalLocation = (Location) (values.get(0).value());
-        Location newLocation = block.getLocation();
+        if (values.isEmpty() || !(values.get(0).value() instanceof Location originalLocation)) return;
 
         // If it fell straight down, allow.
-        if (originalLocation.getBlockX() == newLocation.getBlockX() && originalLocation.getBlockZ() == newLocation.getBlockZ())
+        if (originalLocation.getBlockX() == blockLocation.getBlockX() && originalLocation.getBlockZ() == blockLocation.getBlockZ())
         {
             return;
         }
 
         //in creative mode worlds, never form the block
-        if (GriefPrevention.instance.config_claims_worldModes.get(newLocation.getWorld()) == ClaimsMode.Creative)
+        if (GriefPrevention.instance.config_claims_worldModes.get(blockLocation.getWorld()) == ClaimsMode.Creative)
         {
             event.setCancelled(true);
             fallingBlock.remove();
@@ -221,7 +219,7 @@ public class EntityEventHandler implements Listener
         }
 
         //in other worlds, if landing in land claim, only allow if source was also in the land claim
-        Claim claim = this.dataStore.getClaimAt(newLocation, false, null);
+        Claim claim = this.dataStore.getClaimAt(blockLocation, false, null);
 
         if (claim == null) return;
 
