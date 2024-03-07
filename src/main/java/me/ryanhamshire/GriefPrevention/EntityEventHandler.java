@@ -198,7 +198,12 @@ public class EntityEventHandler implements Listener
             return;
         }
 
-        //otherwise, the falling block is forming a block.  compare new location to original source
+        // Otherwise, the falling block is forming a block.
+
+        ClaimsMode claimsMode = GriefPrevention.instance.config_claims_worldModes.get(block.getWorld());
+        // If claims are disabled, the block is always allowed to form.
+        if (claimsMode == ClaimsMode.Disabled) return;
+
         List<MetadataValue> values = fallingBlock.getMetadata("GP_FALLINGBLOCK");
         //if we're not sure where this entity came from (maybe another plugin didn't follow the standard?), allow the block to form
         //Or if entity fell through an end portal, allow it to form, as the event is erroneously fired twice in this scenario.
@@ -211,7 +216,7 @@ public class EntityEventHandler implements Listener
         }
 
         //in creative mode worlds, never form the block
-        if (GriefPrevention.instance.config_claims_worldModes.get(blockLocation.getWorld()) == ClaimsMode.Creative)
+        if (claimsMode == ClaimsMode.Creative)
         {
             event.setCancelled(true);
             fallingBlock.remove();
@@ -221,7 +226,18 @@ public class EntityEventHandler implements Listener
         //in other worlds, if landing in land claim, only allow if source was also in the land claim
         Claim claim = this.dataStore.getClaimAt(blockLocation, false, null);
 
-        if (claim == null) return;
+        // If not landing in a claim...
+        if (claim == null)
+        {
+            // Remove if claims are required.
+            if (claimsMode == ClaimsMode.SurvivalRequiringClaims)
+            {
+                event.setCancelled(true);
+                fallingBlock.remove();
+            }
+            // Otherwise allow block to form.
+            return;
+        }
 
         if (claim.contains(originalLocation, false, false)) return;
 
