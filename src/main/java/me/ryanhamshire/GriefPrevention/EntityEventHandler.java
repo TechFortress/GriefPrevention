@@ -239,7 +239,15 @@ public class EntityEventHandler implements Listener
             return;
         }
 
+        // If the claim contains the formation point, allow block to form.
         if (claim.contains(originalLocation, false, false)) return;
+
+        // If the claim is an unrestricted subclaim and the block is from
+        // within the parent (but not another subclaim!) block may form.
+        if (claim.parent != null && !claim.getSubclaimRestrictions() && claim.parent.contains(originalLocation, false, true))
+        {
+            return;
+        }
 
         //when not allowed, drop as item instead of forming a block
         event.setCancelled(true);
