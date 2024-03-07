@@ -226,28 +226,21 @@ public class EntityEventHandler implements Listener
         //in other worlds, if landing in land claim, only allow if source was also in the land claim
         Claim claim = this.dataStore.getClaimAt(blockLocation, false, null);
 
-        // If not landing in a claim...
-        if (claim == null)
+        // If landing in a claim...
+        if (claim != null)
         {
-            // Remove if claims are required.
-            if (claimsMode == ClaimsMode.SurvivalRequiringClaims)
+            // If the claim contains the formation point, allow block to form.
+            if (claim.contains(originalLocation, false, false)) return;
+
+            // If the claim is an unrestricted subclaim and the block is from
+            // within the parent (but not another subclaim!) block may form.
+            if (claim.parent != null && !claim.getSubclaimRestrictions() && claim.parent.contains(originalLocation, false, true))
             {
-                event.setCancelled(true);
-                fallingBlock.remove();
+                return;
             }
-            // Otherwise allow block to form.
-            return;
         }
-
-        // If the claim contains the formation point, allow block to form.
-        if (claim.contains(originalLocation, false, false)) return;
-
-        // If the claim is an unrestricted subclaim and the block is from
-        // within the parent (but not another subclaim!) block may form.
-        if (claim.parent != null && !claim.getSubclaimRestrictions() && claim.parent.contains(originalLocation, false, true))
-        {
-            return;
-        }
+        // If not landing in a claim and claims are not required, allow block to form.
+        else if (claimsMode == ClaimsMode.Survival) return;
 
         //when not allowed, drop as item instead of forming a block
         event.setCancelled(true);
