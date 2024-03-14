@@ -52,7 +52,7 @@ public class MonitoredCommands
         }
     }
 
-    private final HashSet<String> monitoredCommands = new HashSet<>();
+    private final Set<String> monitoredCommands = new HashSet<>();
     private int maxSpaces = -1;
 
     public MonitoredCommands(@NotNull Collection<String> commands)
