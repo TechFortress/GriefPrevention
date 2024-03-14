@@ -16,9 +16,11 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public final class ServerMocks {
+public final class ServerMocks
+{
 
-    public static @NotNull Server newServer() {
+    public static @NotNull Server newServer()
+    {
         Server mock = mock(Server.class);
 
         Logger noOp = mock(Logger.class);
@@ -47,7 +49,8 @@ public final class ServerMocks {
         return mock;
     }
 
-    public static void unsetBukkitServer() {
+    public static void unsetBukkitServer()
+    {
         try
         {
             Field server = Bukkit.class.getDeclaredField("server");

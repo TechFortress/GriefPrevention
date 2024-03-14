@@ -37,7 +37,8 @@ public class MonitorableCommand
         return command.substring(0, this.spaces.get(arguments));
     }
 
-    public @NotNull String getArgument(int index) {
+    public @NotNull String getArgument(int index)
+    {
         int start = spaces.get(index) + 1;
         int end = index + 1 == spaces.size() ? command.length() : spaces.get(index + 1);
         return command.substring(start, end);

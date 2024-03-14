@@ -42,7 +42,8 @@ class MonitorableCommandTest
     }
 
     @Test
-    void getArgumentBad() {
+    void getArgumentBad()
+    {
         MonitorableCommand command = new MonitorableCommand("/test single");
         assertThrows(IndexOutOfBoundsException.class, () -> command.getArgument(-1));
         assertThrows(IndexOutOfBoundsException.class, () -> command.getArgument(2));
@@ -69,7 +70,8 @@ class MonitorableCommandTest
     }
 
     @Test
-    void getCommandBad() {
+    void getCommandBad()
+    {
         MonitorableCommand command = new MonitorableCommand("/test single");
         assertThrows(IndexOutOfBoundsException.class, () -> command.getCommand(-1));
         assertThrows(IndexOutOfBoundsException.class, () -> command.getCommand(2));

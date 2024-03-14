@@ -85,7 +85,8 @@ class MonitoredCommandsTest
         }
     }
 
-    private static Collection<Arguments> commandsAndPrefixes() {
+    private static Collection<Arguments> commandsAndPrefixes()
+    {
         return List.of(
                 Arguments.of(Command.class, null),
                 Arguments.of(BukkitCommand.class, "/bukkit:"),
@@ -104,7 +105,7 @@ class MonitoredCommandsTest
         Plugin plugin = mock();
         doReturn("PreFix").when(plugin).getName();
         PluginManager pluginManager = server.getPluginManager();
-        doReturn(new Plugin[] { plugin }).when(pluginManager).getPlugins();
+        doReturn(new Plugin[]{plugin}).when(pluginManager).getPlugins();
 
         MonitoredCommands monitor = new MonitoredCommands(List.of("/test"));
 
@@ -232,7 +233,7 @@ class MonitoredCommandsTest
         doReturn(pdf).when(plugin4).getDescription();
 
         PluginManager pluginManager = server.getPluginManager();
-        doReturn(new Plugin[] { plugin1, plugin2, plugin3, plugin4 }).when(pluginManager).getPlugins();
+        doReturn(new Plugin[]{plugin1, plugin2, plugin3, plugin4}).when(pluginManager).getPlugins();
 
         MonitoredCommands monitor = new MonitoredCommands(List.of("/test"));
 
@@ -295,7 +296,7 @@ class MonitoredCommandsTest
      * Helper used to set command map used by MonitoredCommands rather than create a server implementation.
      *
      * @param commandMap the command map instance
-     * @throws ReflectiveOperationException if setting fails
+     * @exception ReflectiveOperationException if setting fails
      */
     private static void setCommandMap(@Nullable CommandMap commandMap) throws ReflectiveOperationException
     {
@@ -324,13 +325,14 @@ class MonitoredCommandsTest
         ServerMocks.unsetBukkitServer();
     }
 
-    private static abstract class MinecraftCommand extends BukkitCommand {
+    private static abstract class MinecraftCommand extends BukkitCommand
+    {
         // Mockito's mocks are constructed with a package matching that of the mocked object.
         // This means that direct BukkitCommand mocking will always result in the bukkit prefix.
         protected MinecraftCommand(@NotNull String name)
         {
             super(name);
         }
-    };
+    }
 
 }
