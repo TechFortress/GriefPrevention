@@ -3066,26 +3066,27 @@ public class GriefPrevention extends JavaPlugin
     }
 
     //sends a color-coded message to a player
-    public static void sendMessage(Player player, ChatColor color, Messages messageID, String... args)
+    public static void sendMessage(@Nullable Player player, @NotNull ChatColor color, @NotNull Messages messageID, @NotNull String @NotNull ... args)
     {
         sendMessage(player, color, messageID, 0, args);
     }
 
     //sends a color-coded message to a player
-    public static void sendMessage(Player player, ChatColor color, Messages messageID, long delayInTicks, String... args)
+    public static void sendMessage(@Nullable Player player, @NotNull ChatColor color, @NotNull Messages messageID, long delayInTicks, @NotNull String @NotNull ... args)
     {
         String message = GriefPrevention.instance.dataStore.getMessage(messageID, args);
         sendMessage(player, color, message, delayInTicks);
     }
 
     //sends a color-coded message to a player
-    public static void sendMessage(Player player, ChatColor color, String message)
+    public static void sendMessage(@Nullable Player player, @NotNull ChatColor color, @Nullable String message)
     {
-        if (message == null || message.length() == 0) return;
+        if (message == null || message.isBlank()) return;
 
         if (player == null)
         {
-            GriefPrevention.AddLogEntry(color + message);
+            Bukkit.getConsoleSender().sendMessage(message);
+            GriefPrevention.AddLogEntry(message, CustomLogEntryTypes.Debug, true);
         }
         else
         {
@@ -3093,8 +3094,10 @@ public class GriefPrevention extends JavaPlugin
         }
     }
 
-    public static void sendMessage(Player player, ChatColor color, String message, long delayInTicks)
+    public static void sendMessage(@Nullable Player player, @NotNull ChatColor color, @Nullable String message, long delayInTicks)
     {
+        if (message == null || message.isBlank()) return;
+
         SendPlayerMessageTask task = new SendPlayerMessageTask(player, color, message);
 
         //Only schedule if there should be a delay. Otherwise, send the message right now, else the message will appear out of order.
