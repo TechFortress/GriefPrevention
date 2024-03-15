@@ -91,7 +91,8 @@ public class BlockEventHandler implements Listener
 
     protected static final Set<Material> TRASH_BLOCKS;
 
-    static {
+    static
+    {
         //create the list of blocks which will not trigger a warning when they're placed outside of land claims
         TRASH_BLOCKS = new HashSet<>();
         TRASH_BLOCKS.add(Material.COBBLESTONE);
