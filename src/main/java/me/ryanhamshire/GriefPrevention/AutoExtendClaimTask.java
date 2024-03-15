@@ -137,7 +137,7 @@ public class AutoExtendClaimTask implements Runnable
                     if (yTooSmall(y)) return this.minY;
 
                     // Because we found a player block, repeatedly check the next block in the column.
-                    while (isPlayerBlock(chunkSnapshot, x, newY--, z))
+                    while (isPlayerBlock(chunkSnapshot, x, --newY, z))
                     {
                         // If we've hit minimum Y we're done searching.
                         if (yTooSmall(y)) return this.minY;
