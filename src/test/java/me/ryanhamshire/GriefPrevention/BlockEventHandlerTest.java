@@ -1,7 +1,9 @@
 package me.ryanhamshire.GriefPrevention;
 
+import com.griefprevention.test.ServerMocks;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
+import org.bukkit.Tag;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
@@ -9,11 +11,17 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.Plugin;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.notNull;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -23,6 +31,29 @@ import static org.mockito.Mockito.when;
 public class BlockEventHandlerTest
 {
     private static final UUID PLAYER_UUID = UUID.fromString("fa8d60a7-9645-4a9f-b74d-173966174739");
+
+    @BeforeAll
+    static void beforeAll()
+    {
+        Server server = ServerMocks.newServer();
+        doAnswer(invocation ->
+        {
+            Tag<?> tag = mock();
+            doReturn(Set.of()).when(tag).getValues();
+            return tag;
+        }).when(server).getTag(notNull(), notNull(), notNull());
+        Bukkit.setServer(server);
+
+        // Touch class to load material list.
+        //noinspection ResultOfMethodCallIgnored
+        BlockEventHandler.class.getName();
+    }
+
+    @AfterAll
+    static void afterAll()
+    {
+        ServerMocks.unsetBukkitServer();
+    }
 
     @Test
     void verifyNormalHopperPassthrough()
