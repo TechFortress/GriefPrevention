@@ -1888,8 +1888,8 @@ class PlayerEventHandler implements Listener
 
                 // If investigation tool is on cooldown, do nothing.
                 if (player.getCooldown(instance.config_claims_investigationTool) > 0) return;
-                // Set investigation tool on cooldown for 1 second to prevent spamming.
-                player.setCooldown(instance.config_claims_investigationTool, 20);
+                // Set investigation tool on cooldown to prevent spamming.
+                player.setCooldown(instance.config_claims_investigationTool, 1);
 
                 //if holding shift (sneaking), show all claims in area
                 if (player.isSneaking() && player.hasPermission("griefprevention.visualizenearbyclaims"))
