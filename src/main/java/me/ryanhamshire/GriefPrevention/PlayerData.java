@@ -111,6 +111,9 @@ public class PlayerData
     //whether or not this player's dropped items (on death) are unlocked for other players to pick up
     boolean dropsAreUnlocked = false;
 
+    //whether or not the player wants to receive notifications on the chat about claim explosions when placing TNT
+    boolean sendClaimExplosionMessages = true;
+
     //message to send to player after he respawns
     String messageOnRespawn = null;
 

@@ -307,7 +307,7 @@ public class BlockEventHandler implements Listener
             playerData.lastClaim = claim;
 
             //warn about TNT not destroying claimed blocks
-            if (block.getType() == Material.TNT && !claim.areExplosivesAllowed)
+            if (block.getType() == Material.TNT && !claim.areExplosivesAllowed && playerData.sendClaimExplosionMessages)
             {
                 GriefPrevention.sendMessage(player, TextMode.Warn, Messages.NoTNTDamageClaims);
                 GriefPrevention.sendMessage(player, TextMode.Instr, Messages.ClaimExplosivesAdvertisement);
