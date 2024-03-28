@@ -1101,7 +1101,7 @@ class PlayerEventHandler implements Listener
 
         //FEATURE: prevent players from using ender pearls to gain access to secured claims
         TeleportCause cause = event.getCause();
-        if (cause == TeleportCause.CHORUS_FRUIT || (cause == TeleportCause.ENDER_PEARL && instance.config_claims_enderPearlsRequireAccessTrust))
+        if ((cause == TeleportCause.CHORUS_FRUIT && instance.config_claims_enderPearlsRequireAccessTrust) || (cause == TeleportCause.ENDER_PEARL && instance.config_claims_enderPearlsRequireAccessTrust))
         {
             Claim toClaim = this.dataStore.getClaimAt(event.getTo(), false, playerData.lastClaim);
             if (toClaim != null)
