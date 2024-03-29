@@ -1,0 +1,11 @@
+# Use crlf endings by default.
+* text=auto eol=crlf
+
+# Declare text file types just in case
+*.java text
+*.yml text
+*.xml text
+*.md text
+
+# Exclude binary files
+*.png binary
