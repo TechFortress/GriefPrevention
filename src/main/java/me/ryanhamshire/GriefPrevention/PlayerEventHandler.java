@@ -1011,14 +1011,14 @@ class PlayerEventHandler implements Listener
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerTeleport(PlayerTeleportEvent event)
     {
+        //FEATURE: prevent players from using ender pearls or chorus fruit to gain access to secured claims
+        if(!instance.config_claims_enderPearlsRequireAccessTrust) return;
+
+        TeleportCause cause = event.getCause();
+        if(cause != TeleportCause.CHORUS_FRUIT && cause != TeleportCause.ENDER_PEARL) return;
+
         Player player = event.getPlayer();
         PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-
-        //FEATURE: prevent players from using ender pearls or chorus fruit to gain access to secured claims
-        TeleportCause cause = event.getCause();
-
-        if(!instance.config_claims_enderPearlsRequireAccessTrust) return;
-        if(cause != TeleportCause.CHORUS_FRUIT && cause != TeleportCause.ENDER_PEARL) return;
 
         Claim toClaim = this.dataStore.getClaimAt(event.getTo(), false, playerData.lastClaim);
         if(toClaim == null) return;
