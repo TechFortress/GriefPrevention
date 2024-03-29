@@ -245,7 +245,7 @@ public class BlockEventHandler implements Listener
         //FEATURE: limit fire placement, to prevent PvP-by-fire
 
         //if placed block is fire and pvp is off, apply rules for proximity to other players
-        if (block.getType() == Material.FIRE && !doesAllowFireProximityInWorld(block.getWorld()))
+        if (Tag.FIRE.isTagged(block.getType()) && !doesAllowFireProximityInWorld(block.getWorld()))
         {
             List<Player> players = block.getWorld().getPlayers();
             for (Player otherPlayer : players)
