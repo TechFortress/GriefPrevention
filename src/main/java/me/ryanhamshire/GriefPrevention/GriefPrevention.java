@@ -1846,35 +1846,15 @@ public class GriefPrevention extends JavaPlugin
                     return true;
                 }
 
-                if ( (args.length > 0) && args[0].equalsIgnoreCase("notifications")) {
-                    PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-
-                    if (playerData.sendClaimExplosionMessages)
-                    {
-                        playerData.sendClaimExplosionMessages = false;
-                        GriefPrevention.sendMessage(player, TextMode.Success, Messages.ExplosivesDisabledNotifications);
-                    }
-                    else
-                    {
-                        playerData.sendClaimExplosionMessages = true;
-                        GriefPrevention.sendMessage(player, TextMode.Success, Messages.ExplosivesEnabledNotifications);
-                    }
-
-                    this.dataStore.savePlayerData(player.getUniqueId(), playerData);
+                if (claim.areExplosivesAllowed)
+                {
+                    claim.areExplosivesAllowed = false;
+                    GriefPrevention.sendMessage(player, TextMode.Success, Messages.ExplosivesDisabled);
                 }
                 else
                 {
-
-                    if (claim.areExplosivesAllowed)
-                    {
-                        claim.areExplosivesAllowed = false;
-                        GriefPrevention.sendMessage(player, TextMode.Success, Messages.ExplosivesDisabled);
-                    }
-                    else
-                    {
-                        claim.areExplosivesAllowed = true;
-                        GriefPrevention.sendMessage(player, TextMode.Success, Messages.ExplosivesEnabled);
-                    }
+                    claim.areExplosivesAllowed = true;
+                    GriefPrevention.sendMessage(player, TextMode.Success, Messages.ExplosivesEnabled);
                 }
             }
 

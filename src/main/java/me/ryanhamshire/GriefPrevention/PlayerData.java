@@ -111,9 +111,6 @@ public class PlayerData
     //whether or not this player's dropped items (on death) are unlocked for other players to pick up
     boolean dropsAreUnlocked = false;
 
-    //whether or not the player wants to receive notifications on the chat about claim explosions when placing TNT
-    boolean sendClaimExplosionMessages = true;
-
     //message to send to player after he respawns
     String messageOnRespawn = null;
 
@@ -122,6 +119,9 @@ public class PlayerData
 
     //timestamp for last "you're building outside your land claims" message
     Long buildWarningTimestamp = null;
+
+    //timestamp for last warning when placing TNT on explosion protected claim
+    Long explosivesWarningTimestamp = null;
 
     //spot where a player can't talk, used to mute new players until they've moved a little
     //this is an anti-bot strategy.
