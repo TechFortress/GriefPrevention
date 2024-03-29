@@ -21,27 +21,21 @@ package me.ryanhamshire.GriefPrevention;
 import com.google.common.io.Files;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
-import me.ryanhamshire.GriefPrevention.events.ClaimModifiedEvent;
-import me.ryanhamshire.GriefPrevention.events.ClaimResizeEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimCreatedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimDeletedEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimExtendEvent;
+import me.ryanhamshire.GriefPrevention.events.ClaimModifiedEvent;
+import me.ryanhamshire.GriefPrevention.events.ClaimResizeEvent;
 import me.ryanhamshire.GriefPrevention.events.ClaimTransferEvent;
+import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Chunk;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.AnimalTamer;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Tameable;
-import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.BufferedReader;
@@ -52,7 +46,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -624,18 +617,21 @@ public abstract class DataStore
         this.deleteClaim(claim, true, false);
     }
 
-    //deletes a claim or subdivision
+    /**
+     * @deprecated Releasing pets is no longer a core feature. Use {@link #deleteClaim(Claim)}.
+     */
+    @Deprecated(forRemoval = true, since = "17.0.0")
     synchronized public void deleteClaim(Claim claim, boolean releasePets)
     {
-        this.deleteClaim(claim, true, releasePets);
+        this.deleteClaim(claim, true, false);
     }
 
-    synchronized void deleteClaim(Claim claim, boolean fireEvent, boolean releasePets)
+    synchronized void deleteClaim(Claim claim, boolean fireEvent, boolean ignored)
     {
         //delete any children
         for (int j = 1; (j - 1) < claim.children.size(); j++)
         {
-            this.deleteClaim(claim.children.get(j - 1), true);
+            this.deleteClaim(claim.children.get(j - 1), fireEvent, ignored);
         }
 
         //subdivisions must also be removed from the parent claim child list
@@ -682,43 +678,6 @@ public abstract class DataStore
         {
             ClaimDeletedEvent ev = new ClaimDeletedEvent(claim);
             Bukkit.getPluginManager().callEvent(ev);
-        }
-
-        //optionally set any pets free which belong to the claim owner
-        if (releasePets && claim.ownerID != null && claim.parent == null)
-        {
-            for (Chunk chunk : claim.getChunks())
-            {
-                Entity[] entities = chunk.getEntities();
-                for (Entity entity : entities)
-                {
-                    if (entity instanceof Tameable)
-                    {
-                        Tameable pet = (Tameable) entity;
-                        if (pet.isTamed())
-                        {
-                            AnimalTamer owner = pet.getOwner();
-                            if (owner != null)
-                            {
-                                UUID ownerID = owner.getUniqueId();
-                                if (ownerID != null)
-                                {
-                                    if (ownerID.equals(claim.ownerID))
-                                    {
-                                        pet.setTamed(false);
-                                        pet.setOwner(null);
-                                        if (pet instanceof InventoryHolder)
-                                        {
-                                            InventoryHolder holder = (InventoryHolder) pet;
-                                            holder.getInventory().clear();
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -818,6 +777,32 @@ public abstract class DataStore
         {
             return Collections.unmodifiableCollection(new ArrayList<>());
         }
+    }
+
+    public @NotNull Set<Claim> getChunkClaims(@NotNull World world, @NotNull BoundingBox boundingBox)
+    {
+        Set<Claim> claims = new HashSet<>();
+        int chunkXMax = boundingBox.getMaxX() >> 4;
+        int chunkZMax = boundingBox.getMaxZ() >> 4;
+
+        for (int chunkX = boundingBox.getMinX() >> 4; chunkX <= chunkXMax; ++chunkX)
+        {
+            for (int chunkZ = boundingBox.getMinZ() >> 4; chunkZ <= chunkZMax; ++chunkZ)
+            {
+                ArrayList<Claim> chunkClaims = this.chunksToClaimsMap.get(getChunkHash(chunkX, chunkZ));
+                if (chunkClaims == null) continue;
+
+                for (Claim claim : chunkClaims)
+                {
+                    if (claim.inDataStore && world.equals(claim.getLesserBoundaryCorner().getWorld()))
+                    {
+                        claims.add(claim);
+                    }
+                }
+            }
+        }
+
+        return claims;
     }
 
     //gets an almost-unique, persistent identifier for a chunk
@@ -1118,222 +1103,6 @@ public abstract class DataStore
         });
     }
 
-    //starts a siege on a claim
-    //does NOT check siege cooldowns, see onCooldown() below
-    synchronized public void startSiege(Player attacker, Player defender, Claim defenderClaim)
-    {
-        //fill-in the necessary SiegeData instance
-        SiegeData siegeData = new SiegeData(attacker, defender, defenderClaim);
-        PlayerData attackerData = this.getPlayerData(attacker.getUniqueId());
-        PlayerData defenderData = this.getPlayerData(defender.getUniqueId());
-        attackerData.siegeData = siegeData;
-        defenderData.siegeData = siegeData;
-        defenderClaim.siegeData = siegeData;
-
-        //start a task to monitor the siege
-        //why isn't this a "repeating" task?
-        //because depending on the status of the siege at the time the task runs, there may or may not be a reason to run the task again
-        SiegeCheckupTask task = new SiegeCheckupTask(siegeData);
-        siegeData.checkupTaskID = GriefPrevention.instance.getServer().getScheduler().scheduleSyncDelayedTask(GriefPrevention.instance, task, 20L * 30);
-    }
-
-    //ends a siege
-    //either winnerName or loserName can be null, but not both
-    synchronized public void endSiege(SiegeData siegeData, String winnerName, String loserName, List<ItemStack> drops)
-    {
-        boolean grantAccess = false;
-
-        //determine winner and loser
-        if (winnerName == null && loserName != null)
-        {
-            if (siegeData.attacker.getName().equals(loserName))
-            {
-                winnerName = siegeData.defender.getName();
-            }
-            else
-            {
-                winnerName = siegeData.attacker.getName();
-            }
-        }
-        else if (winnerName != null && loserName == null)
-        {
-            if (siegeData.attacker.getName().equals(winnerName))
-            {
-                loserName = siegeData.defender.getName();
-            }
-            else
-            {
-                loserName = siegeData.attacker.getName();
-            }
-        }
-
-        //if the attacker won, plan to open the doors for looting
-        if (siegeData.attacker.getName().equals(winnerName))
-        {
-            grantAccess = true;
-        }
-
-        PlayerData attackerData = this.getPlayerData(siegeData.attacker.getUniqueId());
-        attackerData.siegeData = null;
-
-        PlayerData defenderData = this.getPlayerData(siegeData.defender.getUniqueId());
-        defenderData.siegeData = null;
-        defenderData.lastSiegeEndTimeStamp = System.currentTimeMillis();
-
-        //start a cooldown for this attacker/defender pair
-        Long now = Calendar.getInstance().getTimeInMillis();
-        Long cooldownEnd = now + 1000 * 60 * GriefPrevention.instance.config_siege_cooldownEndInMinutes;  //one hour from now
-        this.siegeCooldownRemaining.put(siegeData.attacker.getName() + "_" + siegeData.defender.getName(), cooldownEnd);
-
-        //start cooldowns for every attacker/involved claim pair
-        for (int i = 0; i < siegeData.claims.size(); i++)
-        {
-            Claim claim = siegeData.claims.get(i);
-            claim.siegeData = null;
-            this.siegeCooldownRemaining.put(siegeData.attacker.getName() + "_" + claim.getOwnerName(), cooldownEnd);
-
-            //if doors should be opened for looting, do that now
-            if (grantAccess)
-            {
-                claim.doorsOpen = true;
-            }
-        }
-
-        //cancel the siege checkup task
-        GriefPrevention.instance.getServer().getScheduler().cancelTask(siegeData.checkupTaskID);
-
-        //notify everyone who won and lost
-        if (winnerName != null && loserName != null)
-        {
-            GriefPrevention.instance.getServer().broadcastMessage(winnerName + " defeated " + loserName + " in siege warfare!");
-        }
-
-        //if the claim should be opened to looting
-        if (grantAccess)
-        {
-
-            Player winner = GriefPrevention.instance.getServer().getPlayer(winnerName);
-            if (winner != null)
-            {
-                //notify the winner
-                GriefPrevention.sendMessage(winner, TextMode.Success, Messages.SiegeWinDoorsOpen);
-
-                //schedule a task to secure the claims in about 5 minutes
-                SecureClaimTask task = new SecureClaimTask(siegeData);
-
-                GriefPrevention.instance.getServer().getScheduler().scheduleSyncDelayedTask(
-                        GriefPrevention.instance, task, 20L * GriefPrevention.instance.config_siege_doorsOpenSeconds
-                );
-            }
-        }
-
-        //if the siege ended due to death, transfer inventory to winner
-        if (drops != null)
-        {
-
-            Player winner = GriefPrevention.instance.getServer().getPlayer(winnerName);
-
-            Player loser = GriefPrevention.instance.getServer().getPlayer(loserName);
-            if (winner != null && loser != null)
-            {
-                //try to add any drops to the winner's inventory
-                for (ItemStack stack : drops)
-                {
-                    if (stack == null || stack.getType() == Material.AIR || stack.getAmount() == 0) continue;
-
-                    HashMap<Integer, ItemStack> wontFitItems = winner.getInventory().addItem(stack);
-
-                    //drop any remainder on the ground at his feet
-                    Object[] keys = wontFitItems.keySet().toArray();
-                    Location winnerLocation = winner.getLocation();
-                    for (Map.Entry<Integer, ItemStack> wontFitItem : wontFitItems.entrySet())
-                    {
-                        winner.getWorld().dropItemNaturally(winnerLocation, wontFitItem.getValue());
-                    }
-                }
-
-                drops.clear();
-            }
-        }
-    }
-
-    //timestamp for each siege cooldown to end
-    private final HashMap<String, Long> siegeCooldownRemaining = new HashMap<>();
-
-    //whether or not a sieger can siege a particular victim or claim, considering only cooldowns
-    synchronized public boolean onCooldown(Player attacker, Player defender, Claim defenderClaim)
-    {
-        Long cooldownEnd = null;
-
-        //look for an attacker/defender cooldown
-        if (this.siegeCooldownRemaining.get(attacker.getName() + "_" + defender.getName()) != null)
-        {
-            cooldownEnd = this.siegeCooldownRemaining.get(attacker.getName() + "_" + defender.getName());
-
-            if (Calendar.getInstance().getTimeInMillis() < cooldownEnd)
-            {
-                return true;
-            }
-
-            //if found but expired, remove it
-            this.siegeCooldownRemaining.remove(attacker.getName() + "_" + defender.getName());
-        }
-
-        //look for genderal defender cooldown
-        PlayerData defenderData = this.getPlayerData(defender.getUniqueId());
-        if (defenderData.lastSiegeEndTimeStamp > 0)
-        {
-            long now = System.currentTimeMillis();
-            if (now - defenderData.lastSiegeEndTimeStamp > 1000 * 60 * 15) //15 minutes in milliseconds
-            {
-                return true;
-            }
-        }
-
-        //look for an attacker/claim cooldown
-        if (cooldownEnd == null && this.siegeCooldownRemaining.get(attacker.getName() + "_" + defenderClaim.getOwnerName()) != null)
-        {
-            cooldownEnd = this.siegeCooldownRemaining.get(attacker.getName() + "_" + defenderClaim.getOwnerName());
-
-            if (Calendar.getInstance().getTimeInMillis() < cooldownEnd)
-            {
-                return true;
-            }
-
-            //if found but expired, remove it
-            this.siegeCooldownRemaining.remove(attacker.getName() + "_" + defenderClaim.getOwnerName());
-        }
-
-        return false;
-    }
-
-    //extend a siege, if it's possible to do so
-    synchronized void tryExtendSiege(Player player, Claim claim)
-    {
-        PlayerData playerData = this.getPlayerData(player.getUniqueId());
-
-        //player must be sieged
-        if (playerData.siegeData == null) return;
-
-        //claim isn't already under the same siege
-        if (playerData.siegeData.claims.contains(claim)) return;
-
-        //admin claims can't be sieged
-        if (claim.isAdminClaim()) return;
-
-        //player must have some level of permission to be sieged in a claim
-        Claim currentClaim = claim;
-        while (!currentClaim.hasExplicitPermission(player, ClaimPermission.Access))
-        {
-            if (currentClaim.parent == null) return;
-            currentClaim = currentClaim.parent;
-        }
-
-        //otherwise extend the siege
-        playerData.siegeData.claims.add(claim);
-        claim.siegeData = playerData.siegeData;
-    }
-
     //deletes all claims owned by a player
     synchronized public void deleteClaimsForPlayer(UUID playerID, boolean releasePets)
     {
@@ -1350,7 +1119,7 @@ public abstract class DataStore
         {
             claim.removeSurfaceFluids(null);
 
-            this.deleteClaim(claim, releasePets);
+            this.deleteClaim(claim);
 
             //if in a creative mode world, delete the claim
             if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()))
@@ -1607,18 +1376,6 @@ public abstract class DataStore
         this.addDefault(defaults, Messages.AdjustBlocksAllSuccess, "Adjusted all online players' bonus claim blocks by {0}.", "0: adjustment amount");
         this.addDefault(defaults, Messages.NotTrappedHere, "You can build here.  Save yourself.", null);
         this.addDefault(defaults, Messages.RescuePending, "If you stay put for 10 seconds, you'll be teleported out.  Please wait.", null);
-        this.addDefault(defaults, Messages.NonSiegeWorld, "Siege is disabled here.", null);
-        this.addDefault(defaults, Messages.AlreadySieging, "You're already involved in a siege.", null);
-        this.addDefault(defaults, Messages.AlreadyUnderSiegePlayer, "{0} is already under siege.  Join the party!", "0: defending player");
-        this.addDefault(defaults, Messages.NotSiegableThere, "{0} isn't protected there.", "0: defending player");
-        this.addDefault(defaults, Messages.SiegeTooFarAway, "You're too far away to siege.", null);
-        this.addDefault(defaults, Messages.NoSiegeYourself, "You cannot siege yourself, don't be silly", null);
-        this.addDefault(defaults, Messages.NoSiegeDefenseless, "That player is defenseless.  Go pick on somebody else.", null);
-        this.addDefault(defaults, Messages.AlreadyUnderSiegeArea, "That area is already under siege.  Join the party!", null);
-        this.addDefault(defaults, Messages.NoSiegeAdminClaim, "Siege is disabled in this area.", null);
-        this.addDefault(defaults, Messages.SiegeOnCooldown, "You're still on siege cooldown for this defender or claim.  Find another victim.", null);
-        this.addDefault(defaults, Messages.SiegeAlert, "You're under siege!  If you log out now, you will die.  You must defeat {0}, wait for him to give up, or escape.", "0: attacker name");
-        this.addDefault(defaults, Messages.SiegeConfirmed, "The siege has begun!  If you log out now, you will die.  You must defeat {0}, chase him away, or admit defeat and walk away.", "0: defender name");
         this.addDefault(defaults, Messages.AbandonClaimMissing, "Stand in the claim you want to delete, or consider /abandonallclaims.", null);
         this.addDefault(defaults, Messages.NotYourClaim, "This isn't your claim.", null);
         this.addDefault(defaults, Messages.DeleteTopLevelClaim, "To delete a subdivision, stand inside it.  Otherwise, use /abandontoplevelclaim to delete this claim and all subdivisions.", null);
@@ -1637,7 +1394,6 @@ public abstract class DataStore
         this.addDefault(defaults, Messages.LocationCurrentClaim, "in this claim", null);
         this.addDefault(defaults, Messages.LocationAllClaims, "in all your claims", null);
         this.addDefault(defaults, Messages.PvPImmunityStart, "You're protected from attack by other players as long as your inventory is empty.", null);
-        this.addDefault(defaults, Messages.SiegeNoDrop, "You can't give away items while involved in a siege.", null);
         this.addDefault(defaults, Messages.DonateItemsInstruction, "To give away the item(s) in your hand, left-click the chest again.", null);
         this.addDefault(defaults, Messages.ChestFull, "This chest is full.", null);
         this.addDefault(defaults, Messages.DonationSuccess, "Item(s) transferred to chest!", null);
@@ -1657,9 +1413,6 @@ public abstract class DataStore
         this.addDefault(defaults, Messages.TrappedChatKeyword, "trapped;stuck", "When mentioned in chat, players get information about the /trapped command (multiple words can be separated with semi-colons)");
         this.addDefault(defaults, Messages.TrappedInstructions, "Are you trapped in someone's land claim?  Try the /trapped command.", null);
         this.addDefault(defaults, Messages.PvPNoDrop, "You can't drop items while in PvP combat.", null);
-        this.addDefault(defaults, Messages.SiegeNoTeleport, "You can't teleport out of a besieged area.", null);
-        this.addDefault(defaults, Messages.BesiegedNoTeleport, "You can't teleport into a besieged area.", null);
-        this.addDefault(defaults, Messages.SiegeNoContainers, "You can't access containers while involved in a siege.", null);
         this.addDefault(defaults, Messages.PvPNoContainers, "You can't access containers during PvP combat.", null);
         this.addDefault(defaults, Messages.PvPImmunityEnd, "Now you can fight with other players.", null);
         this.addDefault(defaults, Messages.NoBedPermission, "{0} hasn't given you permission to sleep here.", "0: claim owner");
@@ -1668,7 +1421,6 @@ public abstract class DataStore
         this.addDefault(defaults, Messages.TooFarAway, "That's too far away.", null);
         this.addDefault(defaults, Messages.BlockNotClaimed, "No one has claimed this block.", null);
         this.addDefault(defaults, Messages.BlockClaimed, "That block has been claimed by {0}.", "0: claim owner");
-        this.addDefault(defaults, Messages.SiegeNoShovel, "You can't use your shovel tool while involved in a siege.", null);
         this.addDefault(defaults, Messages.RestoreNaturePlayerInChunk, "Unable to restore.  {0} is in that chunk.", "0: nearby player");
         this.addDefault(defaults, Messages.NoCreateClaimPermission, "You don't have permission to claim land.", null);
         this.addDefault(defaults, Messages.ResizeClaimTooNarrow, "This new size would be too small.  Claims must be at least {0} blocks wide.", "0: minimum claim width");
@@ -1690,18 +1442,11 @@ public abstract class DataStore
         this.addDefault(defaults, Messages.AbandonClaimAdvertisement, "To delete another claim and free up some blocks, use /abandonclaim.", null);
         this.addDefault(defaults, Messages.CreateClaimFailOverlapShort, "Your selected area overlaps an existing claim.", null);
         this.addDefault(defaults, Messages.CreateClaimSuccess, "Claim created!  Use /trust to share it with friends.", null);
-        this.addDefault(defaults, Messages.SiegeWinDoorsOpen, "Congratulations!  Buttons and levers are temporarily unlocked.", null);
         this.addDefault(defaults, Messages.RescueAbortedMoved, "You moved!  Rescue cancelled.", null);
-        this.addDefault(defaults, Messages.SiegeDoorsLockedEjection, "Looting time is up!  Ejected from the claim.", null);
-        this.addDefault(defaults, Messages.NoModifyDuringSiege, "Claims can't be modified while under siege.", null);
         this.addDefault(defaults, Messages.OnlyOwnersModifyClaims, "Only {0} can modify this claim.", "0: owner name");
-        this.addDefault(defaults, Messages.NoBuildUnderSiege, "This claim is under siege by {0}.  No one can build here.", "0: attacker name");
         this.addDefault(defaults, Messages.NoBuildPvP, "You can't build in claims during PvP combat.", null);
         this.addDefault(defaults, Messages.NoBuildPermission, "You don't have {0}'s permission to build here.", "0: owner name");
-        this.addDefault(defaults, Messages.NonSiegeMaterial, "That material is too tough to break.", null);
-        this.addDefault(defaults, Messages.NoOwnerBuildUnderSiege, "You can't make changes while under siege.", null);
         this.addDefault(defaults, Messages.NoAccessPermission, "You don't have {0}'s permission to use that.", "0: owner name.  access permission controls buttons, levers, and beds");
-        this.addDefault(defaults, Messages.NoContainersSiege, "This claim is under siege by {0}.  No one can access containers here right now.", "0: attacker name");
         this.addDefault(defaults, Messages.NoContainersPermission, "You don't have {0}'s permission to use that.", "0: owner's name.  containers also include crafting blocks");
         this.addDefault(defaults, Messages.OwnerNameForAdminClaims, "an administrator", "as in 'You don't have an administrator's permission to build here.'");
         this.addDefault(defaults, Messages.UnknownPlayerName, "someone", "Name used for unknown players. UUID will be appended if available: \"someone (01234567-0123-0123-0123-0123456789ab)\"");
@@ -1751,7 +1496,6 @@ public abstract class DataStore
         this.addDefault(defaults, Messages.ResizeFailOverlapRegion, "You don't have permission to build there, so you can't claim that area.", null);
         this.addDefault(defaults, Messages.ShowNearbyClaims, "Found {0} land claims.", "0: Number of claims found.");
         this.addDefault(defaults, Messages.NoChatUntilMove, "Sorry, but you have to move a little more before you can chat.  We get lots of spam bots here.  :)", null);
-        this.addDefault(defaults, Messages.SiegeImmune, "That player is immune to /siege.", null);
         this.addDefault(defaults, Messages.SetClaimBlocksSuccess, "Updated accrued claim blocks.", null);
         this.addDefault(defaults, Messages.IgnoreConfirmation, "You're now ignoring chat messages from that player.", null);
         this.addDefault(defaults, Messages.UnIgnoreConfirmation, "You're no longer ignoring chat messages from that player.", null);
@@ -1932,32 +1676,9 @@ public abstract class DataStore
     //gets all the claims "near" a location
     Set<Claim> getNearbyClaims(Location location)
     {
-        Set<Claim> claims = new HashSet<>();
-
-        Chunk lesserChunk = location.getWorld().getChunkAt(location.subtract(150, 0, 150));
-        Chunk greaterChunk = location.getWorld().getChunkAt(location.add(300, 0, 300));
-
-        for (int chunk_x = lesserChunk.getX(); chunk_x <= greaterChunk.getX(); chunk_x++)
-        {
-            for (int chunk_z = lesserChunk.getZ(); chunk_z <= greaterChunk.getZ(); chunk_z++)
-            {
-                Chunk chunk = location.getWorld().getChunkAt(chunk_x, chunk_z);
-                Long chunkID = getChunkHash(chunk.getBlock(0, 0, 0).getLocation());
-                ArrayList<Claim> claimsInChunk = this.chunksToClaimsMap.get(chunkID);
-                if (claimsInChunk != null)
-                {
-                    for (Claim claim : claimsInChunk)
-                    {
-                        if (claim.inDataStore && claim.getLesserBoundaryCorner().getWorld().equals(location.getWorld()))
-                        {
-                            claims.add(claim);
-                        }
-                    }
-                }
-            }
-        }
-
-        return claims;
+        return getChunkClaims(
+                location.getWorld(),
+                new BoundingBox(location.subtract(150, 0, 150), location.clone().add(300, 0, 300)));
     }
 
     //deletes all the land claims in a specified world

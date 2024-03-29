@@ -18,6 +18,8 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.griefprevention.util.command.MonitorableCommand;
+import com.griefprevention.util.command.MonitoredCommands;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.events.ClaimInspectionEvent;
@@ -38,9 +40,6 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.block.data.Waterlogged;
-import org.bukkit.command.Command;
-import org.bukkit.damage.DamageSource;
-import org.bukkit.damage.DamageType;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.Animals;
 import org.bukkit.entity.Creature;
@@ -49,12 +48,9 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fish;
 import org.bukkit.entity.Hanging;
-import org.bukkit.entity.Horse;
-import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.Llama;
 import org.bukkit.entity.Mule;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Tameable;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.entity.minecart.PoweredMinecart;
@@ -63,8 +59,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
@@ -93,8 +87,6 @@ import org.bukkit.event.raid.RaidTriggerEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.BlockIterator;
 import org.jetbrains.annotations.NotNull;
@@ -131,7 +123,11 @@ class PlayerEventHandler implements Listener
     private Pattern howToClaimPattern = null;
 
     //matcher for banned words
-    private final WordFinder bannedWordFinder;
+    private WordFinder bannedWordFinder;
+    private MonitoredCommands pvpBlockedCommands;
+    private MonitoredCommands accessTrustCommands;
+    private MonitoredCommands chatCommands;
+    private MonitoredCommands whisperCommands;
 
     //spam tracker
     SpamDetector spamDetector = new SpamDetector();
@@ -144,7 +140,12 @@ class PlayerEventHandler implements Listener
     {
         this.dataStore = dataStore;
         this.instance = plugin;
-        bannedWordFinder = new WordFinder(instance.dataStore.loadBannedWords());
+        // Initialize empty on load so never null just in case. Reload after plugins enable.
+        this.bannedWordFinder = new WordFinder(List.of());
+        this.pvpBlockedCommands = new MonitoredCommands(List.of());
+        this.accessTrustCommands = new MonitoredCommands(List.of());
+        this.chatCommands = new MonitoredCommands(List.of());
+        this.whisperCommands = new MonitoredCommands(List.of());
 
         spawnEggs = new HashSet<>();
         dyes = new HashSet<>();
@@ -155,11 +156,18 @@ class PlayerEventHandler implements Listener
             else if (material.name().endsWith("_DYE"))
                 dyes.add(material);
         }
+
+        reload();
     }
 
-    protected void resetPattern()
+    protected void reload()
     {
         this.howToClaimPattern = null;
+        this.bannedWordFinder = new WordFinder(instance.dataStore.loadBannedWords());
+        this.pvpBlockedCommands = new MonitoredCommands(instance.config_pvp_blockedCommands);
+        this.accessTrustCommands = new MonitoredCommands(instance.config_claims_commandsRequiringAccessTrust);
+        this.chatCommands = new MonitoredCommands(instance.config_spam_monitorSlashCommands);
+        this.whisperCommands = new MonitoredCommands(instance.config_eavesdrop_whisperCommands);
     }
 
     //when a player chats, monitor for spam
@@ -416,10 +424,7 @@ class PlayerEventHandler implements Listener
     @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
     synchronized void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event)
     {
-        String message = event.getMessage();
-        String[] args = message.split(" ");
-
-        String command = args[0].toLowerCase();
+        MonitorableCommand command = new MonitorableCommand(event.getMessage());
 
         CommandCategory category = this.getCommandCategory(command);
 
@@ -427,11 +432,11 @@ class PlayerEventHandler implements Listener
         PlayerData playerData = null;
 
         //if a whisper
-        if (category == CommandCategory.Whisper && args.length > 1)
+        if (category == CommandCategory.Whisper && command.getArgumentCount() > 1)
         {
             //determine target player, might be NULL
 
-            Player targetPlayer = instance.getServer().getPlayer(args[1]);
+            Player targetPlayer = instance.getServer().getPlayer(command.getArgument(0));
 
             //softmute feature
             if (this.dataStore.isSoftMuted(player.getUniqueId()) && targetPlayer != null && !this.dataStore.isSoftMuted(targetPlayer.getUniqueId()))
@@ -446,15 +451,9 @@ class PlayerEventHandler implements Listener
                 //except for when the recipient has eavesdrop immunity
                 if (targetPlayer == null || !targetPlayer.hasPermission("griefprevention.eavesdropimmune"))
                 {
-                    StringBuilder logMessageBuilder = new StringBuilder();
-                    logMessageBuilder.append("[[").append(event.getPlayer().getName()).append("]] ");
 
-                    for (int i = 1; i < args.length; i++)
-                    {
-                        logMessageBuilder.append(args[i]).append(" ");
-                    }
-
-                    String logMessage = logMessageBuilder.toString();
+                    String logMessage = "[[" + event.getPlayer().getName() + "]] " +
+                            command.getCommand().substring(command.getCommand(0).length() + 1);
 
                     @SuppressWarnings("unchecked")
                     Collection<Player> players = (Collection<Player>) instance.getServer().getOnlinePlayers();
@@ -493,7 +492,7 @@ class PlayerEventHandler implements Listener
         //if in pvp, block any pvp-banned slash commands
         if (playerData == null) playerData = this.dataStore.getPlayerData(event.getPlayer().getUniqueId());
 
-        if ((playerData.inPvpCombat() || playerData.siegeData != null) && instance.config_pvp_blockedCommands.contains(command))
+        if ((playerData.inPvpCombat()) && pvpBlockedCommands.isMonitoredCommand(command))
         {
             event.setCancelled(true);
             GriefPrevention.sendMessage(event.getPlayer(), TextMode.Err, Messages.CommandBannedInPvP);
@@ -517,7 +516,7 @@ class PlayerEventHandler implements Listener
                 event.setCancelled(this.handlePlayerChat(event.getPlayer(), event.getMessage(), event));
             }
 
-            if (!player.hasPermission("griefprevention.spam") && this.bannedWordFinder.hasMatch(message))
+            if (!player.hasPermission("griefprevention.spam") && this.bannedWordFinder.hasMatch(event.getMessage()))
             {
                 event.setCancelled(true);
             }
@@ -525,29 +524,12 @@ class PlayerEventHandler implements Listener
             //unless cancelled, log in abridged logs
             if (!event.isCancelled())
             {
-                StringBuilder builder = new StringBuilder();
-                for (String arg : args)
-                {
-                    builder.append(arg).append(' ');
-                }
-
-                makeSocialLogEntry(event.getPlayer().getName(), builder.toString());
+                makeSocialLogEntry(event.getPlayer().getName(), event.getMessage());
             }
         }
 
         //if requires access trust, check for permission
-        isMonitoredCommand = false;
-        String lowerCaseMessage = message.toLowerCase();
-        for (String monitoredCommand : instance.config_claims_commandsRequiringAccessTrust)
-        {
-            if (lowerCaseMessage.startsWith(monitoredCommand))
-            {
-                isMonitoredCommand = true;
-                break;
-            }
-        }
-
-        if (isMonitoredCommand)
+        if (accessTrustCommands.isMonitoredCommand(command))
         {
             Claim claim = this.dataStore.getClaimAt(player.getLocation(), false, playerData.lastClaim);
             if (claim != null)
@@ -563,69 +545,11 @@ class PlayerEventHandler implements Listener
         }
     }
 
-    private final ConcurrentHashMap<String, CommandCategory> commandCategoryMap = new ConcurrentHashMap<>();
-
-    private CommandCategory getCommandCategory(String commandName)
+    private CommandCategory getCommandCategory(MonitorableCommand command)
     {
-        if (commandName.startsWith("/")) commandName = commandName.substring(1);
-
-        //if we've seen this command or alias before, return the category determined previously
-        CommandCategory category = this.commandCategoryMap.get(commandName);
-        if (category != null) return category;
-
-        //otherwise build a list of all the aliases of this command across all installed plugins
-        HashSet<String> aliases = new HashSet<>();
-        aliases.add(commandName);
-        aliases.add("minecraft:" + commandName);
-        for (Plugin plugin : Bukkit.getServer().getPluginManager().getPlugins())
-        {
-            if (!(plugin instanceof JavaPlugin))
-                continue;
-            JavaPlugin javaPlugin = (JavaPlugin) plugin;
-            Command command = javaPlugin.getCommand(commandName);
-            if (command != null)
-            {
-                aliases.add(command.getName().toLowerCase());
-                aliases.add(plugin.getName().toLowerCase() + ":" + command.getName().toLowerCase());
-                for (String alias : command.getAliases())
-                {
-                    aliases.add(alias.toLowerCase());
-                    aliases.add(plugin.getName().toLowerCase() + ":" + alias.toLowerCase());
-                }
-            }
-        }
-
-        //also consider vanilla commands
-        Command command = Bukkit.getServer().getPluginCommand(commandName);
-        if (command != null)
-        {
-            aliases.add(command.getName().toLowerCase());
-            aliases.add("minecraft:" + command.getName().toLowerCase());
-            for (String alias : command.getAliases())
-            {
-                aliases.add(alias.toLowerCase());
-                aliases.add("minecraft:" + alias.toLowerCase());
-            }
-        }
-
-        //if any of those aliases are in the chat list or whisper list, then we know the category for that command
-        category = CommandCategory.None;
-        for (String alias : aliases)
-        {
-            if (instance.config_eavesdrop_whisperCommands.contains("/" + alias))
-            {
-                category = CommandCategory.Whisper;
-            }
-            else if (instance.config_spam_monitorSlashCommands.contains("/" + alias))
-            {
-                category = CommandCategory.Chat;
-            }
-
-            //remember the categories for later
-            this.commandCategoryMap.put(alias.toLowerCase(), category);
-        }
-
-        return category;
+        if (whisperCommands.isMonitoredCommand(command)) return CommandCategory.Whisper;
+        if (chatCommands.isMonitoredCommand(command)) return CommandCategory.Chat;
+        return CommandCategory.None;
     }
 
     static int longestNameLength = 10;
@@ -991,15 +915,6 @@ class PlayerEventHandler implements Listener
             player.setHealth(0);
         }
 
-        //FEATURE: during a siege, any player who logs out dies and forfeits the siege
-
-        //if player was involved in a siege, he forfeits
-        if (playerData.siegeData != null)
-        {
-            if (player.getHealth() > 0)
-                player.setHealth(0);  //might already be zero from above, this avoids a double death message
-        }
-
         //drop data about this player
         this.dataStore.clearCachedPlayerData(playerID);
 
@@ -1072,13 +987,6 @@ class PlayerEventHandler implements Listener
             GriefPrevention.sendMessage(player, TextMode.Err, Messages.PvPNoDrop);
             event.setCancelled(true);
         }
-
-        //if he's under siege, don't let him drop it
-        else if (playerData.siegeData != null)
-        {
-            GriefPrevention.sendMessage(player, TextMode.Err, Messages.SiegeNoDrop);
-            event.setCancelled(true);
-        }
     }
 
     //when a player teleports via a portal
@@ -1124,35 +1032,6 @@ class PlayerEventHandler implements Listener
                     }
                 }
             }
-        }
-
-        //FEATURE: prevent teleport abuse to win sieges
-
-        //these rules only apply to siege worlds only
-        if (!instance.config_siege_enabledWorlds.contains(player.getWorld())) return;
-
-        //these rules do not apply to admins
-        if (player.hasPermission("griefprevention.siegeteleport")) return;
-
-        //Ignore vanilla teleports (usually corrective teleports? See issue #210)
-        if (event.getCause() == TeleportCause.UNKNOWN) return;
-
-        Location source = event.getFrom();
-        Claim sourceClaim = this.dataStore.getClaimAt(source, false, playerData.lastClaim);
-        if (sourceClaim != null && sourceClaim.siegeData != null)
-        {
-            GriefPrevention.sendMessage(player, TextMode.Err, Messages.SiegeNoTeleport);
-            event.setCancelled(true);
-            return;
-        }
-
-        Location destination = event.getTo();
-        Claim destinationClaim = this.dataStore.getClaimAt(destination, false, null);
-        if (destinationClaim != null && destinationClaim.siegeData != null)
-        {
-            GriefPrevention.sendMessage(player, TextMode.Err, Messages.BesiegedNoTeleport);
-            event.setCancelled(true);
-            return;
         }
     }
 
@@ -1268,35 +1147,12 @@ class PlayerEventHandler implements Listener
             }
         }
 
-        //limit armor placements when entity count is too high
-        if (entity.getType() == EntityType.ARMOR_STAND && instance.creativeRulesApply(player.getLocation()))
-        {
-            if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
-            Claim claim = this.dataStore.getClaimAt(entity.getLocation(), false, playerData.lastClaim);
-            if (claim == null) return;
-
-            String noEntitiesReason = claim.allowMoreEntities(false);
-            if (noEntitiesReason != null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, noEntitiesReason);
-                event.setCancelled(true);
-                return;
-            }
-        }
-
         //always allow interactions when player is in ignore claims mode
         if (playerData.ignoreClaims) return;
 
         //don't allow container access during pvp combat
         if ((entity instanceof StorageMinecart || entity instanceof PoweredMinecart))
         {
-            if (playerData.siegeData != null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.SiegeNoContainers);
-                event.setCancelled(true);
-                return;
-            }
-
             if (playerData.inPvpCombat())
             {
                 GriefPrevention.sendMessage(player, TextMode.Err, Messages.PvPNoContainers);
@@ -1755,14 +1611,6 @@ class PlayerEventHandler implements Listener
         {
             if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
 
-            //block container use while under siege, so players can't hide items from attackers
-            if (playerData.siegeData != null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.SiegeNoContainers);
-                event.setCancelled(true);
-                return;
-            }
-
             //block container use during pvp combat, same reason
             if (playerData.inPvpCombat())
             {
@@ -1964,49 +1812,6 @@ class PlayerEventHandler implements Listener
                 return;
             }
 
-            //if it's a spawn egg, minecart, or boat, and this is a creative world, apply special rules
-            else if (clickedBlock != null && (materialInHand == Material.MINECART ||
-                    materialInHand == Material.FURNACE_MINECART ||
-                    materialInHand == Material.CHEST_MINECART ||
-                    materialInHand == Material.TNT_MINECART ||
-                    materialInHand == Material.ARMOR_STAND ||
-                    materialInHand == Material.ITEM_FRAME ||
-                    materialInHand == Material.GLOW_ITEM_FRAME ||
-                    spawnEggs.contains(materialInHand) ||
-                    materialInHand == Material.INFESTED_STONE ||
-                    materialInHand == Material.INFESTED_COBBLESTONE ||
-                    materialInHand == Material.INFESTED_STONE_BRICKS ||
-                    materialInHand == Material.INFESTED_MOSSY_STONE_BRICKS ||
-                    materialInHand == Material.INFESTED_CRACKED_STONE_BRICKS ||
-                    materialInHand == Material.INFESTED_CHISELED_STONE_BRICKS ||
-                    materialInHand == Material.HOPPER_MINECART) &&
-                    instance.creativeRulesApply(clickedBlock.getLocation()))
-            {
-                //player needs build permission at this location
-                String noBuildReason = instance.allowBuild(player, clickedBlock.getLocation(), Material.MINECART);
-                if (noBuildReason != null)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, noBuildReason);
-                    event.setCancelled(true);
-                    return;
-                }
-
-                //enforce limit on total number of entities in this claim
-                if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
-                Claim claim = this.dataStore.getClaimAt(clickedBlock.getLocation(), false, playerData.lastClaim);
-                if (claim == null) return;
-
-                String noEntitiesReason = claim.allowMoreEntities(false);
-                if (noEntitiesReason != null)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, noEntitiesReason);
-                    event.setCancelled(true);
-                    return;
-                }
-
-                return;
-            }
-
             //if he's investigating a claim
             else if (materialInHand == instance.config_claims_investigationTool && hand == EquipmentSlot.HAND)
             {
@@ -2117,15 +1922,6 @@ class PlayerEventHandler implements Listener
             else if (materialInHand != instance.config_claims_modificationTool || hand != EquipmentSlot.HAND) return;
 
             event.setCancelled(true);  //GriefPrevention exclusively reserves this tool  (e.g. no grass path creation for golden shovel)
-
-            //disable golden shovel while under siege
-            if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
-            if (playerData.siegeData != null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.SiegeNoShovel);
-                event.setCancelled(true);
-                return;
-            }
 
             //FEATURE: shovel and stick can be used from a distance away
             if (action == Action.RIGHT_CLICK_AIR)
