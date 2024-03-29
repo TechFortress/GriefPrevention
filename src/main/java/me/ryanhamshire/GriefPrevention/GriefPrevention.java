@@ -360,6 +360,8 @@ public class GriefPrevention extends JavaPlugin
         //player events
         playerEventHandler = new PlayerEventHandler(this.dataStore, this);
         pluginManager.registerEvents(playerEventHandler, this);
+        // Load monitored commands on a 1-tick delay to allow plugins to enable and Bukkit to load commands.yml.
+        getServer().getScheduler().runTaskLater(this, playerEventHandler::reload, 1L);
 
         //block events
         BlockEventHandler blockEventHandler = new BlockEventHandler(this.dataStore);
@@ -2311,7 +2313,7 @@ public class GriefPrevention extends JavaPlugin
         {
             this.loadConfig();
             this.dataStore.loadMessages();
-            playerEventHandler.resetPattern();
+            playerEventHandler.reload();
             if (player != null)
             {
                 GriefPrevention.sendMessage(player, TextMode.Success, "Configuration updated.  If you have updated your Grief Prevention JAR, you still need to /reload or reboot your server.");
