@@ -1615,37 +1615,9 @@ class PlayerEventHandler implements Listener
         }
 
         //don't care about left-clicking on most blocks, this is probably a break action
-        if (action == Action.LEFT_CLICK_BLOCK && clickedBlock != null)
+        if (action == Action.LEFT_CLICK_BLOCK && clickedBlock != null && !this.onLeftClickWatchList(clickedBlockType))
         {
-            if (clickedBlock.getY() < clickedBlock.getWorld().getMaxHeight() - 1 || event.getBlockFace() != BlockFace.UP)
-            {
-                Block adjacentBlock = clickedBlock.getRelative(event.getBlockFace());
-                byte lightLevel = adjacentBlock.getLightFromBlocks();
-                if (lightLevel == 15 && adjacentBlock.getType() == Material.FIRE)
-                {
-                    if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
-                    Claim claim = this.dataStore.getClaimAt(clickedBlock.getLocation(), false, playerData.lastClaim);
-                    if (claim != null)
-                    {
-                        playerData.lastClaim = claim;
-
-                        Supplier<String> noBuildReason = claim.checkPermission(player, ClaimPermission.Build, event);
-                        if (noBuildReason != null)
-                        {
-                            event.setCancelled(true);
-                            GriefPrevention.sendMessage(player, TextMode.Err, noBuildReason.get());
-                            player.sendBlockChange(adjacentBlock.getLocation(), adjacentBlock.getType(), adjacentBlock.getData());
-                            return;
-                        }
-                    }
-                }
-            }
-
-            //exception for blocks on a specific watch list
-            if (!this.onLeftClickWatchList(clickedBlockType))
-            {
-                return;
-            }
+            return;
         }
 
         //apply rules for containers and crafting blocks
