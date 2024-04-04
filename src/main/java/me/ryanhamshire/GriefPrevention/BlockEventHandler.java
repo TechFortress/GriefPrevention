@@ -306,9 +306,14 @@ public class BlockEventHandler implements Listener
         {
             playerData.lastClaim = claim;
 
-            //warn about TNT not destroying claimed blocks
-            if (block.getType() == Material.TNT && !claim.areExplosivesAllowed)
+            //warn about TNT not destroying claimed blocks (10 minute cooldown)
+
+            Long now = null;
+            if (block.getType() == Material.TNT && !claim.areExplosivesAllowed && (playerData.explosivesWarningTimestamp == null || (now = System.currentTimeMillis()) - playerData.explosivesWarningTimestamp > 600000))
             {
+                if (now == null) now = System.currentTimeMillis();
+                playerData.explosivesWarningTimestamp = now;
+
                 GriefPrevention.sendMessage(player, TextMode.Warn, Messages.NoTNTDamageClaims);
                 GriefPrevention.sendMessage(player, TextMode.Instr, Messages.ClaimExplosivesAdvertisement);
             }

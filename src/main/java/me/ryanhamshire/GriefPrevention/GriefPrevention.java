@@ -26,7 +26,6 @@ import me.ryanhamshire.GriefPrevention.DataStore.NoTransferException;
 import me.ryanhamshire.GriefPrevention.events.PreventBlockBreakEvent;
 import me.ryanhamshire.GriefPrevention.events.SaveTrappedPlayerEvent;
 import me.ryanhamshire.GriefPrevention.events.TrustChangedEvent;
-import net.milkbowl.vault.economy.Economy;
 import org.bukkit.BanList;
 import org.bukkit.BanList.Type;
 import org.bukkit.Bukkit;
@@ -184,11 +183,6 @@ public class GriefPrevention extends JavaPlugin
 
     public boolean config_lockDeathDropsInPvpWorlds;                //whether players' dropped on death items are protected in pvp worlds
     public boolean config_lockDeathDropsInNonPvpWorlds;             //whether players' dropped on death items are protected in non-pvp worlds
-
-    private EconomyHandler economyHandler;
-    public int config_economy_claimBlocksMaxBonus;                  //max "bonus" blocks a player can buy.  set to zero for no limit.
-    public double config_economy_claimBlocksPurchaseCost;            //cost to purchase a claim block.  set to zero to disable purchase.
-    public double config_economy_claimBlocksSellValue;                //return on a sold claim block.  set to zero to disable sale.
 
     public boolean config_blockClaimExplosions;                     //whether explosions may destroy claimed blocks
     public boolean config_blockSurfaceCreeperExplosions;            //whether creeper explosions near or above the surface destroy blocks
@@ -374,10 +368,6 @@ public class GriefPrevention extends JavaPlugin
         //combat/damage-specific entity events
         entityDamageHandler = new EntityDamageHandler(this.dataStore, this);
         pluginManager.registerEvents(entityDamageHandler, this);
-
-        //vault-based economy integration
-        economyHandler = new EconomyHandler(this);
-        pluginManager.registerEvents(economyHandler, this);
 
         //cache offline players
         OfflinePlayer[] offlinePlayers = this.getServer().getOfflinePlayers();
@@ -608,10 +598,6 @@ public class GriefPrevention extends JavaPlugin
         this.config_pvp_allowCombatItemDrop = config.getBoolean("GriefPrevention.PvP.AllowCombatItemDrop", false);
         String bannedPvPCommandsList = config.getString("GriefPrevention.PvP.BlockedSlashCommands", "/home;/vanish;/spawn;/tpa");
 
-        this.config_economy_claimBlocksMaxBonus = config.getInt("GriefPrevention.Economy.ClaimBlocksMaxBonus", 0);
-        this.config_economy_claimBlocksPurchaseCost = config.getDouble("GriefPrevention.Economy.ClaimBlocksPurchaseCost", 0);
-        this.config_economy_claimBlocksSellValue = config.getDouble("GriefPrevention.Economy.ClaimBlocksSellValue", 0);
-
         this.config_lockDeathDropsInPvpWorlds = config.getBoolean("GriefPrevention.ProtectItemsDroppedOnDeath.PvPWorlds", false);
         this.config_lockDeathDropsInNonPvpWorlds = config.getBoolean("GriefPrevention.ProtectItemsDroppedOnDeath.NonPvPWorlds", true);
 
@@ -786,10 +772,6 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.PvP.AllowFlintAndSteelNearOtherPlayers.PvPWorlds", this.config_pvp_allowFireNearPlayers);
         outConfig.set("GriefPrevention.PvP.AllowFlintAndSteelNearOtherPlayers.NonPvPWorlds", this.config_pvp_allowFireNearPlayers_NonPvp);
         outConfig.set("GriefPrevention.PvP.ProtectPetsOutsideLandClaims", this.config_pvp_protectPets);
-
-        outConfig.set("GriefPrevention.Economy.ClaimBlocksMaxBonus", this.config_economy_claimBlocksMaxBonus);
-        outConfig.set("GriefPrevention.Economy.ClaimBlocksPurchaseCost", this.config_economy_claimBlocksPurchaseCost);
-        outConfig.set("GriefPrevention.Economy.ClaimBlocksSellValue", this.config_economy_claimBlocksSellValue);
 
         outConfig.set("GriefPrevention.ProtectItemsDroppedOnDeath.PvPWorlds", this.config_lockDeathDropsInPvpWorlds);
         outConfig.set("GriefPrevention.ProtectItemsDroppedOnDeath.NonPvPWorlds", this.config_lockDeathDropsInNonPvpWorlds);
@@ -1582,169 +1564,6 @@ public class GriefPrevention extends JavaPlugin
                 GriefPrevention.sendMessage(player, TextMode.Success, Messages.SubclaimRestricted);
             }
             this.dataStore.saveClaim(claim);
-            return true;
-        }
-
-        //buyclaimblocks
-        else if (cmd.getName().equalsIgnoreCase("buyclaimblocks") && player != null)
-        {
-            //if economy is disabled, don't do anything
-            EconomyHandler.EconomyWrapper economyWrapper = economyHandler.getWrapper();
-            if (economyWrapper == null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.BuySellNotConfigured);
-                return true;
-            }
-
-            if (!player.hasPermission("griefprevention.buysellclaimblocks"))
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoPermissionForCommand);
-                return true;
-            }
-
-            //if purchase disabled, send error message
-            if (GriefPrevention.instance.config_economy_claimBlocksPurchaseCost == 0)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.OnlySellBlocks);
-                return true;
-            }
-
-            Economy economy = economyWrapper.getEconomy();
-
-            //if no parameter, just tell player cost per block and balance
-            if (args.length != 1)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Info, Messages.BlockPurchaseCost, String.valueOf(GriefPrevention.instance.config_economy_claimBlocksPurchaseCost), String.valueOf(economy.getBalance(player)));
-                return false;
-            }
-            else
-            {
-                PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-
-                //try to parse number of blocks
-                int blockCount;
-                try
-                {
-                    blockCount = Integer.parseInt(args[0]);
-                }
-                catch (NumberFormatException numberFormatException)
-                {
-                    return false;  //causes usage to be displayed
-                }
-
-                if (blockCount <= 0)
-                {
-                    return false;
-                }
-
-                //if the player can't afford his purchase, send error message
-                double balance = economy.getBalance(player);
-                double totalCost = blockCount * GriefPrevention.instance.config_economy_claimBlocksPurchaseCost;
-                if (totalCost > balance)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.InsufficientFunds, economy.format(totalCost), economy.format(balance));
-                }
-
-                //otherwise carry out transaction
-                else
-                {
-                    int newBonusClaimBlocks = playerData.getBonusClaimBlocks() + blockCount;
-
-                    //if the player is going to reach max bonus limit, send error message
-                    int bonusBlocksLimit = GriefPrevention.instance.config_economy_claimBlocksMaxBonus;
-                    if (bonusBlocksLimit != 0 && newBonusClaimBlocks > bonusBlocksLimit)
-                    {
-                        GriefPrevention.sendMessage(player, TextMode.Err, Messages.MaxBonusReached, String.valueOf(blockCount), String.valueOf(bonusBlocksLimit));
-                        return true;
-                    }
-
-                    //withdraw cost
-                    economy.withdrawPlayer(player, totalCost);
-
-                    //add blocks
-                    playerData.setBonusClaimBlocks(playerData.getBonusClaimBlocks() + blockCount);
-                    this.dataStore.savePlayerData(player.getUniqueId(), playerData);
-
-                    //inform player
-                    GriefPrevention.sendMessage(player, TextMode.Success, Messages.PurchaseConfirmation, economy.format(totalCost), String.valueOf(playerData.getRemainingClaimBlocks()));
-                }
-
-                return true;
-            }
-        }
-
-        //sellclaimblocks <amount>
-        else if (cmd.getName().equalsIgnoreCase("sellclaimblocks") && player != null)
-        {
-            //if economy is disabled, don't do anything
-            EconomyHandler.EconomyWrapper economyWrapper = economyHandler.getWrapper();
-            if (economyWrapper == null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.BuySellNotConfigured);
-                return true;
-            }
-
-            if (!player.hasPermission("griefprevention.buysellclaimblocks"))
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.NoPermissionForCommand);
-                return true;
-            }
-
-            //if disabled, error message
-            if (GriefPrevention.instance.config_economy_claimBlocksSellValue == 0)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.OnlyPurchaseBlocks);
-                return true;
-            }
-
-            //load player data
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-            int availableBlocks = playerData.getRemainingClaimBlocks();
-
-            //if no amount provided, just tell player value per block sold, and how many he can sell
-            if (args.length != 1)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Info, Messages.BlockSaleValue, String.valueOf(GriefPrevention.instance.config_economy_claimBlocksSellValue), String.valueOf(availableBlocks));
-                return false;
-            }
-
-            //parse number of blocks
-            int blockCount;
-            try
-            {
-                blockCount = Integer.parseInt(args[0]);
-            }
-            catch (NumberFormatException numberFormatException)
-            {
-                return false;  //causes usage to be displayed
-            }
-
-            if (blockCount <= 0)
-            {
-                return false;
-            }
-
-            //if he doesn't have enough blocks, tell him so
-            if (blockCount > availableBlocks)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.NotEnoughBlocksForSale);
-            }
-
-            //otherwise carry out the transaction
-            else
-            {
-                //compute value and deposit it
-                double totalValue = blockCount * GriefPrevention.instance.config_economy_claimBlocksSellValue;
-                economyWrapper.getEconomy().depositPlayer(player, totalValue);
-
-                //subtract blocks
-                playerData.setBonusClaimBlocks(playerData.getBonusClaimBlocks() - blockCount);
-                this.dataStore.savePlayerData(player.getUniqueId(), playerData);
-
-                //inform player
-                GriefPrevention.sendMessage(player, TextMode.Success, Messages.BlockSaleConfirmation, economyWrapper.getEconomy().format(totalValue), String.valueOf(playerData.getRemainingClaimBlocks()));
-            }
-
             return true;
         }
 
