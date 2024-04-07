@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 
 /**
  * An {@link org.bukkit.event.Event Event} called when a {@link Player} receives {@link Boundary} visuals.
@@ -89,7 +90,7 @@ public class BoundaryVisualizationEvent extends PlayerEvent
      */
     public @NotNull IntVector getCenter()
     {
-        return new IntVector(player.getLocation());
+        return new IntVector(Objects.requireNonNull(player.getLocation()));
     }
 
     /**

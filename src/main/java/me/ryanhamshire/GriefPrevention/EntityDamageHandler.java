@@ -57,6 +57,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.Objects;
 
 public class EntityDamageHandler implements Listener
 {
@@ -417,8 +418,8 @@ public class EntityDamageHandler implements Listener
             if (sendMessages) GriefPrevention.sendMessage(attacker, TextMode.Err, message);
         };
         // Return whether PVP is handled by a claim at the attacker or defender's locations.
-        return handlePvpInClaim(attacker, defender, attacker.getLocation(), attackerData, () -> cancelHandler.accept(Messages.CantFightWhileImmune))
-                || handlePvpInClaim(attacker, defender, defender.getLocation(), defenderData, () -> cancelHandler.accept(Messages.PlayerInPvPSafeZone));
+        return handlePvpInClaim(attacker, defender, Objects.requireNonNull(attacker.getLocation()), attackerData, () -> cancelHandler.accept(Messages.CantFightWhileImmune))
+                || handlePvpInClaim(attacker, defender, Objects.requireNonNull(defender.getLocation()), defenderData, () -> cancelHandler.accept(Messages.PlayerInPvPSafeZone));
     }
 
     /**
@@ -450,7 +451,7 @@ public class EntityDamageHandler implements Listener
         }
 
         // Return whether PVP is handled by a claim at the defender's location.
-        return handlePvpInClaim(attacker, defender, defender.getLocation(), defenderData, cancelHandler);
+        return handlePvpInClaim(attacker, defender, Objects.requireNonNull(defender.getLocation()), defenderData, cancelHandler);
     }
 
     /**
@@ -1020,12 +1021,12 @@ public class EntityDamageHandler implements Listener
                         if (messagedPlayer.compareAndSet(false, true))
                             GriefPrevention.sendMessage(thrower, TextMode.Err, message);
                     };
-                    if (handlePvpInClaim(thrower, affectedPlayer, thrower.getLocation(), playerData, () -> cancelHandler.accept(Messages.CantFightWhileImmune)))
+                    if (handlePvpInClaim(thrower, affectedPlayer, Objects.requireNonNull(thrower.getLocation()), playerData, () -> cancelHandler.accept(Messages.CantFightWhileImmune)))
                     {
                         continue;
                     }
                     playerData = this.dataStore.getPlayerData(affectedPlayer.getUniqueId());
-                    handlePvpInClaim(thrower, affectedPlayer, affectedPlayer.getLocation(), playerData, () -> cancelHandler.accept(Messages.PlayerInPvPSafeZone));
+                    handlePvpInClaim(thrower, affectedPlayer, Objects.requireNonNull(affectedPlayer.getLocation()), playerData, () -> cancelHandler.accept(Messages.PlayerInPvPSafeZone));
                 }
             }
         }

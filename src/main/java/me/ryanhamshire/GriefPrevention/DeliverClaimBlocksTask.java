@@ -22,6 +22,7 @@ import me.ryanhamshire.GriefPrevention.events.AccrueClaimBlocksEvent;
 import org.bukkit.entity.Player;
 
 import java.util.Collection;
+import java.util.Objects;
 
 //FEATURE: give players claim blocks for playing, as long as they're not away from their computer
 
@@ -74,7 +75,7 @@ class DeliverClaimBlocksTask implements Runnable
         try
         {
             isIdle = player.isInsideVehicle() || player.getLocation().getBlock().isLiquid() ||
-                    !(playerData.lastAfkCheckLocation == null || playerData.lastAfkCheckLocation.distanceSquared(player.getLocation()) > idleThresholdSquared);
+                    !(playerData.lastAfkCheckLocation == null || playerData.lastAfkCheckLocation.distanceSquared(Objects.requireNonNull(player.getLocation())) > idleThresholdSquared);
         }
         catch (IllegalArgumentException ignore) //can't measure distance when to/from are different worlds
         {

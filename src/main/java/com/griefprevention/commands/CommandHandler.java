@@ -42,7 +42,7 @@ public abstract class CommandHandler implements TabExecutor
         }
         command.setExecutor(this);
     }
-
+    
     @Override
     public @Nullable List<String> onTabComplete(
             @NotNull CommandSender sender,
