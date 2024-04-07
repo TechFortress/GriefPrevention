@@ -23,6 +23,8 @@ import com.griefprevention.visualization.VisualizationType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 
+import java.util.Objects;
+
 //tells a player about how many claim blocks he has, etc
 //implemented as a task so that it can be delayed
 //otherwise, it's spammy when players mouse-wheel past the shovel in their hot bars
@@ -61,7 +63,7 @@ class EquipShovelProcessingTask implements Runnable
         GriefPrevention.sendMessage(player, TextMode.Instr, Messages.RemainingBlocks, String.valueOf(remainingBlocks));
 
         //link to a video demo of land claiming, based on world type
-        if (GriefPrevention.instance.creativeRulesApply(player.getLocation()))
+        if (GriefPrevention.instance.creativeRulesApply(Objects.requireNonNull(player.getLocation())))
         {
             GriefPrevention.sendMessage(player, TextMode.Instr, Messages.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
         }

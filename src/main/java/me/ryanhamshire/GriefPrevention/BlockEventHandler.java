@@ -394,7 +394,7 @@ public class BlockEventHandler implements Listener
                             GriefPrevention.sendMessage(player, TextMode.Success, Messages.AutomaticClaimNotification);
 
                             //show the player the protected area
-                            BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM, block);
+                            BoundaryVisualization.visualizeClaim(player, Objects.requireNonNull(result.claim), VisualizationType.CLAIM, block);
                         }
                         else
                         {
@@ -402,7 +402,7 @@ public class BlockEventHandler implements Listener
                             GriefPrevention.sendMessage(player, TextMode.Err, Messages.AutomaticClaimOtherClaimTooClose);
 
                             //show the player the protected area
-                            BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE, block);
+                            BoundaryVisualization.visualizeClaim(player, Objects.requireNonNull(result.claim), VisualizationType.CONFLICT_ZONE, block);
                         }
                     }
                 }
@@ -788,9 +788,9 @@ public class BlockEventHandler implements Listener
             {
                 // Set lit for resulting data in event. Currently unused, but may be in the future.
                 lightable.setLit(true);
-
+                
                 // Call event.
-                EntityChangeBlockEvent changeBlockEvent = new EntityChangeBlockEvent(igniteEvent.getIgnitingEntity(), igniteEvent.getBlock(), blockData);
+                EntityChangeBlockEvent changeBlockEvent = new EntityChangeBlockEvent(Objects.requireNonNull(igniteEvent.getIgnitingEntity()), igniteEvent.getBlock(), blockData);
                 GriefPrevention.instance.entityEventHandler.onEntityChangeBLock(changeBlockEvent);
 
                 // Respect event result.

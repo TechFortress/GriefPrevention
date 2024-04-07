@@ -104,6 +104,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
+import java.util.Objects;
 
 class PlayerEventHandler implements Listener
 {
@@ -301,7 +302,7 @@ class PlayerEventHandler implements Listener
 
         if (this.howToClaimPattern.matcher(message).matches())
         {
-            if (instance.creativeRulesApply(player.getLocation()))
+            if (instance.creativeRulesApply(Objects.requireNonNull(player.getLocation())))
             {
                 GriefPrevention.sendMessage(player, TextMode.Info, Messages.CreativeBasicsVideo2, 10L, DataStore.CREATIVE_VIDEO_URL);
             }
@@ -686,7 +687,7 @@ class PlayerEventHandler implements Listener
                             if (info2.address.toString().equals(address))
                             {
                                 OfflinePlayer bannedAccount = instance.getServer().getOfflinePlayer(info2.bannedAccountName);
-                                instance.getServer().getBanList(BanList.Type.NAME).pardon(bannedAccount.getName());
+                                instance.getServer().getBanList(BanList.Type.NAME).pardon(Objects.requireNonNull(bannedAccount.getName()));
                                 this.tempBannedIps.remove(j--);
                             }
                         }
@@ -798,7 +799,7 @@ class PlayerEventHandler implements Listener
                 if (taskID != null && Bukkit.getScheduler().isQueued(taskID))
                 {
                     Bukkit.getScheduler().cancelTask(taskID);
-                    player.sendMessage(event.getJoinMessage());
+                    player.sendMessage(Objects.requireNonNull(event.getJoinMessage()));
                     event.setJoinMessage("");
                 }
             }
@@ -836,7 +837,7 @@ class PlayerEventHandler implements Listener
         long now = Calendar.getInstance().getTimeInMillis();
         if (lastDeathTime != null && now - lastDeathTime < instance.config_spam_deathMessageCooldownSeconds * 1000 && event.getDeathMessage() != null)
         {
-            player.sendMessage(event.getDeathMessage());  //let the player assume his death message was broadcasted to everyone
+            player.sendMessage(Objects.requireNonNull(event.getDeathMessage()));  //let the player assume his death message was broadcasted to everyone
             event.setDeathMessage(null);
         }
 
@@ -970,7 +971,7 @@ class PlayerEventHandler implements Listener
         Player player = event.getPlayer();
 
         //in creative worlds, dropping items is blocked
-        if (instance.creativeRulesApply(player.getLocation()))
+        if (instance.creativeRulesApply(Objects.requireNonNull(player.getLocation())))
         {
             event.setCancelled(true);
             return;
@@ -2219,7 +2220,7 @@ class PlayerEventHandler implements Listener
                                 if (result.claim != null)
                                 {
                                     GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateSubdivisionOverlap);
-                                    BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE, clickedBlock);
+                                    BoundaryVisualization.visualizeClaim(player, Objects.requireNonNull(result.claim), VisualizationType.CONFLICT_ZONE, clickedBlock);
                                 }
                                 else
                                 {
@@ -2233,7 +2234,7 @@ class PlayerEventHandler implements Listener
                             else
                             {
                                 GriefPrevention.sendMessage(player, TextMode.Success, Messages.SubdivisionSuccess);
-                                BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM, clickedBlock);
+                                BoundaryVisualization.visualizeClaim(player, Objects.requireNonNull(result.claim), VisualizationType.CLAIM, clickedBlock);
                                 playerData.lastShovelLocation = null;
                                 playerData.claimSubdividing = null;
                             }
@@ -2368,7 +2369,7 @@ class PlayerEventHandler implements Listener
                     if (result.claim != null)
                     {
                         GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlapShort);
-                        BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE, clickedBlock);
+                        BoundaryVisualization.visualizeClaim(player, Objects.requireNonNull(result.claim), VisualizationType.CONFLICT_ZONE, clickedBlock);
                     }
                     else
                     {
@@ -2382,7 +2383,7 @@ class PlayerEventHandler implements Listener
                 else
                 {
                     GriefPrevention.sendMessage(player, TextMode.Success, Messages.CreateClaimSuccess);
-                    BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM, clickedBlock);
+                    BoundaryVisualization.visualizeClaim(player, Objects.requireNonNull(result.claim), VisualizationType.CLAIM, clickedBlock);
                     playerData.lastShovelLocation = null;
 
                     //if it's a big claim, tell the player about subdivisions
@@ -2392,7 +2393,7 @@ class PlayerEventHandler implements Listener
                         GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SubdivisionVideo2, 201L, DataStore.SUBDIVISION_VIDEO_URL);
                     }
 
-                    AutoExtendClaimTask.scheduleAsync(result.claim);
+                    AutoExtendClaimTask.scheduleAsync(Objects.requireNonNull(result.claim));
                 }
             }
         }
@@ -2465,7 +2466,7 @@ class PlayerEventHandler implements Listener
         Location eye = player.getEyeLocation();
         Material eyeMaterial = eye.getBlock().getType();
         boolean passThroughWater = (eyeMaterial == Material.WATER);
-        BlockIterator iterator = new BlockIterator(player.getLocation(), player.getEyeHeight(), maxDistance);
+        BlockIterator iterator = new BlockIterator(Objects.requireNonNull(player.getLocation()), player.getEyeHeight(), maxDistance);
         Block result = player.getLocation().getBlock().getRelative(BlockFace.UP);
         while (iterator.hasNext())
         {

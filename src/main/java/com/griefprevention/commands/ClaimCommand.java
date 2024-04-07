@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Objects;
 
 public class ClaimCommand extends CommandHandler
 {
@@ -150,7 +151,7 @@ public class ClaimCommand extends CommandHandler
             {
                 GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimFailOverlapShort);
 
-                BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE);
+                BoundaryVisualization.visualizeClaim(player, Objects.requireNonNull(result.claim), VisualizationType.CONFLICT_ZONE);
             }
             else
             {
@@ -162,7 +163,7 @@ public class ClaimCommand extends CommandHandler
             GriefPrevention.sendMessage(player, TextMode.Success, Messages.CreateClaimSuccess);
 
             //link to a video demo of land claiming, based on world type
-            if (plugin.creativeRulesApply(player.getLocation()))
+            if (plugin.creativeRulesApply(Objects.requireNonNull(player.getLocation())))
             {
                 GriefPrevention.sendMessage(player, TextMode.Instr, Messages.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
             }
@@ -170,11 +171,11 @@ public class ClaimCommand extends CommandHandler
             {
                 GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SurvivalBasicsVideo2, DataStore.SURVIVAL_VIDEO_URL);
             }
-            BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM);
+            BoundaryVisualization.visualizeClaim(player, Objects.requireNonNull(result.claim), VisualizationType.CLAIM);
             playerData.claimResizing = null;
             playerData.lastShovelLocation = null;
 
-            AutoExtendClaimTask.scheduleAsync(result.claim);
+            AutoExtendClaimTask.scheduleAsync(Objects.requireNonNull(result.claim));
 
         }
     }

@@ -1262,7 +1262,7 @@ public abstract class DataStore
 
             //inform about success, visualize, communicate remaining blocks available
             GriefPrevention.sendMessage(player, TextMode.Success, Messages.ClaimResizeSuccess, String.valueOf(claimBlocksRemaining));
-            BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CLAIM);
+            BoundaryVisualization.visualizeClaim(player, Objects.requireNonNull(result.claim), VisualizationType.CLAIM);
 
             //if resizing someone else's claim, make a log entry
             if (!player.getUniqueId().equals(playerData.claimResizing.ownerID) && playerData.claimResizing.parent == null)
@@ -1297,7 +1297,7 @@ public abstract class DataStore
                 GriefPrevention.sendMessage(player, TextMode.Err, Messages.ResizeFailOverlap);
 
                 //show the player the conflicting claim
-                BoundaryVisualization.visualizeClaim(player, result.claim, VisualizationType.CONFLICT_ZONE);
+                BoundaryVisualization.visualizeClaim(player, Objects.requireNonNull(result.claim), VisualizationType.CONFLICT_ZONE);
             }
             else
             {
@@ -1666,7 +1666,7 @@ public abstract class DataStore
     Set<Claim> getNearbyClaims(Location location)
     {
         return getChunkClaims(
-                location.getWorld(),
+                Objects.requireNonNull(location.getWorld()),
                 new BoundingBox(location.subtract(150, 0, 150), location.clone().add(300, 0, 300)));
     }
 

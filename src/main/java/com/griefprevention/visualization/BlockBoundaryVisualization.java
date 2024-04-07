@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.function.Consumer;
+import java.util.Objects;
 
 public abstract class BlockBoundaryVisualization extends BoundaryVisualization
 {
@@ -159,7 +160,7 @@ public abstract class BlockBoundaryVisualization extends BoundaryVisualization
         }
 
         // Elements do not track the boundary they're attached to - all elements are reverted individually instead.
-        this.elements.forEach(element -> element.erase(player, world));
+        this.elements.forEach(element -> element.erase(Objects.requireNonNull(player), world));
     }
 
     @Override

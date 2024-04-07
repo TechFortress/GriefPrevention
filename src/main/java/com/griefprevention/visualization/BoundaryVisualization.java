@@ -120,7 +120,7 @@ public abstract class BoundaryVisualization
         }
 
         // Revert data as necessary for any sent elements.
-        elements.forEach(element -> erase(player, element));
+        elements.forEach(element -> erase(Objects.requireNonNull(player), element));
     }
 
     /**

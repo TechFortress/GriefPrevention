@@ -75,6 +75,7 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Objects;
 
 public class GriefPrevention extends JavaPlugin
 {
@@ -915,7 +916,7 @@ public class GriefPrevention extends JavaPlugin
             if (args.length < 1)
             {
                 //link to a video demo of land claiming, based on world type
-                if (GriefPrevention.instance.creativeRulesApply(player.getLocation()))
+                if (GriefPrevention.instance.creativeRulesApply(Objects.requireNonNull(player.getLocation())))
                 {
                     GriefPrevention.sendMessage(player, TextMode.Instr, Messages.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
                 }
@@ -934,7 +935,7 @@ public class GriefPrevention extends JavaPlugin
             catch (NumberFormatException e)
             {
                 //link to a video demo of land claiming, based on world type
-                if (GriefPrevention.instance.creativeRulesApply(player.getLocation()))
+                if (GriefPrevention.instance.creativeRulesApply(Objects.requireNonNull(player.getLocation())))
                 {
                     GriefPrevention.sendMessage(player, TextMode.Instr, Messages.CreativeBasicsVideo2, DataStore.CREATIVE_VIDEO_URL);
                 }
@@ -1699,7 +1700,7 @@ public class GriefPrevention extends JavaPlugin
             //delete all that player's claims
             this.dataStore.deleteClaimsForPlayer(otherPlayer.getUniqueId(), true);
 
-            GriefPrevention.sendMessage(player, TextMode.Success, Messages.DeleteAllSuccess, otherPlayer.getName());
+            GriefPrevention.sendMessage(player, TextMode.Success, Messages.DeleteAllSuccess, Objects.requireNonNull(otherPlayer.getName()));
             if (player != null)
             {
                 GriefPrevention.AddLogEntry(player.getName() + " deleted all claims belonging to " + otherPlayer.getName() + ".", CustomLogEntryTypes.AdminActivity);
@@ -1967,7 +1968,7 @@ public class GriefPrevention extends JavaPlugin
             playerData.setBonusClaimBlocks(playerData.getBonusClaimBlocks() + adjustment);
             this.dataStore.savePlayerData(targetPlayer.getUniqueId(), playerData);
 
-            GriefPrevention.sendMessage(player, TextMode.Success, Messages.AdjustBlocksSuccess, targetPlayer.getName(), String.valueOf(adjustment), String.valueOf(playerData.getBonusClaimBlocks()));
+            GriefPrevention.sendMessage(player, TextMode.Success, Messages.AdjustBlocksSuccess, Objects.requireNonNull(targetPlayer.getName()), String.valueOf(adjustment), String.valueOf(playerData.getBonusClaimBlocks()));
             if (player != null)
                 GriefPrevention.AddLogEntry(player.getName() + " adjusted " + targetPlayer.getName() + "'s bonus claim blocks by " + adjustment + ".", CustomLogEntryTypes.AdminActivity);
 
@@ -2112,7 +2113,7 @@ public class GriefPrevention extends JavaPlugin
             boolean isMuted = this.dataStore.toggleSoftMute(targetPlayer.getUniqueId());
             if (isMuted)
             {
-                GriefPrevention.sendMessage(player, TextMode.Success, Messages.SoftMuted, targetPlayer.getName());
+                GriefPrevention.sendMessage(player, TextMode.Success, Messages.SoftMuted, Objects.requireNonNull(targetPlayer.getName()));
                 String executorName = "console";
                 if (player != null)
                 {
@@ -2123,7 +2124,7 @@ public class GriefPrevention extends JavaPlugin
             }
             else
             {
-                GriefPrevention.sendMessage(player, TextMode.Success, Messages.UnSoftMuted, targetPlayer.getName());
+                GriefPrevention.sendMessage(player, TextMode.Success, Messages.UnSoftMuted, Objects.requireNonNull(targetPlayer.getName()));
             }
 
             return true;
@@ -2861,7 +2862,7 @@ public class GriefPrevention extends JavaPlugin
             //if there's a claim here, keep looking
             if (claim != null)
             {
-                candidateLocation = new Location(claim.lesserBoundaryCorner.getWorld(), claim.lesserBoundaryCorner.getBlockX() - 1, claim.lesserBoundaryCorner.getBlockY(), claim.lesserBoundaryCorner.getBlockZ() - 1);
+                candidateLocation = new Location(Objects.requireNonNull(claim.lesserBoundaryCorner.getWorld()), claim.lesserBoundaryCorner.getBlockX() - 1, claim.lesserBoundaryCorner.getBlockY(), claim.lesserBoundaryCorner.getBlockZ() - 1);
                 continue;
             }
 
