@@ -1011,27 +1011,26 @@ class PlayerEventHandler implements Listener
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerTeleport(PlayerTeleportEvent event)
     {
+        //FEATURE: prevent players from using ender pearls or chorus fruit to gain access to secured claims
+        if(!instance.config_claims_enderPearlsRequireAccessTrust) return;
+
+        TeleportCause cause = event.getCause();
+        if(cause != TeleportCause.CHORUS_FRUIT && cause != TeleportCause.ENDER_PEARL) return;
+
         Player player = event.getPlayer();
         PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
 
-        //FEATURE: prevent players from using ender pearls to gain access to secured claims
-        TeleportCause cause = event.getCause();
-        if (cause == TeleportCause.CHORUS_FRUIT || (cause == TeleportCause.ENDER_PEARL && instance.config_claims_enderPearlsRequireAccessTrust))
-        {
-            Claim toClaim = this.dataStore.getClaimAt(event.getTo(), false, playerData.lastClaim);
-            if (toClaim != null)
-            {
-                playerData.lastClaim = toClaim;
-                Supplier<String> noAccessReason = toClaim.checkPermission(player, ClaimPermission.Access, event);
-                if (noAccessReason != null)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, noAccessReason.get());
-                    event.setCancelled(true);
-                    if (cause == TeleportCause.ENDER_PEARL)
-                        player.getInventory().addItem(new ItemStack(Material.ENDER_PEARL));
-                }
-            }
-        }
+        Claim toClaim = this.dataStore.getClaimAt(event.getTo(), false, playerData.lastClaim);
+        if(toClaim == null) return;
+
+        playerData.lastClaim = toClaim;
+        Supplier<String> noAccessReason = toClaim.checkPermission(player, ClaimPermission.Access, event);
+        if(noAccessReason == null) return;
+
+        GriefPrevention.sendMessage(player, TextMode.Err, noAccessReason.get());
+        event.setCancelled(true);
+        if (cause == TeleportCause.ENDER_PEARL)
+            player.getInventory().addItem(new ItemStack(Material.ENDER_PEARL));
     }
 
     //when a player triggers a raid (in a claim)
