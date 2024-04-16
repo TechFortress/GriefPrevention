@@ -2413,15 +2413,9 @@ class PlayerEventHandler implements Listener
 
     private boolean onLeftClickWatchList(Material material)
     {
+        if (Tag.BUTTONS.isTagged(material)) return true;
         switch (material)
         {
-            case OAK_BUTTON:
-            case SPRUCE_BUTTON:
-            case BIRCH_BUTTON:
-            case JUNGLE_BUTTON:
-            case ACACIA_BUTTON:
-            case DARK_OAK_BUTTON:
-            case STONE_BUTTON:
             case LEVER:
             case REPEATER:
             case CAKE:
