@@ -206,8 +206,25 @@ public class Claim
         this.id = id;
 
         //store corners
-        this.lesserBoundaryCorner = lesserBoundaryCorner;
-        this.greaterBoundaryCorner = greaterBoundaryCorner;
+        this.lesserBoundaryCorner = lesserBoundaryCorner.clone();
+        this.greaterBoundaryCorner = greaterBoundaryCorner.clone();
+
+        // Sanitize corners
+        int x1 = this.lesserBoundaryCorner.getBlockX();
+        int x2 = this.greaterBoundaryCorner.getBlockX();
+        if (x1 > x2)
+        {
+            this.greaterBoundaryCorner.setX(x1);
+            this.lesserBoundaryCorner.setX(x2);
+        }
+        int z1 = this.lesserBoundaryCorner.getBlockZ();
+        int z2 = this.greaterBoundaryCorner.getBlockZ();
+        if (z1 > z2)
+        {
+            this.greaterBoundaryCorner.setZ(z1);
+            this.lesserBoundaryCorner.setZ(z2);
+        }
+        this.lesserBoundaryCorner.setY(Math.min(this.lesserBoundaryCorner.getBlockY(), this.greaterBoundaryCorner.getBlockY()));
 
         //owner
         this.ownerID = ownerID;

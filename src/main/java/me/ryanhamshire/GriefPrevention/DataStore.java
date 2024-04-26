@@ -915,6 +915,14 @@ public abstract class DataStore
             smally = sanitizeClaimDepth(parent, smally);
         }
 
+        //claims can't be made outside the world border
+        final Location smallerBoundaryCorner = new Location(world, smallx, smally, smallz);
+        final Location greaterBoundaryCorner = new Location(world, bigx, bigy, bigz);
+        if(!world.getWorldBorder().isInside(smallerBoundaryCorner) || !world.getWorldBorder().isInside(greaterBoundaryCorner)){
+            result.succeeded = false;
+            return result;
+        }
+
         //creative mode claims always go to bedrock
         if (GriefPrevention.instance.config_claims_worldModes.get(world) == ClaimsMode.Creative)
         {
@@ -923,8 +931,8 @@ public abstract class DataStore
 
         //create a new claim instance (but don't save it, yet)
         Claim newClaim = new Claim(
-                new Location(world, smallx, smally, smallz),
-                new Location(world, bigx, bigy, bigz),
+                smallerBoundaryCorner,
+                greaterBoundaryCorner,
                 ownerID,
                 new ArrayList<>(),
                 new ArrayList<>(),
