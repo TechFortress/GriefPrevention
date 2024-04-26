@@ -1167,8 +1167,19 @@ public abstract class DataStore
         if (playerData.claimResizing.parent == null)
         {
             //measure new claim, apply size rules
-            int newWidth = (Math.abs(newx1 - newx2) + 1);
-            int newHeight = (Math.abs(newz1 - newz2) + 1);
+            int newWidth;
+            int newHeight;
+            try
+            {
+                newWidth = Math.abs(Math.subtractExact(newx1, newx2)) + 1;
+                newHeight = Math.abs(Math.subtractExact(newz1, newz2)) + 1;
+            }
+            catch (ArithmeticException e)
+            {
+                GriefPrevention.sendMessage(player, TextMode.Err, Messages.ResizeClaimInsufficientArea, String.valueOf(GriefPrevention.instance.config_claims_minArea));
+                return;
+            }
+
             boolean smaller = newWidth < playerData.claimResizing.getWidth() || newHeight < playerData.claimResizing.getHeight();
 
             if (!player.hasPermission("griefprevention.adminclaims") && !playerData.claimResizing.isAdminClaim() && smaller)
@@ -1190,8 +1201,17 @@ public abstract class DataStore
             //make sure player has enough blocks to make up the difference
             if (!playerData.claimResizing.isAdminClaim() && player.getName().equals(playerData.claimResizing.getOwnerName()))
             {
-                int newArea = newWidth * newHeight;
-                int blocksRemainingAfter = playerData.getRemainingClaimBlocks() + playerData.claimResizing.getArea() - newArea;
+                int newArea;
+                int blocksRemainingAfter;
+                try
+                {
+                    newArea = Math.multiplyExact(newWidth, newHeight);
+                    blocksRemainingAfter = playerData.getRemainingClaimBlocks() + (playerData.claimResizing.getArea() - newArea);
+                }
+                catch (ArithmeticException e)
+                {
+                    blocksRemainingAfter = -1;
+                }
 
                 if (blocksRemainingAfter < 0)
                 {
