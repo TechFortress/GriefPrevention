@@ -49,7 +49,6 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
-import org.bukkit.event.entity.EntityPortalEnterEvent;
 import org.bukkit.event.entity.ExpBottleEvent;
 import org.bukkit.event.entity.ItemMergeEvent;
 import org.bukkit.event.entity.ItemSpawnEvent;
@@ -120,6 +119,11 @@ public class EntityEventHandler implements Listener
         {
             event.setCancelled(true);
         }
+        //sand cannon fix - when the falling block doesn't fall straight down, take additional anti-grief steps
+        else if (event.getEntity() instanceof FallingBlock fallingBlock)
+        {
+            handleFallingBlockChangeBlock(event, fallingBlock);
+        }
         // All other handling depends on claims being enabled.
         else if (GriefPrevention.instance.config_claims_worldModes.get(event.getBlock().getWorld()) == ClaimsMode.Disabled)
         {
@@ -178,12 +182,6 @@ public class EntityEventHandler implements Listener
                 }
             }
         }
-
-        //sand cannon fix - when the falling block doesn't fall straight down, take additional anti-grief steps
-        else if (event.getEntity() instanceof FallingBlock fallingBlock)
-        {
-            handleFallingBlockChangeBlock(event, fallingBlock);
-        }
     }
 
     private void handleFallingBlockChangeBlock(EntityChangeBlockEvent event, FallingBlock fallingBlock)
@@ -206,11 +204,12 @@ public class EntityEventHandler implements Listener
 
         List<MetadataValue> values = fallingBlock.getMetadata("GP_FALLINGBLOCK");
         //if we're not sure where this entity came from (maybe another plugin didn't follow the standard?), allow the block to form
-        //Or if entity fell through an end portal, allow it to form, as the event is erroneously fired twice in this scenario.
         if (values.isEmpty() || !(values.get(0).value() instanceof Location originalLocation)) return;
 
         // If it fell straight down, allow.
-        if (originalLocation.getBlockX() == blockLocation.getBlockX() && originalLocation.getBlockZ() == blockLocation.getBlockZ())
+        if (Objects.equals(originalLocation.getWorld(), block.getWorld())
+                && originalLocation.getBlockX() == blockLocation.getBlockX()
+                && originalLocation.getBlockZ() == blockLocation.getBlockZ())
         {
             return;
         }
@@ -345,16 +344,6 @@ public class EntityEventHandler implements Listener
     {
         return projectileSource instanceof BlockProjectileSource &&
                 GriefPrevention.instance.dataStore.getClaimAt(((BlockProjectileSource) projectileSource).getBlock().getLocation(), false, claim) == claim;
-    }
-
-    //Used by "sand cannon" fix to ignore fallingblocks that fell through End Portals
-    //This is largely due to a CB issue with the above event
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.LOWEST)
-    public void onFallingBlockEnterPortal(EntityPortalEnterEvent event)
-    {
-        if (event.getEntityType() != EntityType.FALLING_BLOCK)
-            return;
-        event.getEntity().removeMetadata("GP_FALLINGBLOCK", instance);
     }
 
     //don't allow zombies to break down doors

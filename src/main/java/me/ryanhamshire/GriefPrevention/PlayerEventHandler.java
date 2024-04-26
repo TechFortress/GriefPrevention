@@ -1011,27 +1011,26 @@ class PlayerEventHandler implements Listener
     @EventHandler(priority = EventPriority.LOWEST)
     public void onPlayerTeleport(PlayerTeleportEvent event)
     {
+        //FEATURE: prevent players from using ender pearls or chorus fruit to gain access to secured claims
+        if(!instance.config_claims_enderPearlsRequireAccessTrust) return;
+
+        TeleportCause cause = event.getCause();
+        if(cause != TeleportCause.CHORUS_FRUIT && cause != TeleportCause.ENDER_PEARL) return;
+
         Player player = event.getPlayer();
         PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
 
-        //FEATURE: prevent players from using ender pearls to gain access to secured claims
-        TeleportCause cause = event.getCause();
-        if (cause == TeleportCause.CHORUS_FRUIT || (cause == TeleportCause.ENDER_PEARL && instance.config_claims_enderPearlsRequireAccessTrust))
-        {
-            Claim toClaim = this.dataStore.getClaimAt(event.getTo(), false, playerData.lastClaim);
-            if (toClaim != null)
-            {
-                playerData.lastClaim = toClaim;
-                Supplier<String> noAccessReason = toClaim.checkPermission(player, ClaimPermission.Access, event);
-                if (noAccessReason != null)
-                {
-                    GriefPrevention.sendMessage(player, TextMode.Err, noAccessReason.get());
-                    event.setCancelled(true);
-                    if (cause == TeleportCause.ENDER_PEARL)
-                        player.getInventory().addItem(new ItemStack(Material.ENDER_PEARL));
-                }
-            }
-        }
+        Claim toClaim = this.dataStore.getClaimAt(event.getTo(), false, playerData.lastClaim);
+        if(toClaim == null) return;
+
+        playerData.lastClaim = toClaim;
+        Supplier<String> noAccessReason = toClaim.checkPermission(player, ClaimPermission.Access, event);
+        if(noAccessReason == null) return;
+
+        GriefPrevention.sendMessage(player, TextMode.Err, noAccessReason.get());
+        event.setCancelled(true);
+        if (cause == TeleportCause.ENDER_PEARL)
+            player.getInventory().addItem(new ItemStack(Material.ENDER_PEARL));
     }
 
     //when a player triggers a raid (in a claim)
@@ -1546,37 +1545,9 @@ class PlayerEventHandler implements Listener
         }
 
         //don't care about left-clicking on most blocks, this is probably a break action
-        if (action == Action.LEFT_CLICK_BLOCK && clickedBlock != null)
+        if (action == Action.LEFT_CLICK_BLOCK && clickedBlock != null && !this.onLeftClickWatchList(clickedBlockType))
         {
-            if (clickedBlock.getY() < clickedBlock.getWorld().getMaxHeight() - 1 || event.getBlockFace() != BlockFace.UP)
-            {
-                Block adjacentBlock = clickedBlock.getRelative(event.getBlockFace());
-                byte lightLevel = adjacentBlock.getLightFromBlocks();
-                if (lightLevel == 15 && adjacentBlock.getType() == Material.FIRE)
-                {
-                    if (playerData == null) playerData = this.dataStore.getPlayerData(player.getUniqueId());
-                    Claim claim = this.dataStore.getClaimAt(clickedBlock.getLocation(), false, playerData.lastClaim);
-                    if (claim != null)
-                    {
-                        playerData.lastClaim = claim;
-
-                        Supplier<String> noBuildReason = claim.checkPermission(player, ClaimPermission.Build, event);
-                        if (noBuildReason != null)
-                        {
-                            event.setCancelled(true);
-                            GriefPrevention.sendMessage(player, TextMode.Err, noBuildReason.get());
-                            player.sendBlockChange(adjacentBlock.getLocation(), adjacentBlock.getType(), adjacentBlock.getData());
-                            return;
-                        }
-                    }
-                }
-            }
-
-            //exception for blocks on a specific watch list
-            if (!this.onLeftClickWatchList(clickedBlockType))
-            {
-                return;
-            }
+            return;
         }
 
         //apply rules for containers and crafting blocks
@@ -2442,15 +2413,9 @@ class PlayerEventHandler implements Listener
 
     private boolean onLeftClickWatchList(Material material)
     {
+        if (Tag.BUTTONS.isTagged(material)) return true;
         switch (material)
         {
-            case OAK_BUTTON:
-            case SPRUCE_BUTTON:
-            case BIRCH_BUTTON:
-            case JUNGLE_BUTTON:
-            case ACACIA_BUTTON:
-            case DARK_OAK_BUTTON:
-            case STONE_BUTTON:
             case LEVER:
             case REPEATER:
             case CAKE:

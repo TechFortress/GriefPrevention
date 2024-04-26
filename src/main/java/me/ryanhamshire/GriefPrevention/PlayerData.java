@@ -120,6 +120,9 @@ public class PlayerData
     //timestamp for last "you're building outside your land claims" message
     Long buildWarningTimestamp = null;
 
+    //timestamp for last warning when placing TNT on explosion protected claim
+    Long explosivesWarningTimestamp = null;
+
     //spot where a player can't talk, used to mute new players until they've moved a little
     //this is an anti-bot strategy.
     Location noChatLocation = null;
