@@ -88,33 +88,34 @@ import java.util.function.Supplier;
 //event handlers related to blocks
 public class BlockEventHandler implements Listener
 {
+
+    protected static final Set<Material> TRASH_BLOCKS;
+
+    static
+    {
+        //create the list of blocks which will not trigger a warning when they're placed outside of land claims
+        TRASH_BLOCKS = new HashSet<>();
+        TRASH_BLOCKS.add(Material.COBBLESTONE);
+        TRASH_BLOCKS.add(Material.TORCH);
+        TRASH_BLOCKS.add(Material.DIRT);
+        TRASH_BLOCKS.addAll(Tag.SAPLINGS.getValues());
+        TRASH_BLOCKS.add(Material.GRAVEL);
+        TRASH_BLOCKS.add(Material.SAND);
+        TRASH_BLOCKS.add(Material.SANDSTONE);
+        TRASH_BLOCKS.add(Material.TNT);
+        TRASH_BLOCKS.add(Material.CRAFTING_TABLE);
+        TRASH_BLOCKS.add(Material.TUFF);
+        TRASH_BLOCKS.add(Material.COBBLED_DEEPSLATE);
+    }
+
     //convenience reference to singleton datastore
     private final DataStore dataStore;
-
-    private final Set<Material> trashBlocks;
 
     //constructor
     public BlockEventHandler(DataStore dataStore)
     {
         this.dataStore = dataStore;
 
-        //create the list of blocks which will not trigger a warning when they're placed outside of land claims
-        this.trashBlocks = new HashSet<>();
-        this.trashBlocks.add(Material.COBBLESTONE);
-        this.trashBlocks.add(Material.TORCH);
-        this.trashBlocks.add(Material.DIRT);
-        this.trashBlocks.add(Material.OAK_SAPLING);
-        this.trashBlocks.add(Material.SPRUCE_SAPLING);
-        this.trashBlocks.add(Material.BIRCH_SAPLING);
-        this.trashBlocks.add(Material.JUNGLE_SAPLING);
-        this.trashBlocks.add(Material.ACACIA_SAPLING);
-        this.trashBlocks.add(Material.DARK_OAK_SAPLING);
-        this.trashBlocks.add(Material.GRAVEL);
-        this.trashBlocks.add(Material.SAND);
-        this.trashBlocks.add(Material.TNT);
-        this.trashBlocks.add(Material.CRAFTING_TABLE);
-        this.trashBlocks.add(Material.TUFF);
-        this.trashBlocks.add(Material.COBBLED_DEEPSLATE);
     }
 
     //when a player breaks a block...
@@ -432,7 +433,7 @@ public class BlockEventHandler implements Listener
         }
 
         //FEATURE: warn players when they're placing non-trash blocks outside of their claimed areas
-        else if (!this.trashBlocks.contains(block.getType()) && GriefPrevention.instance.claimsEnabledForWorld(block.getWorld()))
+        else if (!this.TRASH_BLOCKS.contains(block.getType()) && GriefPrevention.instance.claimsEnabledForWorld(block.getWorld()))
         {
             if (!playerData.warnedAboutBuildingOutsideClaims && !player.hasPermission("griefprevention.adminclaims")
                     && player.hasPermission("griefprevention.createclaims") && ((playerData.lastClaim == null
