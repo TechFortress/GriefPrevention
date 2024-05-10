@@ -437,6 +437,71 @@ public class GriefPrevention extends JavaPlugin
         @EventHandler
         public void onWorldLoad(WorldLoadEvent event) {
             loadConfig();
+
+            if (dataStore != null) {
+                for (Player player : getServer().getOnlinePlayers())
+                {
+                    UUID playerID = player.getUniqueId();
+                    PlayerData playerData = dataStore.getPlayerData(playerID);
+                    dataStore.savePlayerDataSync(playerID, playerData);
+                }
+
+                dataStore.close();
+            }
+
+            if (!databaseUrl.isEmpty())
+            {
+                try
+                {
+                    DatabaseDataStore databaseStore = new DatabaseDataStore(databaseUrl, databaseUserName, databasePassword);
+
+                    if (FlatFileDataStore.hasData())
+                    {
+                        GriefPrevention.AddLogEntry("There appears to be some data on the hard drive.  Migrating those data to the database...");
+                        FlatFileDataStore flatFileStore = new FlatFileDataStore();
+                        dataStore = flatFileStore;
+                        flatFileStore.migrateData(databaseStore);
+                        GriefPrevention.AddLogEntry("Data migration process complete.");
+                    }
+
+                    dataStore = databaseStore;
+                }
+                catch (Exception e)
+                {
+                    GriefPrevention.AddLogEntry("Because there was a problem with the database, GriefPrevention will not function properly.  Either update the database config settings resolve the issue, or delete those lines from your config.yml so that GriefPrevention can use the file system to store data.");
+                    e.printStackTrace();
+                    GriefPrevention.this.getServer().getPluginManager().disablePlugin(GriefPrevention.this);
+                    return;
+                }
+            }
+
+            //if not using the database because it's not configured or because there was a problem, use the file system to store data
+            //this is the preferred method, as it's simpler than the database scenario
+            if (dataStore == null)
+            {
+                File oldclaimdata = new File(getDataFolder(), "ClaimData");
+                if (oldclaimdata.exists())
+                {
+                    if (!FlatFileDataStore.hasData())
+                    {
+                        File claimdata = new File("plugins" + File.separator + "GriefPreventionData" + File.separator + "ClaimData");
+                        oldclaimdata.renameTo(claimdata);
+                        File oldplayerdata = new File(getDataFolder(), "PlayerData");
+                        File playerdata = new File("plugins" + File.separator + "GriefPreventionData" + File.separator + "PlayerData");
+                        oldplayerdata.renameTo(playerdata);
+                    }
+                }
+                try
+                {
+                    dataStore = new FlatFileDataStore();
+                }
+                catch (Exception e)
+                {
+                    GriefPrevention.AddLogEntry("Unable to initialize the file system data store.  Details:");
+                    GriefPrevention.AddLogEntry(e.getMessage());
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
