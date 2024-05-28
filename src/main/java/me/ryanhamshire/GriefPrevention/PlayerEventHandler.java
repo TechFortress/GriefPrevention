@@ -2244,11 +2244,10 @@ class PlayerEventHandler implements Listener
                 ClaimStartEvent claimStart = new ClaimStartEvent(claimsEnabledForWorld, maxClaims, event.getPlayer());
                 
                 Bukkit.getPluginManager().callEvent(claimStart);
-                if (!claimStart.isCancelled())
-                {
-                    claimsEnabledForWorld = claimStart.isEnabledForWorld();
-                    maxClaims = claimStart.getMaxClaims();
-                }
+                if (claimStart.isCancelled()) return;
+                
+                claimsEnabledForWorld = claimStart.isEnabledForWorld();
+                maxClaims = claimStart.getMaxClaims();
                 
                 //if claims are not enabled in this world and it's not an administrative claim, display an error message and stop
                 if (!claimsEnabledForWorld &&
