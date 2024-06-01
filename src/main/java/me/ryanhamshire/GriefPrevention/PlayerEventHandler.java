@@ -2240,15 +2240,15 @@ class PlayerEventHandler implements Listener
             {
                 boolean claimsEnabledForWorld = instance.claimsEnabledForWorld(player.getWorld());
                 int maxClaims = instance.config_claims_maxClaimsPerPlayer;
-                
+
                 ClaimStartEvent claimStart = new ClaimStartEvent(claimsEnabledForWorld, maxClaims, event.getPlayer());
-                
+
                 Bukkit.getPluginManager().callEvent(claimStart);
                 if (claimStart.isCancelled()) return;
-                
+
                 claimsEnabledForWorld = claimStart.isEnabledForWorld();
                 maxClaims = claimStart.getMaxClaims();
-                
+
                 //if claims are not enabled in this world and it's not an administrative claim, display an error message and stop
                 if (!claimsEnabledForWorld &&
                         !player.hasPermission("griefprevention.overrideworldrestriction"))
@@ -2256,7 +2256,7 @@ class PlayerEventHandler implements Listener
                     GriefPrevention.sendMessage(player, TextMode.Err, Messages.ClaimsDisabledWorld);
                     return;
                 }
-                
+
                 //if he's at the claim count per player limit already and doesn't have permission to bypass, display an error message
                 if (maxClaims > 0 &&
                         !player.hasPermission("griefprevention.overrideclaimcountlimit") &&
