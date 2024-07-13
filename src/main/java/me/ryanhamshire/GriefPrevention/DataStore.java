@@ -1119,7 +1119,7 @@ public abstract class DataStore
         ArrayList<Claim> claimsToDelete = new ArrayList<>();
         for (Claim claim : this.claims)
         {
-            if ((playerID == claim.ownerID || (playerID != null && playerID.equals(claim.ownerID))))
+            if (Objects.equals(playerID, claim.ownerID))
                 claimsToDelete.add(claim);
         }
 
