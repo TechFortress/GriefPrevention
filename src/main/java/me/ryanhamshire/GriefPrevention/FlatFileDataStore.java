@@ -33,7 +33,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -473,7 +473,7 @@ public class FlatFileDataStore extends DataStore
 
     Claim loadClaim(File file, ArrayList<Long> out_parentID, long claimID) throws IOException, InvalidConfigurationException, Exception
     {
-        List<String> lines = Files.readLines(file, Charset.forName("UTF-8"));
+        List<String> lines = Files.readLines(file, StandardCharsets.UTF_8);
         StringBuilder builder = new StringBuilder();
         for (String line : lines)
         {
@@ -578,7 +578,7 @@ public class FlatFileDataStore extends DataStore
             //open the claim's file
             File claimFile = new File(claimDataFolderPath + File.separator + claimID + ".yml");
             claimFile.createNewFile();
-            Files.write(yaml.getBytes("UTF-8"), claimFile);
+            Files.write(yaml.getBytes(StandardCharsets.UTF_8), claimFile);
         }
 
         //if any problem, log it
@@ -625,7 +625,7 @@ public class FlatFileDataStore extends DataStore
                     needRetry = false;
 
                     //read the file content and immediately close it
-                    List<String> lines = Files.readLines(playerFile, Charset.forName("UTF-8"));
+                    List<String> lines = Files.readLines(playerFile, StandardCharsets.UTF_8);
                     Iterator<String> iterator = lines.iterator();
 
 
@@ -719,7 +719,7 @@ public class FlatFileDataStore extends DataStore
 
             //write data to file
             File playerDataFile = new File(playerDataFolderPath + File.separator + playerID.toString());
-            Files.write(fileContent.toString().getBytes("UTF-8"), playerDataFile);
+            Files.write(fileContent.toString().getBytes(StandardCharsets.UTF_8), playerDataFile);
         }
 
         //if any problem, log it
