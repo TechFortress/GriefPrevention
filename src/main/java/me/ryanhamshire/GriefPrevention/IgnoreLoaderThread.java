@@ -79,7 +79,7 @@ class IgnoreLoaderThread extends Thread
         //if last attempt failed, log information about the problem
         if (needRetry)
         {
-            GriefPrevention.AddLogEntry("Retry attempts exhausted.  Unable to load ignore data for player \"" + playerToLoad.toString() + "\": " + latestException.toString());
+            GriefPrevention.AddLogEntry("Retry attempts exhausted.  Unable to load ignore data for player \"" + playerToLoad.toString() + "\": " + latestException);
             latestException.printStackTrace();
         }
     }
