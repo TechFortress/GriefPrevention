@@ -766,14 +766,7 @@ public abstract class DataStore
     public Collection<Claim> getClaims(int chunkx, int chunkz)
     {
         ArrayList<Claim> chunkClaims = this.chunksToClaimsMap.get(getChunkHash(chunkx, chunkz));
-        if (chunkClaims != null)
-        {
-            return Collections.unmodifiableCollection(chunkClaims);
-        }
-        else
-        {
-            return Collections.unmodifiableCollection(new ArrayList<>());
-        }
+        return Collections.unmodifiableCollection(Objects.requireNonNullElseGet(chunkClaims, ArrayList::new));
     }
 
     public @NotNull Set<Claim> getChunkClaims(@NotNull World world, @NotNull BoundingBox boundingBox)
