@@ -1215,7 +1215,7 @@ public class BlockEventHandler implements Listener
             return;
         }
 
-        UUID itemOwnerId = (UUID) meta.get(0).value();
+        UUID itemOwnerId = (UUID) meta.getFirst().value();
         // Determine if the owner has unlocked their dropped items.
         // This first requires that the player is logged in.
         if (Bukkit.getServer().getPlayer(itemOwnerId) != null)

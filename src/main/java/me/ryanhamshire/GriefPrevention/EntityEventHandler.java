@@ -170,7 +170,7 @@ public class EntityEventHandler implements Listener
         // Prevent breaking lily pads via collision with a boat.
         else if (event.getEntity() instanceof Vehicle && !event.getEntity().getPassengers().isEmpty())
         {
-            Entity driver = event.getEntity().getPassengers().get(0);
+            Entity driver = event.getEntity().getPassengers().getFirst();
             if (driver instanceof Player player)
             {
                 Block block = event.getBlock();
@@ -202,7 +202,7 @@ public class EntityEventHandler implements Listener
 
         List<MetadataValue> values = fallingBlock.getMetadata("GP_FALLINGBLOCK");
         //if we're not sure where this entity came from (maybe another plugin didn't follow the standard?), allow the block to form
-        if (values.isEmpty() || !(values.get(0).value() instanceof Location originalLocation)) return;
+        if (values.isEmpty() || !(values.getFirst().value() instanceof Location originalLocation)) return;
 
         // If it fell straight down, allow.
         if (Objects.equals(originalLocation.getWorld(), block.getWorld())
@@ -782,7 +782,7 @@ public class EntityEventHandler implements Listener
         List<MetadataValue> data = item.getMetadata("GP_ITEMOWNER");
 
         // Ignore absent or invalid data.
-        if (data.isEmpty() || !(data.get(0).value() instanceof UUID ownerID)) return;
+        if (data.isEmpty() || !(data.getFirst().value() instanceof UUID ownerID)) return;
 
         // Get owner from stored UUID.
         OfflinePlayer owner = instance.getServer().getOfflinePlayer(ownerID);

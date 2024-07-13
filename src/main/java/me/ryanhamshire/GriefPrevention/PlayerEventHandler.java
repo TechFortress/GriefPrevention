@@ -776,8 +776,8 @@ class PlayerEventHandler implements Listener
                 {
                     if (player.getPortalCooldown() > 8 && player.hasMetadata("GP_PORTALRESCUE"))
                     {
-                        GriefPrevention.AddLogEntry("Rescued " + player.getName() + " from a nether portal.\nTeleported from " + GriefPrevention.getfriendlyLocationString(player.getLocation()) + " to " + GriefPrevention.getfriendlyLocationString((Location) player.getMetadata("GP_PORTALRESCUE").get(0).value()), CustomLogEntryTypes.Debug);
-                        player.teleport((Location) player.getMetadata("GP_PORTALRESCUE").get(0).value());
+                        GriefPrevention.AddLogEntry("Rescued " + player.getName() + " from a nether portal.\nTeleported from " + GriefPrevention.getfriendlyLocationString(player.getLocation()) + " to " + GriefPrevention.getfriendlyLocationString((Location) player.getMetadata("GP_PORTALRESCUE").getFirst().value()), CustomLogEntryTypes.Debug);
+                        player.teleport((Location) player.getMetadata("GP_PORTALRESCUE").getFirst().value());
                         player.removeMetadata("GP_PORTALRESCUE", instance);
                     }
                 }
@@ -1992,7 +1992,7 @@ class PlayerEventHandler implements Listener
                         if (location.distance(centerBlock.getLocation()) > playerData.fillRadius) continue;
 
                         //default fill block is initially the first from the allowed fill blocks list above
-                        Material defaultFiller = allowedFillBlocks.get(0);
+                        Material defaultFiller = allowedFillBlocks.getFirst();
 
                         //prefer to use the block the player clicked on, if it's an acceptable fill block
                         if (allowedFillBlocks.contains(centerBlock.getType()))
