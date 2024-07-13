@@ -37,6 +37,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -1580,8 +1581,9 @@ public abstract class DataStore
             }
 
             //read the message from the file, use default if necessary
-            this.messages[messageID.ordinal()] = config.getString("Messages." + messageID.name() + ".Text", messageData.text);
-            config.set("Messages." + messageID.name() + ".Text", this.messages[messageID.ordinal()]);
+            String messageTextPath = "Messages." + messageID.name() + ".Text";
+            this.messages[messageID.ordinal()] = config.getString(messageTextPath, messageData.text);
+            config.set(messageTextPath, this.messages[messageID.ordinal()]);
 
             //support color codes
             if (messageID != Messages.HowToClaimRegex)
@@ -1591,8 +1593,14 @@ public abstract class DataStore
 
             if (messageData.notes != null)
             {
+                // Import old non-comment notes.
                 messageData.notes = config.getString("Messages." + messageID.name() + ".Notes", messageData.notes);
-                config.set("Messages." + messageID.name() + ".Notes", messageData.notes);
+                // Import existing comment notes.
+                List<String> notes = config.getComments(messageTextPath);
+                if (notes.isEmpty()) {
+                    notes = List.of(messageData.notes);
+                }
+                config.setComments(messageTextPath, notes);
             }
         }
 
@@ -1616,7 +1624,7 @@ public abstract class DataStore
     }
 
     private void addDefault(HashMap<String, CustomizableMessage> defaults,
-                            Messages id, String text, String notes)
+                            @NotNull Messages id, @NotNull String text, @Nullable String notes)
     {
         CustomizableMessage message = new CustomizableMessage(id, text, notes);
         defaults.put(id.name(), message);
