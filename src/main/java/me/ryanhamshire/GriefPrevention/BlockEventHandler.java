@@ -494,12 +494,12 @@ public class BlockEventHandler implements Listener
             claimOwner = claim.getOwnerID();
 
         // Check for double chests placed just outside the claim boundary
-        if (block.getBlockData() instanceof Chest)
+        if (block.getBlockData() instanceof Chest chest)
         {
             for (BlockFace face : HORIZONTAL_DIRECTIONS)
             {
                 Block relative = block.getRelative(face);
-                if (!(relative.getBlockData() instanceof Chest)) continue;
+                if (!(relative.getBlockData() instanceof Chest relativeChest)) continue;
 
                 Claim relativeClaim = this.dataStore.getClaimAt(relative.getLocation(), true, claim);
                 UUID relativeClaimOwner = relativeClaim == null ? null : relativeClaim.getOwnerID();
@@ -509,11 +509,9 @@ public class BlockEventHandler implements Listener
                 if (Objects.equals(claimOwner, relativeClaimOwner)) break;
 
                 // Change both chests to singular chests
-                Chest chest = (Chest) block.getBlockData();
                 chest.setType(Chest.Type.SINGLE);
                 block.setBlockData(chest);
 
-                Chest relativeChest = (Chest) relative.getBlockData();
                 relativeChest.setType(Chest.Type.SINGLE);
                 relative.setBlockData(relativeChest);
 
@@ -1176,8 +1174,7 @@ public class BlockEventHandler implements Listener
         //from where?
         Block fromBlock = dispenseEvent.getBlock();
         BlockData fromData = fromBlock.getBlockData();
-        if (!(fromData instanceof Dispenser)) return;
-        Dispenser dispenser = (Dispenser) fromData;
+        if (!(fromData instanceof Dispenser dispenser)) return;
 
         //to where?
         Block toBlock = fromBlock.getRelative(dispenser.getFacing());

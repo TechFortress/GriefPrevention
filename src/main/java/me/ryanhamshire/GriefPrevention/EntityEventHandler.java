@@ -712,13 +712,11 @@ public class EntityEventHandler implements Listener
         }
 
         //only allow players to break paintings, not anything else (like water and explosions)
-        if (!(event instanceof HangingBreakByEntityEvent))
+        if (!(event instanceof HangingBreakByEntityEvent entityEvent))
         {
             event.setCancelled(true);
             return;
         }
-
-        HangingBreakByEntityEvent entityEvent = (HangingBreakByEntityEvent) event;
 
         //who is removing it?
         Entity remover = entityEvent.getRemover();

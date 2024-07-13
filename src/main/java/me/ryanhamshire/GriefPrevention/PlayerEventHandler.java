@@ -1083,9 +1083,8 @@ class PlayerEventHandler implements Listener
         PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
 
         //if entity is tameable and has an owner, apply special rules
-        if (entity instanceof Tameable)
+        if (entity instanceof Tameable tameable)
         {
-            Tameable tameable = (Tameable) entity;
             if (tameable.isTamed())
             {
                 if (tameable.getOwner() != null)
@@ -1125,9 +1124,8 @@ class PlayerEventHandler implements Listener
             {
                 //ensure this entity can be tamed by players
                 tameable.setOwner(null);
-                if (tameable instanceof InventoryHolder)
+                if (tameable instanceof InventoryHolder holder)
                 {
-                    InventoryHolder holder = (InventoryHolder) tameable;
                     holder.getInventory().clear();
                 }
             }
