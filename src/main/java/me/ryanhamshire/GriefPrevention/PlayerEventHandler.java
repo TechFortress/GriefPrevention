@@ -2411,16 +2411,11 @@ class PlayerEventHandler implements Listener
     private boolean onLeftClickWatchList(Material material)
     {
         if (Tag.BUTTONS.isTagged(material)) return true;
-        switch (material)
+        return switch (material)
         {
-            case LEVER:
-            case REPEATER:
-            case CAKE:
-            case DRAGON_EGG:
-                return true;
-            default:
-                return false;
-        }
+            case LEVER, REPEATER, CAKE, DRAGON_EGG -> true;
+            default -> false;
+        };
     }
 
     static Block getTargetBlock(Player player, int maxDistance) throws IllegalStateException
