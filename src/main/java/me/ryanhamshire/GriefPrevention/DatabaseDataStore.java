@@ -613,7 +613,6 @@ public class DatabaseDataStore extends DataStore
                 }
             }
             catch (SQLException e) {}
-            ;
         }
 
         this.databaseConnection = null;

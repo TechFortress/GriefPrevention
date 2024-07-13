@@ -1300,7 +1300,7 @@ public abstract class DataStore
             }
 
             //if increased to a sufficiently large size and no subdivisions yet, send subdivision instructions
-            if (oldClaim.getArea() < 1000 && result.claim.getArea() >= 1000 && result.claim.children.size() == 0 && !player.hasPermission("griefprevention.adminclaims"))
+            if (oldClaim.getArea() < 1000 && result.claim.getArea() >= 1000 && result.claim.children.isEmpty() && !player.hasPermission("griefprevention.adminclaims"))
             {
                 GriefPrevention.sendMessage(player, TextMode.Info, Messages.BecomeMayor, 200L);
                 GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SubdivisionVideo2, 201L, DataStore.SUBDIVISION_VIDEO_URL);

@@ -1232,7 +1232,7 @@ class PlayerEventHandler implements Listener
             //don't track in worlds where claims are not enabled
             if (!instance.claimsEnabledForWorld(entity.getWorld())) return;
 
-            Claim cachedClaim = playerData.lastClaim;;
+            Claim cachedClaim = playerData.lastClaim;
             Claim claim = this.dataStore.getClaimAt(entity.getLocation(), false, cachedClaim);
 
             // Require a claim to handle.

@@ -671,7 +671,7 @@ public class EntityEventHandler implements Listener
     {
         Item item = event.getEntity();
         List<MetadataValue> data = item.getMetadata("GP_ITEMOWNER");
-        event.setCancelled(data != null && data.size() > 0);
+        event.setCancelled(!data.isEmpty());
     }
 
     //when an entity picks up an item

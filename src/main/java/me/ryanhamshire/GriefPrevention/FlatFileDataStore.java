@@ -432,7 +432,7 @@ public class FlatFileDataStore extends DataStore
                 {
                     ArrayList<Long> out_parentID = new ArrayList<>();  //hacky output parameter
                     Claim claim = this.loadClaim(files[i], out_parentID, claimID);
-                    if (out_parentID.size() == 0 || out_parentID.get(0) == -1)
+                    if (out_parentID.isEmpty() || out_parentID.get(0) == -1)
                     {
                         this.addClaim(claim, false);
                     }

@@ -438,7 +438,7 @@ public class BlockEventHandler implements Listener
         {
             if (!playerData.warnedAboutBuildingOutsideClaims && !player.hasPermission("griefprevention.adminclaims")
                     && player.hasPermission("griefprevention.createclaims") && ((playerData.lastClaim == null
-                    && playerData.getClaims().size() == 0) || (playerData.lastClaim != null
+                    && playerData.getClaims().isEmpty()) || (playerData.lastClaim != null
                     && playerData.lastClaim.isNear(player.getLocation(), 15))))
             {
                 Long now = null;
