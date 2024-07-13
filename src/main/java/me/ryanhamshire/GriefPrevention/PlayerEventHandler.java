@@ -559,10 +559,7 @@ class PlayerEventHandler implements Listener
     static void makeSocialLogEntry(String name, String message)
     {
         StringBuilder entryBuilder = new StringBuilder(name);
-        for (int i = name.length(); i < longestNameLength; i++)
-        {
-            entryBuilder.append(' ');
-        }
+        entryBuilder.append(" ".repeat(Math.max(0, longestNameLength - name.length())));
         entryBuilder.append(": ").append(message);
 
         longestNameLength = Math.max(longestNameLength, name.length());
