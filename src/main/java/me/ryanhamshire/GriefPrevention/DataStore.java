@@ -1353,7 +1353,7 @@ public abstract class DataStore
     protected void loadMessages()
     {
         Messages[] messageIDs = Messages.values();
-        this.messages = new String[Messages.values().length];
+        this.messages = new String[messageIDs.length];
 
         //load the config file
         FileConfiguration config = YamlConfiguration.loadConfiguration(new File(messagesFilePath));
@@ -1407,8 +1407,6 @@ public abstract class DataStore
         {
             GriefPrevention.AddLogEntry("Unable to write to the configuration file at \"" + DataStore.messagesFilePath + "\"");
         }
-
-        System.gc();
     }
 
     synchronized public String getMessage(Messages messageID, String... args)
