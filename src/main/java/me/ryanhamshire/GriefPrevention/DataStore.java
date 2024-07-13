@@ -302,7 +302,7 @@ public abstract class DataStore
 
             for (Map.Entry<UUID, Boolean> entry : softMuteMap.entrySet())
             {
-                if (entry.getValue().booleanValue())
+                if (entry.getValue() == Boolean.TRUE)
                 {
                     outStream.write(entry.getKey().toString());
                     outStream.newLine();

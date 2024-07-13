@@ -2395,8 +2395,7 @@ class PlayerEventHandler implements Listener
         Boolean cachedValue = this.inventoryHolderCache.get(cacheKey);
         if (cachedValue != null)
         {
-            return cachedValue.booleanValue();
-
+            return cachedValue;
         }
         else
         {
