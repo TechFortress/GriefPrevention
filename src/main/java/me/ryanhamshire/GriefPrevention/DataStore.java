@@ -37,7 +37,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -49,7 +48,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -1403,13 +1401,6 @@ public abstract class DataStore
         }
 
         System.gc();
-    }
-
-    private void addDefault(HashMap<String, CustomizableMessage> defaults,
-                            @NotNull Messages id, @NotNull String text, @Nullable String notes)
-    {
-        CustomizableMessage message = new CustomizableMessage(id, text, notes);
-        defaults.put(id.name(), message);
     }
 
     synchronized public String getMessage(Messages messageID, String... args)
