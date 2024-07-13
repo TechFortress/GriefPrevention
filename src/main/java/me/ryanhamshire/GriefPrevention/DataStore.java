@@ -1599,7 +1599,11 @@ public abstract class DataStore
         //save any changes
         try
         {
-            config.options().header("Use a YAML editor like NotepadPlusPlus to edit this file.  \nAfter editing, back up your changes before reloading the server in case you made a syntax error.  \nUse dollar signs ($) for formatting codes, which are documented here: http://minecraft.gamepedia.com/Formatting_codes");
+            config.options().setHeader(List.of(
+                    "Use a YAML editor like NotepadPlusPlus to edit this file.",
+                    "After editing, back up your changes before reloading the server in case you made a syntax error.",
+                    "Use dollar signs ($) for formatting codes, which are documented here: http://minecraft.wiki/Formatting_codes#Color_codes"
+            ));
             config.save(DataStore.messagesFilePath);
         }
         catch (IOException exception)
