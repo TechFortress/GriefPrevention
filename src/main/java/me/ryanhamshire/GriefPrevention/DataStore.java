@@ -1361,9 +1361,17 @@ public abstract class DataStore
         //for each message ID
         for (Messages message : messageIDs)
         {
-            //read the message from the file, use default if necessary
-            String messagePath = "Messages." + message.name() + ".Text";
-            this.messages[message.ordinal()] = config.getString(messagePath, message.defaultValue);
+            String messagePath = "Messages." + message.name();
+            // If available, migrate legacy path.
+            if (config.isString(messagePath + ".Text"))
+            {
+                this.messages[message.ordinal()] = config.getString(messagePath + ".Text", message.defaultValue);
+            }
+            // Otherwise prefer current value if available.
+            else
+            {
+                this.messages[message.ordinal()] = config.getString(messagePath, this.messages[message.ordinal()]);
+            }
             config.set(messagePath, this.messages[message.ordinal()]);
 
             //support color codes
@@ -1375,7 +1383,7 @@ public abstract class DataStore
             if (message.notes != null)
             {
                 // Import old non-comment notes.
-                String notesString = config.getString("Messages." + message.name() + ".Notes", message.notes);
+                String notesString = config.getString(messagePath + ".Notes", message.notes);
                 // Import existing comment notes.
                 List<String> notes = config.getComments(messagePath);
                 if (notes.isEmpty()) {
