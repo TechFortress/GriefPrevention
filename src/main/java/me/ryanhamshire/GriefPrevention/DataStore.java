@@ -475,11 +475,7 @@ public abstract class DataStore
         ArrayList<Long> chunkHashes = claim.getChunkHashes();
         for (Long chunkHash : chunkHashes)
         {
-            ArrayList<Claim> claimsInChunk = this.chunksToClaimsMap.get(chunkHash);
-            if (claimsInChunk == null)
-            {
-                this.chunksToClaimsMap.put(chunkHash, claimsInChunk = new ArrayList<>());
-            }
+            ArrayList<Claim> claimsInChunk = this.chunksToClaimsMap.computeIfAbsent(chunkHash, hash -> new ArrayList<>());
 
             claimsInChunk.add(claim);
         }
