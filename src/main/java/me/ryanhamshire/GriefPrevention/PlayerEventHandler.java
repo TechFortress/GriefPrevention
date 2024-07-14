@@ -2145,6 +2145,8 @@ class PlayerEventHandler implements Listener
                     }
                 }
 
+                UUID playerID = player.getUniqueId();
+
                 //if not an administrative claim, verify the player has enough claim blocks for this new claim
                 if (playerData.shovelMode != ShovelMode.Admin)
                 {
