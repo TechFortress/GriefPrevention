@@ -193,9 +193,6 @@ public class AutoExtendClaimTask implements Runnable
 
     static Set<Material> getPlayerBlocks(Environment environment, Biome biome)
     {
-        //NOTE on this list.  why not make a list of natural blocks?
-        //answer: better to leave a few player blocks than to remove too many natural blocks.  remember we're "restoring nature"
-        //a few extra player blocks can be manually removed, but it will be impossible to guess exactly which natural materials to use in manual repair of an overzealous block removal
         Set<Material> playerBlocks = new HashSet<>();
         playerBlocks.addAll(Tag.ANVIL.getValues());
         playerBlocks.addAll(Tag.BANNERS.getValues());

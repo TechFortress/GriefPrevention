@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 
 /**
  * A representation of a system for displaying rectangular {@link Boundary Boundaries} to {@link Player Players}.
- * This is used to display claim areas, visualize affected area during nature restoration, and more.
+ * This is used to display claim areas, conflicting claims, and more.
  */
 public abstract class BoundaryVisualization
 {
