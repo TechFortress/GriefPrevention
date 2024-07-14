@@ -54,9 +54,6 @@ public class PlayerData
     //what "mode" the shovel is in determines what it will do when it's used
     public ShovelMode shovelMode = ShovelMode.Basic;
 
-    //radius for restore nature fill mode
-    int fillRadius = 0;
-
     //last place the player used the shovel, useful in creating and resizing claims,
     //because the player must use the shovel twice in those instances
     public Location lastShovelLocation = null;
