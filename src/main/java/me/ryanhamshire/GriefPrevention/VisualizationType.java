@@ -40,7 +40,6 @@ public enum VisualizationType
             case Claim -> com.griefprevention.visualization.VisualizationType.CLAIM;
             case Subdivision -> com.griefprevention.visualization.VisualizationType.SUBDIVISION;
             case ErrorClaim -> com.griefprevention.visualization.VisualizationType.CONFLICT_ZONE;
-            case RestoreNature -> com.griefprevention.visualization.VisualizationType.NATURE_RESTORATION_ZONE;
             case AdminClaim -> com.griefprevention.visualization.VisualizationType.ADMIN_CLAIM;
         };
     }
@@ -50,7 +49,6 @@ public enum VisualizationType
         return switch (accent.getMaterial()) {
             case WHITE_WOOL -> com.griefprevention.visualization.VisualizationType.SUBDIVISION;
             case NETHERRACK -> com.griefprevention.visualization.VisualizationType.CONFLICT_ZONE;
-            case DIAMOND_BLOCK -> com.griefprevention.visualization.VisualizationType.NATURE_RESTORATION_ZONE;
             case PUMPKIN -> com.griefprevention.visualization.VisualizationType.ADMIN_CLAIM;
             default -> com.griefprevention.visualization.VisualizationType.CLAIM;
         };

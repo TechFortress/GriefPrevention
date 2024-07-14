@@ -118,14 +118,5 @@ class RestoreNatureExecutionTask implements Runnable
                 feetBlock.getRelative(BlockFace.UP).setType(Material.AIR);
             }
         }
-
-        //show visualization to player who started the restoration
-        if (player != null)
-        {
-            BoundaryVisualization.visualizeArea(
-                    player,
-                    new BoundingBox(lesserCorner, greaterCorner),
-                    VisualizationType.NATURE_RESTORATION_ZONE);
-        }
     }
 }
