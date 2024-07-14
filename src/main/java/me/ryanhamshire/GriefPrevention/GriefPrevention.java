@@ -1579,12 +1579,6 @@ public class GriefPrevention extends JavaPlugin
                     {
                         this.dataStore.deleteClaim(claim, true, true);
 
-                        //if in a creative mode world, /restorenature the claim
-                        if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()) || GriefPrevention.instance.config_claims_survivalAutoNatureRestoration)
-                        {
-                            GriefPrevention.instance.restoreClaim(claim, 0);
-                        }
-
                         GriefPrevention.sendMessage(player, TextMode.Success, Messages.DeleteSuccess);
                         GriefPrevention.AddLogEntry(player.getName() + " deleted " + claim.getOwnerName() + "'s claim at " + GriefPrevention.getfriendlyLocationString(claim.getLesserBoundaryCorner()), CustomLogEntryTypes.AdminActivity);
 
@@ -2354,14 +2348,6 @@ public class GriefPrevention extends JavaPlugin
             //delete it
             this.dataStore.deleteClaim(claim, true, false);
 
-            //if in a creative mode world, restore the claim area
-            if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()))
-            {
-                GriefPrevention.AddLogEntry(player.getName() + " abandoned a claim @ " + GriefPrevention.getfriendlyLocationString(claim.getLesserBoundaryCorner()));
-                GriefPrevention.sendMessage(player, TextMode.Warn, Messages.UnclaimCleanupWarning);
-                GriefPrevention.instance.restoreClaim(claim, 20L * 60 * 2);
-            }
-
             //adjust claim blocks when abandoning a top level claim
             if (this.config_claims_abandonReturnRatio != 1.0D && claim.parent == null && claim.ownerID.equals(playerData.playerID))
             {
@@ -2965,54 +2951,6 @@ public class GriefPrevention extends JavaPlugin
     {
         Supplier<String> result = ProtectionHelper.checkPermission(player, location, ClaimPermission.Build, breakEvent);
         return result == null ? null : result.get();
-    }
-
-    //restores nature in multiple chunks, as described by a claim instance
-    //this restores all chunks which have ANY number of claim blocks from this claim in them
-    //if the claim is still active (in the data store), then the claimed blocks will not be changed (only the area bordering the claim)
-    public void restoreClaim(Claim claim, long delayInTicks)
-    {
-        //admin claims aren't automatically cleaned up when deleted or abandoned
-        if (claim.isAdminClaim()) return;
-
-        //it's too expensive to do this for huge claims
-        if (claim.getArea() > 10000 || claim.getWidth() > 250 || claim.getHeight() > 250) return;
-
-        ArrayList<Chunk> chunks = claim.getChunks();
-        for (Chunk chunk : chunks)
-        {
-            this.restoreChunk(chunk, this.getSeaLevel(chunk.getWorld()) - 15, false, delayInTicks, null);
-        }
-    }
-
-
-    public void restoreChunk(Chunk chunk, int miny, boolean aggressiveMode, long delayInTicks, Player playerReceivingVisualization)
-    {
-        //build a snapshot of this chunk, including 1 block boundary outside of the chunk all the way around
-        int maxHeight = chunk.getWorld().getMaxHeight();
-        BlockSnapshot[][][] snapshots = new BlockSnapshot[18][maxHeight][18];
-        Block startBlock = chunk.getBlock(0, 0, 0);
-        Location startLocation = new Location(chunk.getWorld(), startBlock.getX() - 1, 0, startBlock.getZ() - 1);
-        for (int x = 0; x < snapshots.length; x++)
-        {
-            for (int z = 0; z < snapshots[0][0].length; z++)
-            {
-                for (int y = 0; y < snapshots[0].length; y++)
-                {
-                    Block block = chunk.getWorld().getBlockAt(startLocation.getBlockX() + x, startLocation.getBlockY() + y, startLocation.getBlockZ() + z);
-                    snapshots[x][y][z] = new BlockSnapshot(block.getLocation(), block.getType(), block.getBlockData());
-                }
-            }
-        }
-
-        //create task to process those data in another thread
-        Location lesserBoundaryCorner = chunk.getBlock(0, 0, 0).getLocation();
-        Location greaterBoundaryCorner = chunk.getBlock(15, 0, 15).getLocation();
-
-        //create task
-        //when done processing, this task will create a main thread task to actually update the world with processing results
-        RestoreNatureProcessingTask task = new RestoreNatureProcessingTask(snapshots, miny, chunk.getWorld().getEnvironment(), lesserBoundaryCorner.getBlock().getBiome(), lesserBoundaryCorner, greaterBoundaryCorner, this.getSeaLevel(chunk.getWorld()), aggressiveMode, GriefPrevention.instance.creativeRulesApply(lesserBoundaryCorner), playerReceivingVisualization);
-        GriefPrevention.instance.getServer().getScheduler().runTaskLaterAsynchronously(GriefPrevention.instance, task, delayInTicks);
     }
 
     private Set<Material> parseMaterialListFromConfig(List<String> stringsToParse)

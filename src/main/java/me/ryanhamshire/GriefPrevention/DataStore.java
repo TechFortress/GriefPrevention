@@ -1126,12 +1126,6 @@ public abstract class DataStore
         for (Claim claim : claimsToDelete)
         {
             this.deleteClaim(claim);
-
-            //if in a creative mode world, delete the claim
-            if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()))
-            {
-                GriefPrevention.instance.restoreClaim(claim, 0);
-            }
         }
     }
 
@@ -1233,16 +1227,6 @@ public abstract class DataStore
         //return here if event is cancelled
         if (event.isCancelled()) return;
 
-        //special rule for making a top-level claim smaller.  to check this, verifying the old claim's corners are inside the new claim's boundaries.
-        //rule: in any mode, shrinking a claim removes any surface fluids
-        boolean smaller = false;
-        if (oldClaim.parent == null)
-        {
-            //if the new claim is smaller
-            if (!newClaim.contains(oldClaim.getLesserBoundaryCorner(), true, false) || !newClaim.contains(oldClaim.getGreaterBoundaryCorner(), true, false))
-                smaller = true;
-        }
-
         //ask the datastore to try and resize the claim, this checks for conflicts with other claims
         CreateClaimResult result = GriefPrevention.instance.dataStore.resizeClaim(
                 playerData.claimResizing,
@@ -1296,14 +1280,6 @@ public abstract class DataStore
             {
                 GriefPrevention.sendMessage(player, TextMode.Info, Messages.BecomeMayor, 200L);
                 GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SubdivisionVideo2, 201L, DataStore.SUBDIVISION_VIDEO_URL);
-            }
-
-            //if in a creative mode world and shrinking an existing claim, restore any unclaimed area
-            if (smaller && GriefPrevention.instance.creativeRulesApply(oldClaim.getLesserBoundaryCorner()))
-            {
-                GriefPrevention.sendMessage(player, TextMode.Warn, Messages.UnclaimCleanupWarning);
-                GriefPrevention.instance.restoreClaim(oldClaim, 20L * 60 * 2);  //2 minutes
-                GriefPrevention.AddLogEntry(player.getName() + " shrank a claim @ " + GriefPrevention.getfriendlyLocationString(playerData.claimResizing.getLesserBoundaryCorner()));
             }
 
             //clean up
