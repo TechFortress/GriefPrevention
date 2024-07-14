@@ -29,7 +29,6 @@ public enum VisualizationType
     Claim,
     Subdivision,
     ErrorClaim,
-    RestoreNature,
     AdminClaim;
 
     @Deprecated(forRemoval = true, since = "16.18")
