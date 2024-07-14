@@ -91,21 +91,6 @@ commands:
       usage: /<command>
       permission: griefprevention.adminclaims
       aliases: ac
-    restorenature:
-      description: Switches the shovel tool to restoration mode.
-      usage: /<command>
-      permission: griefprevention.restorenature
-      aliases: rn
-    restorenatureaggressive:
-      description: Switches the shovel tool to aggressive restoration mode.
-      usage: /<command>
-      permission: griefprevention.restorenatureaggressive
-      aliases: rna
-    restorenaturefill:
-      description: Switches the shovel tool to fill mode.
-      usage: /<command> <radius>
-      permission: griefprevention.restorenatureaggressive
-      aliases: rnf
     basicclaims:
       description: Switches the shovel tool back to basic claims mode.
       usage: /<command>
@@ -211,8 +196,6 @@ permissions:
     griefprevention.admin.*:
         description: Grants all administrative functionality.
         children:
-            griefprevention.restorenature: true
-            griefprevention.restorenatureaggressive: true
             griefprevention.ignoreclaims: true
             griefprevention.adminclaims: true
             griefprevention.adjustclaimblocks: true
@@ -251,9 +234,6 @@ permissions:
     griefprevention.claimslistother:
         description: Grants permission to use /claimslist to get another player's information.
         default: op
-    griefprevention.restorenature:
-        description: Grants permission to use /restorenature.
-        default: op
     griefprevention.transferclaim:
         description: Grants permission to use /transferclaim.
         default: op
@@ -280,9 +260,6 @@ permissions:
         default: op
     griefprevention.eavesdropsigns:
         description: Allows a player to see sign placements as chat messages.
-        default: op
-    griefprevention.restorenatureaggressive:
-        description: Grants access to /restorenatureaggressive and /restorenaturefill.
         default: op
     griefprevention.reload:
         description: Grants access to /gpreload.
