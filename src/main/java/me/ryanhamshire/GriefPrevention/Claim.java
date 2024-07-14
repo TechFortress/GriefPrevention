@@ -116,50 +116,6 @@ public class Claim
         this.modifiedDate = Calendar.getInstance().getTime();
     }
 
-    //removes any lava above sea level in a claim
-    //exclusionClaim is another claim indicating an sub-area to be excluded from this operation
-    //it may be null
-    public void removeSurfaceFluids(Claim exclusionClaim)
-    {
-        //don't do this for administrative claims
-        if (this.isAdminClaim()) return;
-
-        //don't do it for very large claims
-        if (this.getArea() > 10000) return;
-
-        //only in creative mode worlds
-        if (!GriefPrevention.instance.creativeRulesApply(this.lesserBoundaryCorner)) return;
-
-        Location lesser = this.getLesserBoundaryCorner();
-        Location greater = this.getGreaterBoundaryCorner();
-
-        if (lesser.getWorld().getEnvironment() == Environment.NETHER) return;  //don't clean up lava in the nether
-
-        int seaLevel = 0;  //clean up all fluids in the end
-
-        //respect sea level in normal worlds
-        if (lesser.getWorld().getEnvironment() == Environment.NORMAL)
-            seaLevel = GriefPrevention.instance.getSeaLevel(lesser.getWorld());
-
-        for (int x = lesser.getBlockX(); x <= greater.getBlockX(); x++)
-        {
-            for (int z = lesser.getBlockZ(); z <= greater.getBlockZ(); z++)
-            {
-                for (int y = seaLevel - 1; y <= lesser.getWorld().getMaxHeight(); y++)
-                {
-                    //dodge the exclusion claim
-                    Block block = lesser.getWorld().getBlockAt(x, y, z);
-                    if (exclusionClaim != null && exclusionClaim.contains(block.getLocation(), true, false)) continue;
-
-                    if (block.getType() == Material.LAVA || block.getType() == Material.WATER)
-                    {
-                        block.setType(Material.AIR);
-                    }
-                }
-            }
-        }
-    }
-
     //main constructor.  note that only creating a claim instance does nothing - a claim must be added to the data store to be effective
     Claim(Location lesserBoundaryCorner, Location greaterBoundaryCorner, UUID ownerID, List<String> builderIDs, List<String> containerIDs, List<String> accessorIDs, List<String> managerIDs, boolean inheritNothing, Long id)
     {

@@ -1125,8 +1125,6 @@ public abstract class DataStore
         //delete them one by one
         for (Claim claim : claimsToDelete)
         {
-            claim.removeSurfaceFluids(null);
-
             this.deleteClaim(claim);
 
             //if in a creative mode world, delete the claim
@@ -1242,12 +1240,7 @@ public abstract class DataStore
         {
             //if the new claim is smaller
             if (!newClaim.contains(oldClaim.getLesserBoundaryCorner(), true, false) || !newClaim.contains(oldClaim.getGreaterBoundaryCorner(), true, false))
-            {
                 smaller = true;
-
-                //remove surface fluids about to be unclaimed
-                oldClaim.removeSurfaceFluids(newClaim);
-            }
         }
 
         //ask the datastore to try and resize the claim, this checks for conflicts with other claims

@@ -61,14 +61,7 @@ class CleanupUnusedClaimTask implements Runnable
             {
                 if (expireEventCanceled())
                     return;
-                claim.removeSurfaceFluids(null);
                 GriefPrevention.instance.dataStore.deleteClaim(claim, true, true);
-
-                //if configured to do so, restore the land to natural
-                if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()) || GriefPrevention.instance.config_claims_survivalAutoNatureRestoration)
-                {
-                    GriefPrevention.instance.restoreClaim(claim, 0);
-                }
 
                 GriefPrevention.AddLogEntry(" " + claim.getOwnerName() + "'s new player claim expired.", CustomLogEntryTypes.AdminActivity);
             }

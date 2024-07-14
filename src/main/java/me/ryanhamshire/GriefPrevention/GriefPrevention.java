@@ -1624,7 +1624,6 @@ public class GriefPrevention extends JavaPlugin
                     }
                     else
                     {
-                        claim.removeSurfaceFluids(null);
                         this.dataStore.deleteClaim(claim, true, true);
 
                         //if in a creative mode world, /restorenature the claim
@@ -2400,7 +2399,6 @@ public class GriefPrevention extends JavaPlugin
         else
         {
             //delete it
-            claim.removeSurfaceFluids(null);
             this.dataStore.deleteClaim(claim, true, false);
 
             //if in a creative mode world, restore the claim area
