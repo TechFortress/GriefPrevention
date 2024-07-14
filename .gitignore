@@ -63,7 +63,8 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
-# ZEINTELLIJ
+
+# IntelliJ
 workspace.xml
 tasks.xml
 .idea/libraries
@@ -74,3 +75,6 @@ target/
 *.name
 .idea
 *.iml
+
+# VS Code
+.vscode/
