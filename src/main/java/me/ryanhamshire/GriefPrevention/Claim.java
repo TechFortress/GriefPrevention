@@ -160,42 +160,6 @@ public class Claim
         }
     }
 
-    //determines whether or not a claim has surface lava
-    //used to warn players when they abandon their claims about automatic fluid cleanup
-    boolean hasSurfaceFluids()
-    {
-        Location lesser = this.getLesserBoundaryCorner();
-        Location greater = this.getGreaterBoundaryCorner();
-
-        //don't bother for very large claims, too expensive
-        if (this.getArea() > 10000) return false;
-
-        int seaLevel = 0;  //clean up all fluids in the end
-
-        //respect sea level in normal worlds
-        if (lesser.getWorld().getEnvironment() == Environment.NORMAL)
-            seaLevel = GriefPrevention.instance.getSeaLevel(lesser.getWorld());
-
-        for (int x = lesser.getBlockX(); x <= greater.getBlockX(); x++)
-        {
-            for (int z = lesser.getBlockZ(); z <= greater.getBlockZ(); z++)
-            {
-                for (int y = seaLevel - 1; y <= lesser.getWorld().getMaxHeight(); y++)
-                {
-                    //dodge the exclusion claim
-                    Block block = lesser.getWorld().getBlockAt(x, y, z);
-
-                    if (block.getType() == Material.WATER || block.getType() == Material.LAVA)
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
-    }
-
     //main constructor.  note that only creating a claim instance does nothing - a claim must be added to the data store to be effective
     Claim(Location lesserBoundaryCorner, Location greaterBoundaryCorner, UUID ownerID, List<String> builderIDs, List<String> containerIDs, List<String> accessorIDs, List<String> managerIDs, boolean inheritNothing, Long id)
     {
