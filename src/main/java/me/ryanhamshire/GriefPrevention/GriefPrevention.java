@@ -140,8 +140,6 @@ public class GriefPrevention extends JavaPlugin
     public int config_claims_minArea;                               //minimum area for non-admin claims
 
     public int config_claims_chestClaimExpirationDays;                //number of days of inactivity before an automatic chest claim will be deleted
-    public int config_claims_unusedClaimExpirationDays;                //number of days of inactivity before an unused (nothing build) claim will be deleted
-    public boolean config_claims_survivalAutoNatureRestoration;        //whether survival claims will be automatically restored to nature when auto-deleted
     public boolean config_claims_allowTrappedInAdminClaims;            //whether it should be allowed to use /trapped in adminclaims.
 
     public Material config_claims_investigationTool;                //which material will be used to investigate claims with a right click
@@ -563,11 +561,9 @@ public class GriefPrevention extends JavaPlugin
             AddLogEntry("Updated default value for GriefPrevention.Claims.MaximumDepth to " + Integer.MIN_VALUE);
         }
         this.config_claims_chestClaimExpirationDays = config.getInt("GriefPrevention.Claims.Expiration.ChestClaimDays", 7);
-        this.config_claims_unusedClaimExpirationDays = config.getInt("GriefPrevention.Claims.Expiration.UnusedClaimDays", 14);
         this.config_claims_expirationDays = config.getInt("GriefPrevention.Claims.Expiration.AllClaims.DaysInactive", 60);
         this.config_claims_expirationExemptionTotalBlocks = config.getInt("GriefPrevention.Claims.Expiration.AllClaims.ExceptWhenOwnerHasTotalClaimBlocks", 10000);
         this.config_claims_expirationExemptionBonusBlocks = config.getInt("GriefPrevention.Claims.Expiration.AllClaims.ExceptWhenOwnerHasBonusClaimBlocks", 5000);
-        this.config_claims_survivalAutoNatureRestoration = config.getBoolean("GriefPrevention.Claims.Expiration.AutomaticNatureRestoration.SurvivalWorlds", false);
         this.config_claims_allowTrappedInAdminClaims = config.getBoolean("GriefPrevention.Claims.AllowTrappedInAdminClaims", false);
 
         this.config_claims_maxClaimsPerPlayer = config.getInt("GriefPrevention.Claims.MaximumNumberOfClaimsPerPlayer", 0);
@@ -727,11 +723,9 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.Claims.InvestigationTool", this.config_claims_investigationTool.name());
         outConfig.set("GriefPrevention.Claims.ModificationTool", this.config_claims_modificationTool.name());
         outConfig.set("GriefPrevention.Claims.Expiration.ChestClaimDays", this.config_claims_chestClaimExpirationDays);
-        outConfig.set("GriefPrevention.Claims.Expiration.UnusedClaimDays", this.config_claims_unusedClaimExpirationDays);
         outConfig.set("GriefPrevention.Claims.Expiration.AllClaims.DaysInactive", this.config_claims_expirationDays);
         outConfig.set("GriefPrevention.Claims.Expiration.AllClaims.ExceptWhenOwnerHasTotalClaimBlocks", this.config_claims_expirationExemptionTotalBlocks);
         outConfig.set("GriefPrevention.Claims.Expiration.AllClaims.ExceptWhenOwnerHasBonusClaimBlocks", this.config_claims_expirationExemptionBonusBlocks);
-        outConfig.set("GriefPrevention.Claims.Expiration.AutomaticNatureRestoration.SurvivalWorlds", this.config_claims_survivalAutoNatureRestoration);
         outConfig.set("GriefPrevention.Claims.AllowTrappedInAdminClaims", this.config_claims_allowTrappedInAdminClaims);
         outConfig.set("GriefPrevention.Claims.MaximumNumberOfClaimsPerPlayer", this.config_claims_maxClaimsPerPlayer);
         outConfig.set("GriefPrevention.Claims.VillagerTradingRequiresPermission", this.config_claims_villagerTradingRequiresTrust);
@@ -1123,50 +1117,6 @@ public class GriefPrevention extends JavaPlugin
             //revert any current visualization
             playerData.setVisibleBoundaries(null);
 
-            return true;
-        }
-
-        //restore nature
-        else if (cmd.getName().equalsIgnoreCase("restorenature") && player != null)
-        {
-            //change shovel mode
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-            playerData.shovelMode = ShovelMode.RestoreNature;
-            GriefPrevention.sendMessage(player, TextMode.Instr, Messages.RestoreNatureActivate);
-            return true;
-        }
-
-        //restore nature aggressive mode
-        else if (cmd.getName().equalsIgnoreCase("restorenatureaggressive") && player != null)
-        {
-            //change shovel mode
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-            playerData.shovelMode = ShovelMode.RestoreNatureAggressive;
-            GriefPrevention.sendMessage(player, TextMode.Warn, Messages.RestoreNatureAggressiveActivate);
-            return true;
-        }
-
-        //restore nature fill mode
-        else if (cmd.getName().equalsIgnoreCase("restorenaturefill") && player != null)
-        {
-            //change shovel mode
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-            playerData.shovelMode = ShovelMode.RestoreNatureFill;
-
-            //set radius based on arguments
-            playerData.fillRadius = 2;
-            if (args.length > 0)
-            {
-                try
-                {
-                    playerData.fillRadius = Integer.parseInt(args[0]);
-                }
-                catch (Exception exception) { }
-            }
-
-            if (playerData.fillRadius < 0) playerData.fillRadius = 2;
-
-            GriefPrevention.sendMessage(player, TextMode.Success, Messages.FillModeActive, String.valueOf(playerData.fillRadius));
             return true;
         }
 
@@ -1624,14 +1574,7 @@ public class GriefPrevention extends JavaPlugin
                     }
                     else
                     {
-                        claim.removeSurfaceFluids(null);
                         this.dataStore.deleteClaim(claim, true, true);
-
-                        //if in a creative mode world, /restorenature the claim
-                        if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()) || GriefPrevention.instance.config_claims_survivalAutoNatureRestoration)
-                        {
-                            GriefPrevention.instance.restoreClaim(claim, 0);
-                        }
 
                         GriefPrevention.sendMessage(player, TextMode.Success, Messages.DeleteSuccess);
                         GriefPrevention.AddLogEntry(player.getName() + " deleted " + claim.getOwnerName() + "'s claim at " + GriefPrevention.getfriendlyLocationString(claim.getLesserBoundaryCorner()), CustomLogEntryTypes.AdminActivity);
@@ -2400,16 +2343,7 @@ public class GriefPrevention extends JavaPlugin
         else
         {
             //delete it
-            claim.removeSurfaceFluids(null);
             this.dataStore.deleteClaim(claim, true, false);
-
-            //if in a creative mode world, restore the claim area
-            if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()))
-            {
-                GriefPrevention.AddLogEntry(player.getName() + " abandoned a claim @ " + GriefPrevention.getfriendlyLocationString(claim.getLesserBoundaryCorner()));
-                GriefPrevention.sendMessage(player, TextMode.Warn, Messages.UnclaimCleanupWarning);
-                GriefPrevention.instance.restoreClaim(claim, 20L * 60 * 2);
-            }
 
             //adjust claim blocks when abandoning a top level claim
             if (this.config_claims_abandonReturnRatio != 1.0D && claim.parent == null && claim.ownerID.equals(playerData.playerID))
@@ -3014,54 +2948,6 @@ public class GriefPrevention extends JavaPlugin
     {
         Supplier<String> result = ProtectionHelper.checkPermission(player, location, ClaimPermission.Build, breakEvent);
         return result == null ? null : result.get();
-    }
-
-    //restores nature in multiple chunks, as described by a claim instance
-    //this restores all chunks which have ANY number of claim blocks from this claim in them
-    //if the claim is still active (in the data store), then the claimed blocks will not be changed (only the area bordering the claim)
-    public void restoreClaim(Claim claim, long delayInTicks)
-    {
-        //admin claims aren't automatically cleaned up when deleted or abandoned
-        if (claim.isAdminClaim()) return;
-
-        //it's too expensive to do this for huge claims
-        if (claim.getArea() > 10000 || claim.getWidth() > 250 || claim.getHeight() > 250) return;
-
-        ArrayList<Chunk> chunks = claim.getChunks();
-        for (Chunk chunk : chunks)
-        {
-            this.restoreChunk(chunk, this.getSeaLevel(chunk.getWorld()) - 15, false, delayInTicks, null);
-        }
-    }
-
-
-    public void restoreChunk(Chunk chunk, int miny, boolean aggressiveMode, long delayInTicks, Player playerReceivingVisualization)
-    {
-        //build a snapshot of this chunk, including 1 block boundary outside of the chunk all the way around
-        int maxHeight = chunk.getWorld().getMaxHeight();
-        BlockSnapshot[][][] snapshots = new BlockSnapshot[18][maxHeight][18];
-        Block startBlock = chunk.getBlock(0, 0, 0);
-        Location startLocation = new Location(chunk.getWorld(), startBlock.getX() - 1, 0, startBlock.getZ() - 1);
-        for (int x = 0; x < snapshots.length; x++)
-        {
-            for (int z = 0; z < snapshots[0][0].length; z++)
-            {
-                for (int y = 0; y < snapshots[0].length; y++)
-                {
-                    Block block = chunk.getWorld().getBlockAt(startLocation.getBlockX() + x, startLocation.getBlockY() + y, startLocation.getBlockZ() + z);
-                    snapshots[x][y][z] = new BlockSnapshot(block.getLocation(), block.getType(), block.getBlockData());
-                }
-            }
-        }
-
-        //create task to process those data in another thread
-        Location lesserBoundaryCorner = chunk.getBlock(0, 0, 0).getLocation();
-        Location greaterBoundaryCorner = chunk.getBlock(15, 0, 15).getLocation();
-
-        //create task
-        //when done processing, this task will create a main thread task to actually update the world with processing results
-        RestoreNatureProcessingTask task = new RestoreNatureProcessingTask(snapshots, miny, chunk.getWorld().getEnvironment(), lesserBoundaryCorner.getBlock().getBiome(), lesserBoundaryCorner, greaterBoundaryCorner, this.getSeaLevel(chunk.getWorld()), aggressiveMode, GriefPrevention.instance.creativeRulesApply(lesserBoundaryCorner), playerReceivingVisualization);
-        GriefPrevention.instance.getServer().getScheduler().runTaskLaterAsynchronously(GriefPrevention.instance, task, delayInTicks);
     }
 
     private Set<Material> parseMaterialListFromConfig(List<String> stringsToParse)

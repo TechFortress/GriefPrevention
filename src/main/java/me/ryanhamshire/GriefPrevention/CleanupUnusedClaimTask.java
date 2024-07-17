@@ -61,14 +61,7 @@ class CleanupUnusedClaimTask implements Runnable
             {
                 if (expireEventCanceled())
                     return;
-                claim.removeSurfaceFluids(null);
                 GriefPrevention.instance.dataStore.deleteClaim(claim, true, true);
-
-                //if configured to do so, restore the land to natural
-                if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()) || GriefPrevention.instance.config_claims_survivalAutoNatureRestoration)
-                {
-                    GriefPrevention.instance.restoreClaim(claim, 0);
-                }
 
                 GriefPrevention.AddLogEntry(" " + claim.getOwnerName() + "'s new player claim expired.", CustomLogEntryTypes.AdminActivity);
             }
@@ -92,43 +85,6 @@ class CleanupUnusedClaimTask implements Runnable
                 GriefPrevention.AddLogEntry(" All of " + claim.getOwnerName() + "'s claims have expired.", CustomLogEntryTypes.AdminActivity);
                 GriefPrevention.AddLogEntry("earliestPermissibleLastLogin#getTime: " + earliestPermissibleLastLogin.getTime(), CustomLogEntryTypes.Debug, true);
                 GriefPrevention.AddLogEntry("ownerInfo#getLastPlayed: " + ownerInfo.getLastPlayed(), CustomLogEntryTypes.Debug, true);
-
-                for (Claim claim : claims)
-                {
-                    //if configured to do so, restore the land to natural
-                    if (GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()) || GriefPrevention.instance.config_claims_survivalAutoNatureRestoration)
-                    {
-                        GriefPrevention.instance.restoreClaim(claim, 0);
-                    }
-                }
-            }
-        }
-        else if (GriefPrevention.instance.config_claims_unusedClaimExpirationDays > 0 && GriefPrevention.instance.creativeRulesApply(claim.getLesserBoundaryCorner()))
-        {
-            //avoid scanning large claims and administrative claims
-            if (claim.isAdminClaim() || claim.getWidth() > 25 || claim.getHeight() > 25) return;
-
-            //otherwise scan the claim content
-            int minInvestment = 400;
-
-            long investmentScore = claim.getPlayerInvestmentScore();
-
-            if (investmentScore < minInvestment)
-            {
-                //if the owner has been gone at least a week, and if he has ONLY the new player claim, it will be removed
-                Calendar sevenDaysAgo = Calendar.getInstance();
-                sevenDaysAgo.add(Calendar.DATE, -GriefPrevention.instance.config_claims_unusedClaimExpirationDays);
-                boolean claimExpired = sevenDaysAgo.getTime().after(new Date(ownerInfo.getLastPlayed()));
-                if (claimExpired)
-                {
-                    if (expireEventCanceled())
-                        return;
-                    GriefPrevention.instance.dataStore.deleteClaim(claim, true, true);
-                    GriefPrevention.AddLogEntry("Removed " + claim.getOwnerName() + "'s unused claim @ " + GriefPrevention.getfriendlyLocationString(claim.getLesserBoundaryCorner()), CustomLogEntryTypes.AdminActivity);
-
-                    //restore the claim area to natural state
-                    GriefPrevention.instance.restoreClaim(claim, 0);
-                }
             }
         }
     }
