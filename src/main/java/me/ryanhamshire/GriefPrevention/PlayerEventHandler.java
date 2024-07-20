@@ -18,17 +18,16 @@
 
 package me.ryanhamshire.GriefPrevention;
 
+import com.griefprevention.protection.ProtectionHelper;
 import com.griefprevention.util.command.MonitorableCommand;
 import com.griefprevention.util.command.MonitoredCommands;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.events.ClaimInspectionEvent;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
-import com.griefprevention.protection.ProtectionHelper;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Chunk;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -39,7 +38,6 @@ import org.bukkit.World.Environment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.Levelled;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.Animals;
@@ -1086,9 +1084,8 @@ class PlayerEventHandler implements Listener
         PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
 
         //if entity is tameable and has an owner, apply special rules
-        if (entity instanceof Tameable)
+        if (entity instanceof Tameable tameable)
         {
-            Tameable tameable = (Tameable) entity;
             if (tameable.isTamed())
             {
                 if (tameable.getOwner() != null)
@@ -1098,15 +1095,6 @@ class PlayerEventHandler implements Listener
                     //if the player interacting is the owner or an admin in ignore claims mode, always allow
                     if (player.getUniqueId().equals(ownerID) || playerData.ignoreClaims)
                     {
-                        //if giving away pet, do that instead
-                        if (playerData.petGiveawayRecipient != null)
-                        {
-                            tameable.setOwner(playerData.petGiveawayRecipient);
-                            playerData.petGiveawayRecipient = null;
-                            GriefPrevention.sendMessage(player, TextMode.Success, Messages.PetGiveawayConfirmation);
-                            event.setCancelled(true);
-                        }
-
                         return;
                     }
                     if (!instance.pvpRulesApply(entity.getLocation().getWorld()) || instance.config_pvp_protectPets)

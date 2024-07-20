@@ -111,9 +111,6 @@ public class PlayerData
     //message to send to player after he respawns
     String messageOnRespawn = null;
 
-    //player which a pet will be given to when it's right-clicked
-    OfflinePlayer petGiveawayRecipient = null;
-
     //timestamp for last "you're building outside your land claims" message
     Long buildWarningTimestamp = null;
 
