@@ -2089,41 +2089,6 @@ public class GriefPrevention extends JavaPlugin
             return true;
         }
 
-        //givepet
-        else if (cmd.getName().equalsIgnoreCase("givepet") && player != null)
-        {
-            //requires one parameter
-            if (args.length < 1) return false;
-
-            PlayerData playerData = this.dataStore.getPlayerData(player.getUniqueId());
-
-            //special case: cancellation
-            if (args[0].equalsIgnoreCase("cancel"))
-            {
-                playerData.petGiveawayRecipient = null;
-                GriefPrevention.sendMessage(player, TextMode.Success, Messages.PetTransferCancellation);
-                return true;
-            }
-
-            //find the specified player
-            OfflinePlayer targetPlayer = this.resolvePlayerByName(args[0]);
-            if (targetPlayer == null
-                    || !targetPlayer.isOnline() && !targetPlayer.hasPlayedBefore()
-                    || targetPlayer.getName() == null)
-            {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.PlayerNotFound2);
-                return true;
-            }
-
-            //remember the player's ID for later pet transfer
-            playerData.petGiveawayRecipient = targetPlayer;
-
-            //send instructions
-            GriefPrevention.sendMessage(player, TextMode.Instr, Messages.ReadyToTransferPet);
-
-            return true;
-        }
-
         //gpblockinfo
         else if (cmd.getName().equalsIgnoreCase("gpblockinfo") && player != null)
         {

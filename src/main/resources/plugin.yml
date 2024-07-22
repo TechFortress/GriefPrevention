@@ -154,10 +154,6 @@ commands:
       description: Reloads Grief Prevention's configuration settings.  Does NOT totally reload the entire plugin.
       usage: /<command>
       permission: griefprevention.reload
-    givepet:
-      description: Allows a player to give away a pet he or she tamed.
-      usage: /<command> <player>
-      permission: griefprevention.givepet
     gpblockinfo:
       description: Allows an administrator to get technical information about blocks in the world and items in hand.
       usage: /<command>
@@ -219,9 +215,6 @@ permissions:
             griefprevention.deleteclaimsinworld: true
             griefprevention.unlockothersdrops: true
             griefprevention.seeclaimsize: true
-    griefprevention.givepet:
-        description: Grants permission to use /givepet.
-        default: true
     griefprevention.unlockdrops:
         description: Grants permission to use /unlockdrops.
         default: true
