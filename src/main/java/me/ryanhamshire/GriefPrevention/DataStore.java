@@ -1339,7 +1339,7 @@ public abstract class DataStore
             // Otherwise prefer current value if available.
             else
             {
-                this.messages[message.ordinal()] = config.getString(messagePath, this.messages[message.ordinal()]);
+                this.messages[message.ordinal()] = config.getString(messagePath, message.defaultValue);
             }
             config.set(messagePath, this.messages[message.ordinal()]);
 
