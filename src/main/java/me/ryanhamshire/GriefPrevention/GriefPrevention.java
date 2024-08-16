@@ -31,7 +31,6 @@ import org.bukkit.BanList.Type;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
-import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -2085,19 +2084,6 @@ public class GriefPrevention extends JavaPlugin
             {
                 GriefPrevention.AddLogEntry("Configuration updated.  If you have updated your Grief Prevention JAR, you still need to /reload or reboot your server.");
             }
-
-            return true;
-        }
-
-        //gpblockinfo
-        else if (cmd.getName().equalsIgnoreCase("gpblockinfo") && player != null)
-        {
-            ItemStack inHand = player.getInventory().getItemInMainHand();
-            player.sendMessage("In Hand: " + inHand.getType().name());
-
-            Block inWorld = player.getTargetBlockExact(300, FluidCollisionMode.ALWAYS);
-            if (inWorld == null) inWorld = player.getEyeLocation().getBlock();
-            player.sendMessage("In World: " + inWorld.getType().name());
 
             return true;
         }
