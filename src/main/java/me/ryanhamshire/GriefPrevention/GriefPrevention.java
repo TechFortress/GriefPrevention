@@ -901,6 +901,11 @@ public class GriefPrevention extends JavaPlugin
         databaseProps.setProperty("username", databaseUserName);
         databaseProps.setProperty("password", databasePassword);
 
+        // If not in use already, database settings are "secret" to discourage adoption until datastore is rewritten.
+        if (databaseUrl.isBlank()) {
+            return;
+        }
+
         // Write properties file for future usage.
         try (FileWriter writer = new FileWriter(databasePropsFile, StandardCharsets.UTF_8))
         {
