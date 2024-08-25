@@ -896,15 +896,15 @@ public class GriefPrevention extends JavaPlugin
         databaseUserName = legacyConfig.getString("GriefPrevention.Database.UserName", "");
         databasePassword = legacyConfig.getString("GriefPrevention.Database.Password", "");
 
-        // Set properties to loaded values.
-        databaseProps.setProperty("jdbcUrl", databaseUrl);
-        databaseProps.setProperty("username", databaseUserName);
-        databaseProps.setProperty("password", databasePassword);
-
         // If not in use already, database settings are "secret" to discourage adoption until datastore is rewritten.
         if (databaseUrl.isBlank()) {
             return;
         }
+
+        // Set properties to loaded values.
+        databaseProps.setProperty("jdbcUrl", databaseUrl);
+        databaseProps.setProperty("username", databaseUserName);
+        databaseProps.setProperty("password", databasePassword);
 
         // Write properties file for future usage.
         try (FileWriter writer = new FileWriter(databasePropsFile, StandardCharsets.UTF_8))
