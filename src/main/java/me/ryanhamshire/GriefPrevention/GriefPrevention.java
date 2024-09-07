@@ -58,7 +58,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -66,11 +69,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -793,9 +798,7 @@ public class GriefPrevention extends JavaPlugin
         this.config_pvp_protectPets = config.getBoolean("GriefPrevention.PvP.ProtectPetsOutsideLandClaims", false);
 
         //optional database settings
-        this.databaseUrl = config.getString("GriefPrevention.Database.URL", "");
-        this.databaseUserName = config.getString("GriefPrevention.Database.UserName", "");
-        this.databasePassword = config.getString("GriefPrevention.Database.Password", "");
+        loadDatabaseSettings(config);
 
         this.config_advanced_fixNegativeClaimblockAmounts = config.getBoolean("GriefPrevention.Advanced.fixNegativeClaimblockAmounts", true);
         this.config_advanced_claim_expiration_check_rate = config.getInt("GriefPrevention.Advanced.ClaimExpirationCheckRate", 60);
@@ -933,10 +936,6 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.HardModeZombiesBreakDoors", this.config_zombiesBreakDoors);
         outConfig.set("GriefPrevention.MobProjectilesChangeBlocks", this.config_mobProjectilesChangeBlocks);
 
-        outConfig.set("GriefPrevention.Database.URL", this.databaseUrl);
-        outConfig.set("GriefPrevention.Database.UserName", this.databaseUserName);
-        outConfig.set("GriefPrevention.Database.Password", this.databasePassword);
-
         outConfig.set("GriefPrevention.UseBanCommand", this.config_ban_useCommand);
         outConfig.set("GriefPrevention.BanCommandPattern", this.config_ban_commandFormat);
 
@@ -995,6 +994,59 @@ public class GriefPrevention extends JavaPlugin
         for (String command : commands)
         {
             this.config_pvp_blockedCommands.add(command.trim().toLowerCase());
+        }
+    }
+
+    private void loadDatabaseSettings(@NotNull FileConfiguration legacyConfig)
+    {
+        File databasePropsFile = new File(DataStore.dataLayerFolderPath, "database.properties");
+        Properties databaseProps = new Properties();
+
+        // If properties file exists, use it - old config has already been migrated.
+        if (databasePropsFile.exists() && databasePropsFile.isFile())
+        {
+            try (FileReader reader = new FileReader(databasePropsFile, StandardCharsets.UTF_8))
+            {
+                // Load properties from file.
+                databaseProps.load(reader);
+
+                // Set values from loaded properties.
+                databaseUrl = databaseProps.getProperty("jdbcUrl", "");
+                databaseUserName = databaseProps.getProperty("username", "");
+                databasePassword = databaseProps.getProperty("password", "");
+            }
+            catch (IOException e)
+            {
+                getLogger().log(Level.SEVERE, "Unable to read database.properties", e);
+            }
+
+            return;
+        }
+
+        // Otherwise, database details may not have been migrated from legacy configuration.
+        // Try to load them.
+        databaseUrl = legacyConfig.getString("GriefPrevention.Database.URL", "");
+        databaseUserName = legacyConfig.getString("GriefPrevention.Database.UserName", "");
+        databasePassword = legacyConfig.getString("GriefPrevention.Database.Password", "");
+
+        // If not in use already, database settings are "secret" to discourage adoption until datastore is rewritten.
+        if (databaseUrl.isBlank()) {
+            return;
+        }
+
+        // Set properties to loaded values.
+        databaseProps.setProperty("jdbcUrl", databaseUrl);
+        databaseProps.setProperty("username", databaseUserName);
+        databaseProps.setProperty("password", databasePassword);
+
+        // Write properties file for future usage.
+        try (FileWriter writer = new FileWriter(databasePropsFile, StandardCharsets.UTF_8))
+        {
+            databaseProps.store(writer, null);
+        }
+        catch (IOException e)
+        {
+            getLogger().log(Level.SEVERE, "Unable to write database.properties", e);
         }
     }
 
