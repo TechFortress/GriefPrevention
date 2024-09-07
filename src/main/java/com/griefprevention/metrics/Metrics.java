@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -67,13 +66,12 @@ public class Metrics {
             // Inform the server owners about bStats
             config
                     .options()
-                    .setHeader(List.of(
-                            "bStats (https://bStats.org) collects some basic information for plugin authors, like how",
-                            "many people use their plugin and their total player count. It's recommended to keep bStats",
-                            "enabled, but if you're not comfortable with this, you can turn this setting off. There is no",
-                            "performance penalty associated with having metrics enabled, and data sent to bStats is fully",
-                            "anonymous."
-                    ))
+                    .header(
+                            "bStats (https://bStats.org) collects some basic information for plugin authors, like how\n"
+                                    + "many people use their plugin and their total player count. It's recommended to keep bStats\n"
+                                    + "enabled, but if you're not comfortable with this, you can turn this setting off. There is no\n"
+                                    + "performance penalty associated with having metrics enabled, and data sent to bStats is fully\n"
+                                    + "anonymous.")
                     .copyDefaults(true);
             try {
                 config.save(configFile);
