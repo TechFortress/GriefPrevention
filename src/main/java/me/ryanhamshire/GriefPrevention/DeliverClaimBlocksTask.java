@@ -67,7 +67,7 @@ class DeliverClaimBlocksTask implements Runnable
 
         // check if player is idle. Considered idle if player's yaw has not changed
         boolean isIdle = false;
-        isIdle = !(playerData.lastAfkCheckLocation == null || playerData.lastAfkCheckLocation.getYaw() != player.getLocation().getYaw());
+        isIdle = !(playerData.lastAfkCheckLocation == null || playerData.lastAfkCheckLocation.getDirection() != player.getLocation().getDirection());
 
         //remember current location for next time
         playerData.lastAfkCheckLocation = player.getLocation();
