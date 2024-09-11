@@ -65,7 +65,7 @@ class DeliverClaimBlocksTask implements Runnable
         DataStore dataStore = instance.dataStore;
         PlayerData playerData = dataStore.getPlayerData(player.getUniqueId());
 
-        // check if player is idle. Considered idle if player's facing direction has not changed
+        // check if player is idle (player's facing direction has not changed)
         boolean isIdle = false;
         isIdle = !(playerData.lastAfkCheckLocation == null || playerData.lastAfkCheckLocation.getDirection().equals(player.getLocation().getDirection()));
 
@@ -74,7 +74,7 @@ class DeliverClaimBlocksTask implements Runnable
 
         try
         {
-            //determine how fast blocks accrue for this player. Addons can modify this
+            //determine how fast blocks accrue for this player; can be modified by addons
             int accrualRate = instance.config_claims_blocksAccruedPerHour_default;
 
             //fire event for addons
