@@ -46,7 +46,7 @@ public class AccrueClaimBlocksEvent extends PlayerEvent implements Cancellable
      * 6 times per hour.
      * <br>To achieve a specific number of blocks to accrue, either multiply in advance or set
      * using {@link #setBlocksToAccrue(int)} after construction.
-     * <br>This event is initialized to canceled if @param isIdle is set to true.
+     * <br>This event is initialized as canceled if @param isIdle is set to true.
      *
      * @param player the {@link Player} receiving accruals
      * @param blocksToAccruePerHour the number of claim blocks to accrue multiplied by 6
