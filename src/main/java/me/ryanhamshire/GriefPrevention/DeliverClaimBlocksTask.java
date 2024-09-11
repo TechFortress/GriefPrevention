@@ -65,7 +65,7 @@ class DeliverClaimBlocksTask implements Runnable
         DataStore dataStore = instance.dataStore;
         PlayerData playerData = dataStore.getPlayerData(player.getUniqueId());
 
-        // check if player is idle (player's facing direction has not changed)
+        // check if player is idle (considered idle if player's facing direction has not changed)
         boolean isIdle = false;
         isIdle = !(playerData.lastAfkCheckLocation == null || playerData.lastAfkCheckLocation.getDirection().equals(player.getLocation().getDirection()));
 
@@ -82,6 +82,7 @@ class DeliverClaimBlocksTask implements Runnable
             instance.getServer().getPluginManager().callEvent(event);
             if (event.isCancelled())
             {
+                //event is initialized as canceled if player is idle
                 if (event.isIdle())
                     GriefPrevention.AddLogEntry(player.getName() + " wasn't active enough to accrue claim blocks this round.", CustomLogEntryTypes.Debug, true);
                 else
