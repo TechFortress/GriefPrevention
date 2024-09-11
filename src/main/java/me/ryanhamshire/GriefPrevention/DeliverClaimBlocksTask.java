@@ -65,7 +65,7 @@ class DeliverClaimBlocksTask implements Runnable
         DataStore dataStore = instance.dataStore;
         PlayerData playerData = dataStore.getPlayerData(player.getUniqueId());
 
-        // check if player is idle. Considered idle if player's yaw has not changed
+        // check if player is idle. Considered idle if player's facing direction has not changed
         boolean isIdle = false;
         isIdle = !(playerData.lastAfkCheckLocation == null || playerData.lastAfkCheckLocation.getDirection().equals(player.getLocation().getDirection()));
 
