@@ -255,12 +255,22 @@ public class PlayerData
                 Claim claim = dataStore.claims.get(i);
                 if (!claim.inDataStore)
                 {
-                    dataStore.claims.remove(i--);
+                    Claim remove = dataStore.claims.remove(i--);
+                    dataStore.claimIDMap.remove(remove.getID());
+                    for (Claim child : remove.children)
+                    {
+                        dataStore.claimIDMap.remove(child.getID());
+                    }
                     continue;
                 }
                 if (playerID.equals(claim.ownerID))
                 {
                     this.claims.add(claim);
+                    dataStore.claimIDMap.put(claim.getID(), claim);
+                    for (Claim child : claim.children)
+                    {
+                        dataStore.claimIDMap.put(child.getID(), child);
+                    }
                     totalClaimsArea += claim.getArea();
                 }
             }
