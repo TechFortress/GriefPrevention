@@ -71,6 +71,8 @@ public abstract class DataStore
 
     //in-memory cache for claim data
     ArrayList<Claim> claims = new ArrayList<>();
+    // claim id to claim cache
+    public final Map<Long, Claim> claimIDMap = new ConcurrentHashMap<>();
     ConcurrentHashMap<Long, ArrayList<Claim>> chunksToClaimsMap = new ConcurrentHashMap<>();
 
     //in-memory cache for messages
@@ -447,6 +449,11 @@ public abstract class DataStore
 
         //add it and mark it as added
         this.claims.add(newClaim);
+        this.claimIDMap.put(newClaim.id, newClaim);
+        for (Claim child : newClaim.children)
+        {
+            this.claimIDMap.put(child.id, child);
+        }
         addToChunkClaimMap(newClaim);
 
         newClaim.inDataStore = true;
@@ -653,6 +660,12 @@ public abstract class DataStore
             }
         }
 
+        claimIDMap.remove(claim.id);
+        for (Claim child : claim.children)
+        {
+            claimIDMap.remove(child.id);
+        }
+
         removeFromChunkClaimMap(claim);
 
         //remove from secondary storage
@@ -740,21 +753,7 @@ public abstract class DataStore
     //finds a claim by ID
     public synchronized Claim getClaim(long id)
     {
-        for (Claim claim : this.claims)
-        {
-            if (claim.inDataStore)
-            {
-                if (claim.getID() == id)
-                    return claim;
-                for (Claim subClaim : claim.children)
-                {
-                    if (subClaim.getID() == id)
-                    return subClaim;
-                }
-            }
-        }
-
-        return null;
+        return this.claimIDMap.get(id);
     }
 
     //returns a read-only access point for the list of all land claims
