@@ -39,7 +39,8 @@ public class ClaimCommand extends CommandHandler
         if (!(sender instanceof Player player))
             return false;
 
-        if (!plugin.claimsEnabledForWorld(player.getWorld()))
+        World world = player.getWorld();
+        if (!plugin.claimsEnabledForWorld(world))
         {
             GriefPrevention.sendMessage(player, TextMode.Err, Messages.ClaimsDisabledWorld);
             return true;
@@ -105,8 +106,26 @@ public class ClaimCommand extends CommandHandler
 
         if (radius < 0) radius = 0;
 
-        Location lesser = player.getLocation().add(-radius, 0, -radius);
-        Location greater = player.getLocation().add(radius, 0, radius);
+        Location playerLoc = player.getLocation();
+        int lesserX;
+        int lesserZ;
+        int greaterX;
+        int greaterZ;
+        try
+        {
+            lesserX = Math.subtractExact(playerLoc.getBlockX(), radius);
+            lesserZ = Math.subtractExact(playerLoc.getBlockZ(), radius);
+            greaterX = Math.addExact(playerLoc.getBlockX(), radius);
+            greaterZ = Math.addExact(playerLoc.getBlockZ(), radius);
+        }
+        catch (ArithmeticException e)
+        {
+            GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimInsufficientBlocks, String.valueOf(Integer.MAX_VALUE));
+            return true;
+        }
+
+        Location lesser = new Location(world, lesserX, playerLoc.getY(), lesserZ);
+        Location greater = new Location(world, greaterX, world.getMaxHeight(), greaterZ);
 
         UUID ownerId;
         if (playerData.shovelMode == ShovelMode.Admin)
@@ -115,7 +134,18 @@ public class ClaimCommand extends CommandHandler
         } else
         {
             //player must have sufficient unused claim blocks
-            int area = Math.abs((greater.getBlockX() - lesser.getBlockX() + 1) * (greater.getBlockZ() - lesser.getBlockZ() + 1));
+            int area;
+            try
+            {
+                int dX = Math.addExact(Math.subtractExact(greater.getBlockX(), lesser.getBlockX()), 1);
+                int dZ = Math.addExact(Math.subtractExact(greater.getBlockZ(), lesser.getBlockZ()), 1);
+                area = Math.abs(Math.multiplyExact(dX, dZ));
+            }
+            catch (ArithmeticException e)
+            {
+                GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimInsufficientBlocks, String.valueOf(Integer.MAX_VALUE));
+                return true;
+            }
             int remaining = playerData.getRemainingClaimBlocks();
             if (remaining < area)
             {
