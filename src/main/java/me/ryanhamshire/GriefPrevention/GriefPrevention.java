@@ -1153,25 +1153,63 @@ public class GriefPrevention extends JavaPlugin
 
             if (radius < 0) radius = 0;
 
-            Location lc = player.getLocation().add(-radius, 0, -radius);
-            Location gc = player.getLocation().add(radius, 0, radius);
-
-            //player must have sufficient unused claim blocks
-            int area = Math.abs((gc.getBlockX() - lc.getBlockX() + 1) * (gc.getBlockZ() - lc.getBlockZ() + 1));
-            int remaining = playerData.getRemainingClaimBlocks();
-            if (remaining < area)
+            Location playerLoc = player.getLocation();
+            int lesserX;
+            int lesserZ;
+            int greaterX;
+            int greaterZ;
+            try
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimInsufficientBlocks, String.valueOf(area - remaining));
-                GriefPrevention.instance.dataStore.tryAdvertiseAdminAlternatives(player);
+                lesserX = Math.subtractExact(playerLoc.getBlockX(), radius);
+                lesserZ = Math.subtractExact(playerLoc.getBlockZ(), radius);
+                greaterX = Math.addExact(playerLoc.getBlockX(), radius);
+                greaterZ = Math.addExact(playerLoc.getBlockZ(), radius);
+            }
+            catch (ArithmeticException e)
+            {
+                GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimInsufficientBlocks, String.valueOf(Integer.MAX_VALUE));
                 return true;
             }
 
-            CreateClaimResult result = this.dataStore.createClaim(lc.getWorld(),
-                    lc.getBlockX(), gc.getBlockX(),
-                    lc.getBlockY() - GriefPrevention.instance.config_claims_claimsExtendIntoGroundDistance - 1,
-                    gc.getWorld().getHighestBlockYAt(gc) - GriefPrevention.instance.config_claims_claimsExtendIntoGroundDistance - 1,
-                    lc.getBlockZ(), gc.getBlockZ(),
-                    player.getUniqueId(), null, null, player);
+            World world = player.getWorld();
+            Location lesser = new Location(world, lesserX, playerLoc.getY(), lesserZ);
+            Location greater = new Location(world, greaterX, world.getMaxHeight(), greaterZ);
+
+            UUID ownerId;
+            if (playerData.shovelMode == ShovelMode.Admin)
+            {
+                ownerId = null;
+            } else
+            {
+                //player must have sufficient unused claim blocks
+                int area;
+                try
+                {
+                    int dX = Math.addExact(Math.subtractExact(greater.getBlockX(), lesser.getBlockX()), 1);
+                    int dZ = Math.addExact(Math.subtractExact(greater.getBlockZ(), lesser.getBlockZ()), 1);
+                    area = Math.abs(Math.multiplyExact(dX, dZ));
+                }
+                catch (ArithmeticException e)
+                {
+                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimInsufficientBlocks, String.valueOf(Integer.MAX_VALUE));
+                    return true;
+                }
+                int remaining = playerData.getRemainingClaimBlocks();
+                if (remaining < area)
+                {
+                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.CreateClaimInsufficientBlocks, String.valueOf(area - remaining));
+                    dataStore.tryAdvertiseAdminAlternatives(player);
+                    return true;
+                }
+                ownerId = player.getUniqueId();
+            }
+
+            CreateClaimResult result = this.dataStore.createClaim(world,
+                    lesser.getBlockX(), greater.getBlockX(),
+                    lesser.getBlockY() - GriefPrevention.instance.config_claims_claimsExtendIntoGroundDistance - 1,
+                    world.getHighestBlockYAt(greater) - GriefPrevention.instance.config_claims_claimsExtendIntoGroundDistance - 1,
+                    lesser.getBlockZ(), lesser.getBlockZ(),
+                    ownerId, null, null, player);
             if (!result.succeeded || result.claim == null)
             {
                 if (result.claim != null)

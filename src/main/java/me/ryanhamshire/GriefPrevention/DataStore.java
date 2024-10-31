@@ -1419,7 +1419,7 @@ public abstract class DataStore
             }
             catch (ArithmeticException e)
             {
-                GriefPrevention.sendMessage(player, TextMode.Err, Messages.ResizeClaimInsufficientArea, String.valueOf(GriefPrevention.instance.config_claims_minArea));
+                GriefPrevention.sendMessage(player, TextMode.Err, Messages.ResizeNeedMoreBlocks, String.valueOf(Integer.MAX_VALUE));
                 return;
             }
 
@@ -1433,7 +1433,16 @@ public abstract class DataStore
                     return;
                 }
 
-                int newArea = newWidth * newHeight;
+                int newArea;
+                try
+                {
+                    newArea = Math.multiplyExact(newWidth, newHeight);
+                }
+                catch (ArithmeticException e)
+                {
+                    GriefPrevention.sendMessage(player, TextMode.Err, Messages.ResizeNeedMoreBlocks, String.valueOf(Integer.MAX_VALUE));
+                    return;
+                }
                 if (newArea < GriefPrevention.instance.config_claims_minArea)
                 {
                     GriefPrevention.sendMessage(player, TextMode.Err, Messages.ResizeClaimInsufficientArea, String.valueOf(GriefPrevention.instance.config_claims_minArea));
@@ -1453,7 +1462,7 @@ public abstract class DataStore
                 }
                 catch (ArithmeticException e)
                 {
-                    blocksRemainingAfter = -1;
+                    blocksRemainingAfter = Integer.MIN_VALUE + 1;
                 }
 
                 if (blocksRemainingAfter < 0)
