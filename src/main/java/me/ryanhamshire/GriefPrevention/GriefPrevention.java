@@ -1172,8 +1172,15 @@ public class GriefPrevention extends JavaPlugin
             }
 
             World world = player.getWorld();
-            Location lesser = new Location(world, lesserX, playerLoc.getY(), lesserZ);
-            Location greater = new Location(world, greaterX, world.getMaxHeight(), greaterZ);
+
+            int lesserY;
+            try
+            {
+                lesserY = Math.subtractExact(Math.subtractExact(playerLoc.getBlockY(), config_claims_claimsExtendIntoGroundDistance), 1);
+            } catch (ArithmeticException e)
+            {
+                lesserY = world.getMinHeight();
+            }
 
             UUID ownerId;
             if (playerData.shovelMode == ShovelMode.Admin)
@@ -1185,8 +1192,8 @@ public class GriefPrevention extends JavaPlugin
                 int area;
                 try
                 {
-                    int dX = Math.addExact(Math.subtractExact(greater.getBlockX(), lesser.getBlockX()), 1);
-                    int dZ = Math.addExact(Math.subtractExact(greater.getBlockZ(), lesser.getBlockZ()), 1);
+                    int dX = Math.addExact(Math.subtractExact(greaterX, lesserX), 1);
+                    int dZ = Math.addExact(Math.subtractExact(greaterZ, lesserZ), 1);
                     area = Math.abs(Math.multiplyExact(dX, dZ));
                 }
                 catch (ArithmeticException e)
@@ -1205,10 +1212,10 @@ public class GriefPrevention extends JavaPlugin
             }
 
             CreateClaimResult result = this.dataStore.createClaim(world,
-                    lesser.getBlockX(), greater.getBlockX(),
-                    lesser.getBlockY() - GriefPrevention.instance.config_claims_claimsExtendIntoGroundDistance - 1,
-                    world.getHighestBlockYAt(greater) - GriefPrevention.instance.config_claims_claimsExtendIntoGroundDistance - 1,
-                    lesser.getBlockZ(), lesser.getBlockZ(),
+                    lesserX, greaterX,
+                    lesserY,
+                    world.getMaxHeight(),
+                    lesserZ, greaterZ,
                     ownerId, null, null, player);
             if (!result.succeeded || result.claim == null)
             {
