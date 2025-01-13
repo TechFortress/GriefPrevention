@@ -562,7 +562,9 @@ public class EntityDamageHandler implements Listener
                 && entityType != EntityType.GLOW_ITEM_FRAME
                 && entityType != EntityType.ARMOR_STAND
                 && entityType != EntityType.VILLAGER
-                && entityType != EntityType.END_CRYSTAL)
+                && entityType != EntityType.END_CRYSTAL
+                // Item Displays have no hitbox, but display plugins may manually fire events where appropriate.
+                && entityType != EntityType.ITEM_DISPLAY)
         {
             return false;
         }
