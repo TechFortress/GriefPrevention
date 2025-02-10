@@ -24,6 +24,9 @@ import com.griefprevention.util.command.MonitoredCommands;
 import com.griefprevention.visualization.BoundaryVisualization;
 import com.griefprevention.visualization.VisualizationType;
 import me.ryanhamshire.GriefPrevention.events.ClaimInspectionEvent;
+import me.ryanhamshire.GriefPrevention.events.StartClaimCreationEvent;
+import me.ryanhamshire.GriefPrevention.events.StartClaimResizeEvent;
+import me.ryanhamshire.GriefPrevention.events.StartSubdivideClaimCreationEvent;
 import me.ryanhamshire.GriefPrevention.util.BoundingBox;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
@@ -1969,6 +1972,8 @@ class PlayerEventHandler implements Listener
                         playerData.claimResizing = claim;
                         playerData.lastShovelLocation = clickedBlock.getLocation();
                         GriefPrevention.sendMessage(player, TextMode.Instr, Messages.ResizeStart);
+
+                        Bukkit.getPluginManager().callEvent(new StartClaimResizeEvent(player, claim, clickedBlock));
                     }
 
                     //if he didn't click on a corner and is in subdivision mode, he's creating a new subdivision
@@ -1989,6 +1994,8 @@ class PlayerEventHandler implements Listener
                                 GriefPrevention.sendMessage(player, TextMode.Instr, Messages.SubdivisionStart);
                                 playerData.lastShovelLocation = clickedBlock.getLocation();
                                 playerData.claimSubdividing = claim;
+
+                                Bukkit.getPluginManager().callEvent(new StartSubdivideClaimCreationEvent(player, clickedBlock, claim));
                             }
                         }
 
@@ -2087,6 +2094,8 @@ class PlayerEventHandler implements Listener
 
                 //show him where he's working
                 BoundaryVisualization.visualizeArea(player, new BoundingBox(clickedBlock), VisualizationType.INITIALIZE_ZONE);
+
+                Bukkit.getPluginManager().callEvent(new StartClaimCreationEvent(player, clickedBlock));
             }
 
             //otherwise, he's trying to finish creating a claim by setting the other boundary corner
