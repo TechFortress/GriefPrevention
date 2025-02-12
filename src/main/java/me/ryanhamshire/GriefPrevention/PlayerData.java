@@ -150,11 +150,30 @@ public class PlayerData
     //the number of claim blocks a player has available for claiming land
     public int getRemainingClaimBlocks()
     {
-        int remainingBlocks = this.getAccruedClaimBlocks() + this.getBonusClaimBlocks() + GriefPrevention.instance.dataStore.getGroupBonusBlocks(this.playerID);
-        for (int i = 0; i < this.getClaims().size(); i++)
+        int remainingBlocks;
+        try
         {
-            Claim claim = this.getClaims().get(i);
-            remainingBlocks -= claim.getArea();
+            remainingBlocks = Math.addExact(
+                    Math.addExact(this.getAccruedClaimBlocks(), this.getBonusClaimBlocks()),
+                    GriefPrevention.instance.dataStore.getGroupBonusBlocks(this.playerID));
+        }
+        catch (ArithmeticException e)
+        {
+            // If there is an overflow adding the player's available blocks, use max value.
+            remainingBlocks = Integer.MAX_VALUE;
+        }
+        try
+        {
+            for (int i = 0; i < this.getClaims().size(); i++)
+            {
+                Claim claim = this.getClaims().get(i);
+                remainingBlocks = Math.subtractExact(remainingBlocks, claim.getArea());
+            }
+        }
+        catch (ArithmeticException e)
+        {
+            // If there is an overflow subtracting the player's claims, they don't have any blocks left.
+            return 0;
         }
 
         return remainingBlocks;
@@ -255,12 +274,22 @@ public class PlayerData
                 Claim claim = dataStore.claims.get(i);
                 if (!claim.inDataStore)
                 {
-                    dataStore.claims.remove(i--);
+                    Claim remove = dataStore.claims.remove(i--);
+                    dataStore.claimIDMap.remove(remove.getID());
+                    for (Claim child : remove.children)
+                    {
+                        dataStore.claimIDMap.remove(child.getID());
+                    }
                     continue;
                 }
                 if (playerID.equals(claim.ownerID))
                 {
                     this.claims.add(claim);
+                    dataStore.claimIDMap.put(claim.getID(), claim);
+                    for (Claim child : claim.children)
+                    {
+                        dataStore.claimIDMap.put(child.getID(), child);
+                    }
                     totalClaimsArea += claim.getArea();
                 }
             }

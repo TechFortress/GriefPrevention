@@ -154,10 +154,6 @@ commands:
       description: Reloads Grief Prevention's configuration settings.  Does NOT totally reload the entire plugin.
       usage: /<command>
       permission: griefprevention.reload
-    gpblockinfo:
-      description: Allows an administrator to get technical information about blocks in the world and items in hand.
-      usage: /<command>
-      permission: griefprevention.gpblockinfo
     ignoreplayer:
       description: Ignores another player's chat messages.
       usage: /<command> <player name>
@@ -271,9 +267,6 @@ permissions:
         default: op
     griefprevention.seeclaimsize:
         description: Allows a player to see claim size for other players claims when right clicking with investigation tool
-        default: op
-    griefprevention.gpblockinfo:
-        description: Grants access to /gpblockinfo.
         default: op
     griefprevention.overrideclaimcountlimit:
         description: Allows players to create more claims than the limit specified by the config.

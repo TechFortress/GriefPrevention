@@ -1914,6 +1914,8 @@ class PlayerEventHandler implements Listener
                 return;
             }
 
+            playerData = this.dataStore.getPlayerData(player.getUniqueId());
+
             //if he's resizing a claim and that claim hasn't been deleted since he started resizing it
             if (playerData.claimResizing != null && playerData.claimResizing.inDataStore)
             {

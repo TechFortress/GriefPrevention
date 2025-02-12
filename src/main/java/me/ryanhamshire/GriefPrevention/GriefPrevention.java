@@ -31,7 +31,6 @@ import org.bukkit.BanList.Type;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
-import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -59,7 +58,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -67,12 +69,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -126,8 +130,6 @@ public class GriefPrevention extends JavaPlugin
     public double config_claims_abandonReturnRatio;                 //the portion of claim blocks returned to a player when a claim is abandoned
     public int config_claims_blocksAccruedPerHour_default;            //how many additional blocks players get each hour of play (can be zero) without any special permissions
     public int config_claims_maxAccruedBlocks_default;                //the limit on accrued blocks (over time) for players without any special permissions.  doesn't limit purchased or admin-gifted blocks
-    public int config_claims_accruedIdleThreshold;                    //how far (in blocks) a player must move in order to not be considered afk/idle when determining accrued claim blocks
-    public int config_claims_accruedIdlePercent;                    //how much percentage of claim block accruals should idle players get
     public int config_claims_maxDepth;                                //limit on how deep claims can go
     public int config_claims_expirationDays;                        //how many days of inactivity before a player loses his claims
     public int config_claims_expirationExemptionTotalBlocks;        //total claim blocks amount which will exempt a player from claim expiration
@@ -543,9 +545,6 @@ public class GriefPrevention extends JavaPlugin
         this.config_claims_blocksAccruedPerHour_default = config.getInt("GriefPrevention.Claims.Claim Blocks Accrued Per Hour.Default", config_claims_blocksAccruedPerHour_default);
         this.config_claims_maxAccruedBlocks_default = config.getInt("GriefPrevention.Claims.MaxAccruedBlocks", 80000);
         this.config_claims_maxAccruedBlocks_default = config.getInt("GriefPrevention.Claims.Max Accrued Claim Blocks.Default", this.config_claims_maxAccruedBlocks_default);
-        this.config_claims_accruedIdleThreshold = config.getInt("GriefPrevention.Claims.AccruedIdleThreshold", 0);
-        this.config_claims_accruedIdleThreshold = config.getInt("GriefPrevention.Claims.Accrued Idle Threshold", this.config_claims_accruedIdleThreshold);
-        this.config_claims_accruedIdlePercent = config.getInt("GriefPrevention.Claims.AccruedIdlePercent", 0);
         this.config_claims_abandonReturnRatio = config.getDouble("GriefPrevention.Claims.AbandonReturnRatio", 1.0D);
         this.config_claims_automaticClaimsForNewPlayersRadius = config.getInt("GriefPrevention.Claims.AutomaticNewPlayerClaimsRadius", 4);
         this.config_claims_automaticClaimsForNewPlayersRadiusMin = Math.max(0, Math.min(this.config_claims_automaticClaimsForNewPlayersRadius,
@@ -671,9 +670,7 @@ public class GriefPrevention extends JavaPlugin
         this.config_pvp_protectPets = config.getBoolean("GriefPrevention.PvP.ProtectPetsOutsideLandClaims", false);
 
         //optional database settings
-        this.databaseUrl = config.getString("GriefPrevention.Database.URL", "");
-        this.databaseUserName = config.getString("GriefPrevention.Database.UserName", "");
-        this.databasePassword = config.getString("GriefPrevention.Database.Password", "");
+        loadDatabaseSettings(config);
 
         this.config_advanced_fixNegativeClaimblockAmounts = config.getBoolean("GriefPrevention.Advanced.fixNegativeClaimblockAmounts", true);
         this.config_advanced_claim_expiration_check_rate = config.getInt("GriefPrevention.Advanced.ClaimExpirationCheckRate", 60);
@@ -711,8 +708,6 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.Claims.InitialBlocks", this.config_claims_initialBlocks);
         outConfig.set("GriefPrevention.Claims.Claim Blocks Accrued Per Hour.Default", this.config_claims_blocksAccruedPerHour_default);
         outConfig.set("GriefPrevention.Claims.Max Accrued Claim Blocks.Default", this.config_claims_maxAccruedBlocks_default);
-        outConfig.set("GriefPrevention.Claims.Accrued Idle Threshold", this.config_claims_accruedIdleThreshold);
-        outConfig.set("GriefPrevention.Claims.AccruedIdlePercent", this.config_claims_accruedIdlePercent);
         outConfig.set("GriefPrevention.Claims.AbandonReturnRatio", this.config_claims_abandonReturnRatio);
         outConfig.set("GriefPrevention.Claims.AutomaticNewPlayerClaimsRadius", this.config_claims_automaticClaimsForNewPlayersRadius);
         outConfig.set("GriefPrevention.Claims.AutomaticNewPlayerClaimsRadiusMinimum", this.config_claims_automaticClaimsForNewPlayersRadiusMin);
@@ -800,10 +795,6 @@ public class GriefPrevention extends JavaPlugin
         outConfig.set("GriefPrevention.HardModeZombiesBreakDoors", this.config_zombiesBreakDoors);
         outConfig.set("GriefPrevention.MobProjectilesChangeBlocks", this.config_mobProjectilesChangeBlocks);
 
-        outConfig.set("GriefPrevention.Database.URL", this.databaseUrl);
-        outConfig.set("GriefPrevention.Database.UserName", this.databaseUserName);
-        outConfig.set("GriefPrevention.Database.Password", this.databasePassword);
-
         outConfig.set("GriefPrevention.UseBanCommand", this.config_ban_useCommand);
         outConfig.set("GriefPrevention.BanCommandPattern", this.config_ban_commandFormat);
 
@@ -862,6 +853,59 @@ public class GriefPrevention extends JavaPlugin
         for (String command : commands)
         {
             this.config_pvp_blockedCommands.add(command.trim().toLowerCase());
+        }
+    }
+
+    private void loadDatabaseSettings(@NotNull FileConfiguration legacyConfig)
+    {
+        File databasePropsFile = new File(DataStore.dataLayerFolderPath, "database.properties");
+        Properties databaseProps = new Properties();
+
+        // If properties file exists, use it - old config has already been migrated.
+        if (databasePropsFile.exists() && databasePropsFile.isFile())
+        {
+            try (FileReader reader = new FileReader(databasePropsFile, StandardCharsets.UTF_8))
+            {
+                // Load properties from file.
+                databaseProps.load(reader);
+
+                // Set values from loaded properties.
+                databaseUrl = databaseProps.getProperty("jdbcUrl", "");
+                databaseUserName = databaseProps.getProperty("username", "");
+                databasePassword = databaseProps.getProperty("password", "");
+            }
+            catch (IOException e)
+            {
+                getLogger().log(Level.SEVERE, "Unable to read database.properties", e);
+            }
+
+            return;
+        }
+
+        // Otherwise, database details may not have been migrated from legacy configuration.
+        // Try to load them.
+        databaseUrl = legacyConfig.getString("GriefPrevention.Database.URL", "");
+        databaseUserName = legacyConfig.getString("GriefPrevention.Database.UserName", "");
+        databasePassword = legacyConfig.getString("GriefPrevention.Database.Password", "");
+
+        // If not in use already, database settings are "secret" to discourage adoption until datastore is rewritten.
+        if (databaseUrl.isBlank()) {
+            return;
+        }
+
+        // Set properties to loaded values.
+        databaseProps.setProperty("jdbcUrl", databaseUrl);
+        databaseProps.setProperty("username", databaseUserName);
+        databaseProps.setProperty("password", databasePassword);
+
+        // Write properties file for future usage.
+        try (FileWriter writer = new FileWriter(databasePropsFile, StandardCharsets.UTF_8))
+        {
+            databaseProps.store(writer, null);
+        }
+        catch (IOException e)
+        {
+            getLogger().log(Level.SEVERE, "Unable to write database.properties", e);
         }
     }
 
@@ -2085,19 +2129,6 @@ public class GriefPrevention extends JavaPlugin
             {
                 GriefPrevention.AddLogEntry("Configuration updated.  If you have updated your Grief Prevention JAR, you still need to /reload or reboot your server.");
             }
-
-            return true;
-        }
-
-        //gpblockinfo
-        else if (cmd.getName().equalsIgnoreCase("gpblockinfo") && player != null)
-        {
-            ItemStack inHand = player.getInventory().getItemInMainHand();
-            player.sendMessage("In Hand: " + inHand.getType().name());
-
-            Block inWorld = player.getTargetBlockExact(300, FluidCollisionMode.ALWAYS);
-            if (inWorld == null) inWorld = player.getEyeLocation().getBlock();
-            player.sendMessage("In World: " + inWorld.getType().name());
 
             return true;
         }
