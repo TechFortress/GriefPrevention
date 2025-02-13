@@ -25,8 +25,6 @@ import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.World.Environment;
-import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
@@ -201,10 +199,17 @@ public class Claim
     //measurements.  all measurements are in blocks
     public int getArea()
     {
-        int claimWidth = this.greaterBoundaryCorner.getBlockX() - this.lesserBoundaryCorner.getBlockX() + 1;
-        int claimHeight = this.greaterBoundaryCorner.getBlockZ() - this.lesserBoundaryCorner.getBlockZ() + 1;
-
-        return claimWidth * claimHeight;
+        try
+        {
+            int dX = Math.addExact(Math.subtractExact(greaterBoundaryCorner.getBlockX(), lesserBoundaryCorner.getBlockX()), 1);
+            int dZ = Math.addExact(Math.subtractExact(greaterBoundaryCorner.getBlockZ(), lesserBoundaryCorner.getBlockZ()), 1);
+            return Math.multiplyExact(dX, dZ);
+        }
+        catch (ArithmeticException e)
+        {
+            // If a claim's area exceeds the max value an int can hold, return max value.
+            return Integer.MAX_VALUE;
+        }
     }
 
     public int getWidth()
