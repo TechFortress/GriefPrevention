@@ -941,8 +941,9 @@ public class GriefPrevention extends JavaPlugin
             }
 
             // Unless the player has the extendclaim permission, he requires claim modification tool in hand
-            if (player.getGameMode() != GameMode.CREATIVE && (player.getItemInHand().getType() != GriefPrevention.instance.config_claims_modificationTool && !player.hasPermission("griefprevention.extendclaim")))
-            {
+            if (player.getGameMode() != GameMode.CREATIVE
+                    && player.getItemInHand().getType() != GriefPrevention.instance.config_claims_modificationTool
+                    && !player.hasPermission("griefprevention.extendclaim.no_tool")) {
                 GriefPrevention.sendMessage(player, TextMode.Err, Messages.MustHoldModificationToolForThat);
                 return true;
             }
